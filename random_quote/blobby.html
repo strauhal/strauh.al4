@@ -162,6 +162,10 @@
     </div>
 
     <script>
+        const RAW_BASE = "https://raw.githubusercontent.com/strauhal/strauh.al/refs/heads/main/";
+        const normalizeImageUrl = (url) =>
+            url.startsWith("https://strauh.al/") ? RAW_BASE + url.replace("https://strauh.al/", "") : url;
+
         const canvas = document.getElementById('interactive-canvas');
         const isCanvasSupported = !!(canvas.getContext && canvas.getContext('2d'));
 
@@ -173,7 +177,20 @@
                 const fallbackImage = document.getElementById('fallback-image');
                 fallbackImage.style.display = 'block';
                 
-                const imageUrls = [ "https://strauh.al/more_fine_art/toppan2.png", "https://strauh.al/more_fine_art/tumblr_084aeb22760ef39d3a5658ce441cd4cf_2d7b8dbc_1280.jpg", "https://strauh.al/more_fine_art/tumblr_10946cbeaef57c034b2aaf9865fba4d7_4468aeb1_1280.jpg", "https://strauh.al/more_fine_art/tumblr_4f7e30e0e7e26748b14d28c33e9333a2_88713fa8_1280.jpg", "https://strauh.al/more_fine_art/tumblr_6ffb5c4323ddffb4f3247915fe8d8176_2859fb2b_1280.jpg", "https://strauh.al/more_fine_art/tumblr_7656584befc57e3f25593b094f9af13a_04eb02f9_2048.jpg", "https://strauh.al/more_fine_art/tumblr_989687c381cdd655b835f3ab471c8494_33cf1a38_1280.jpg", "https://strauh.al/more_fine_art/tumblr_9b0de624b23f05c03c0ac80a47dc3f96_b7a31d49_640.jpg", "https://strauh.al/more_fine_art/tumblr_a60d63bfd2f53ce3ffc9f92f0fcfb9f3_65597114_1280.jpg", "https://strauh.al/more_fine_art/tumblr_d0af9aa85cf565ea6597e267bfd326d2_e0feda99_540.jpg", "https://strauh.al/more_fine_art/tumblr_d55d2c72373381a2e349907c5650ca50_c21902dd_640.jpg", "https://strauh.al/more_fine_art/yoji-shinkawa-the-art-director-of-metal-gear-solid-6-sabukaru.jpeg" ];
+                const imageUrls = [
+                    "https://strauh.al/more_fine_art/toppan2.png",
+                    "https://strauh.al/more_fine_art/tumblr_084aeb22760ef39d3a5658ce441cd4cf_2d7b8dbc_1280.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_10946cbeaef57c034b2aaf9865fba4d7_4468aeb1_1280.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_4f7e30e0e7e26748b14d28c33e9333a2_88713fa8_1280.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_6ffb5c4323ddffb4f3247915fe8d8176_2859fb2b_1280.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_7656584befc57e3f25593b094f9af13a_04eb02f9_2048.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_989687c381cdd655b835f3ab471c8494_33cf1a38_1280.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_9b0de624b23f05c03c0ac80a47dc3f96_b7a31d49_640.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_a60d63bfd2f53ce3ffc9f92f0fcfb9f3_65597114_1280.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_d0af9aa85cf565ea6597e267bfd326d2_e0feda99_540.jpg",
+                    "https://strauh.al/more_fine_art/tumblr_d55d2c72373381a2e349907c5650ca50_c21902dd_640.jpg",
+                    "https://strauh.al/more_fine_art/yoji-shinkawa-the-art-director-of-metal-gear-solid-6-sabukaru.jpeg",
+                ].map(normalizeImageUrl);
                 const quotes = [
                     {"id": 1, "quote": "\"about neither concept nor beauty—instead relying on application, context and frequency to communicate their desire\""},
                     {"id": 2, "quote": "\"If you are inspired by people who are still alive, you are aiming too low and you're not going to reach very far. You need to reach into the ancient, ancient past to make media to make an impression on the world that will last into the future\""},
@@ -652,10 +669,7 @@
 "https://strauh.al/more_fine_art/tumblr_d55d2c72373381a2e349907c5650ca50_c21902dd_640.jpg",
 "https://strauh.al/more_fine_art/yoji-shinkawa-the-art-director-of-metal-gear-solid-6-sabukaru.jpeg",
 
-
-
-
-        ];
+        ].map(normalizeImageUrl);
 
 // The quotes are in the specified object format.
         const quotes = [
@@ -1710,4 +1724,3 @@
     </script>
 </body>
 </html>
-

@@ -130,6 +130,7 @@
 
     <script>
         // --- DATA ---
+        const RAW_BASE = "https://raw.githubusercontent.com/strauhal/strauh.al/refs/heads/main/";
         
         // Add your image links to this array.
         const imageUrls = [
@@ -580,10 +581,11 @@
 "https://strauh.al/more_fine_art/tumblr_d55d2c72373381a2e349907c5650ca50_c21902dd_640.jpg",
 "https://strauh.al/more_fine_art/yoji-shinkawa-the-art-director-of-metal-gear-solid-6-sabukaru.jpeg",
 
-
-
-
-        ];
+        ].map((url) =>
+            url.startsWith("https://strauh.al/")
+                ? RAW_BASE + url.replace("https://strauh.al/", "")
+                : url
+        );
 
         // The quotes are in the specified object format.
         const quotes = [
@@ -1631,4 +1633,3 @@
     </script>
 </body>
 </html>
-
