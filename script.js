@@ -1,28 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    /**
+     * CONFIGURATION
+     * Adjusted timings for optimal responsiveness vs. resource usage.
+     */
     const CONFIG = {
-        DESKTOP_HOVER_DELAY: 40,
-        MOBILE_SCROLL_DELAY: 150,
+        DESKTOP_HOVER_DELAY: 40,  // ms: Just enough to skip accidental swipes
+        MOBILE_SCROLL_DELAY: 100, // ms: Snappier mobile response
         CACHE_SIZE: 50,
         DEFAULT_ANCHOR_Y: 10,
-        // Extensions to target
         IMG_EXTS: ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     };
 
-    // Central State
+    /**
+     * CENTRAL STATE MANAGEMENT
+     * Single source of truth for all interactions.
+     */
     const state = {
         isMobile: () => window.matchMedia("(max-width: 900px)").matches,
         needsLayoutUpdate: true,
-        linkPositions: [], // Cache for scroll math O(1) access
+        linkPositions: [], 
         stickyLink: null,
         anchorY: CONFIG.DEFAULT_ANCHOR_Y,
         lastTapped: null,
         allowClick: false,
+        activeImgSrc: null, // The "Conductor's Baton" - dictates what plays
         timers: { hover: null, load: null },
         scrollTicking: false
     };
 
-    // Efficient Selector String construction
+    // Construct optimized selector string once
     const LINK_SELECTOR = CONFIG.IMG_EXTS
         .flatMap(ext => [ext, ext.toUpperCase()])
         .map(ext => `a[href$="${ext}"]`)
@@ -30,8 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * MODULE: YouTube Embeds
-     * Adds toggle functionality to YouTube links.
-     * Triggers layout recalculation when toggled.
+     * Handles text-to-iframe conversion with toggle functionality.
      */
     function initYouTubeEmbeds() {
         const paragraphs = document.querySelectorAll('p');
@@ -43,22 +49,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const [fullUrl, _, videoId, startTime] = match;
 
-            // 1. Linkify text FIRST to avoid destroying elements we append later
+            // Linkify text URL if plain text
             if (!p.querySelector(`a[href="${fullUrl}"]`)) {
                 p.innerHTML = p.innerHTML.replace(fullUrl, `<a href="${fullUrl}" target="_blank">${fullUrl}</a>`);
             }
             
-            // 2. Create Toggle Link
             const embedLink = document.createElement('a');
             Object.assign(embedLink.style, {
                 cursor: 'pointer', marginLeft: '5px', textDecoration: 'underline'
             });
             embedLink.textContent = '[display]';
 
-            // 3. Container for iframe
             const container = document.createElement('div');
-            
-            // 4. Append elements to the DOM
             p.appendChild(embedLink);
             p.appendChild(container);
 
@@ -80,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     container.innerHTML = '';
                 }
                 
-                // Content changed height, invalidate scroll cache
+                // Content shift invalidates layout cache
                 state.needsLayoutUpdate = true;
             });
         });
@@ -88,19 +90,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * MODULE: Image Preview
-     * Highly optimized implementation using Delegation and Layout Caching.
+     * Handles all image interaction logic.
      */
     function initImagePreview() {
         // --- 1. DOM Construction ---
         const container = document.createElement('div');
         container.id = 'image-preview-container';
         
-        // Hardware acceleration styles for smooth rendering
         Object.assign(container.style, {
             position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
             zIndex: '-1', pointerEvents: 'none', display: 'none',
             flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            transform: 'translate3d(0, 0, 0)',
+            transform: 'translate3d(0, 0, 0)', // Hardware Accel
             webkitTransform: 'translate3d(0, 0, 0)',
             backfaceVisibility: 'hidden'
         });
@@ -113,27 +114,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- 2. Cache System ---
         const imageCache = new Map();
+        
         const getCachedImage = (src) => {
             if (imageCache.has(src)) {
+                // LRU: Re-insert to update order
                 const val = imageCache.get(src);
-                imageCache.delete(src); // Refresh LRU
+                imageCache.delete(src);
                 imageCache.set(src, val);
                 return val;
             }
+            
             const newImg = new Image();
             newImg.src = src;
+            
             if (imageCache.size >= CONFIG.CACHE_SIZE) {
                 imageCache.delete(imageCache.keys().next().value);
             }
+            
             imageCache.set(src, newImg);
             return newImg;
         };
 
-        // --- 3. Layout Caching (Performance Core) ---
+        // --- 3. Layout Caching ---
         const imageLinks = document.querySelectorAll(LINK_SELECTOR);
 
         const recalculateLayout = () => {
-            // Batch read DOM properties to avoid thrashing
             const scrollY = window.scrollY;
             state.linkPositions = Array.from(imageLinks).map(link => ({
                 link,
@@ -142,30 +147,34 @@ document.addEventListener('DOMContentLoaded', () => {
             state.needsLayoutUpdate = false;
         };
 
-        // --- 4. Interaction Logic ---
+        // --- 4. Visual Logic ---
         
         const clearHighlights = () => {
-            // Only query the DOM for active classes to minimize work
-            const active = document.querySelectorAll('.mobile-hover');
-            for (let i = 0; i < active.length; i++) active[i].classList.remove('mobile-hover');
+            document.querySelectorAll('.mobile-hover').forEach(el => el.classList.remove('mobile-hover'));
         };
 
         const updatePreview = (src) => {
+            // Set the "current note" immediately
+            state.activeImgSrc = src;
+
             const cached = getCachedImage(src);
             
+            // Prepare container
             container.style.display = 'flex';
             container.style.zIndex = '-1';
-            img.style.display = 'none'; // Hide until loaded/retrieved
+            img.style.display = 'none'; 
 
-            // Optimized Style Application
-            const isMob = state.isMobile();
-            img.style.width = 'auto';
-            img.style.height = 'auto';
-            img.style.maxWidth = '100%';
-            img.style.maxHeight = '100%';
-            img.style.objectFit = 'contain';
+            // Apply styles
+            Object.assign(img.style, {
+                width: 'auto', height: 'auto',
+                maxWidth: '100%', maxHeight: '100%', 
+                objectFit: 'contain'
+            });
 
             const render = () => {
+                // STRICT CHECK: Is this still the active image?
+                if (state.activeImgSrc !== src) return;
+
                 if (img.src !== cached.src) img.src = cached.src;
                 img.style.display = 'block';
             };
@@ -175,12 +184,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const hidePreview = () => {
+            state.activeImgSrc = null;
             container.style.display = 'none';
-            img.src = ''; // Cancel network request/render
+            img.src = ''; // Cancel/Clear
             clearHighlights();
         };
 
-        // Mobile: Calculate closest link using Cached Positions (Pure Math, No DOM reads)
+        // --- 5. Mobile Scroll Logic ---
+
         const updateStickyHighlight = (force = false) => {
             if (state.needsLayoutUpdate) recalculateLayout();
 
@@ -188,10 +199,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let closest = null;
             let minDiff = Infinity;
 
-            // Fast array scan
-            const len = state.linkPositions.length;
-            for (let i = 0; i < len; i++) {
-                const item = state.linkPositions[i];
+            // Fast Array Scan (O(n))
+            for (const item of state.linkPositions) {
                 const diff = Math.abs(item.top - targetY);
                 if (diff < minDiff) {
                     minDiff = diff;
@@ -222,9 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // --- 5. Event Delegation (Memory Optimization) ---
+        // --- 6. Event Delegation (The Conductor) ---
 
-        // Desktop Hover (Delegated)
+        // Desktop Hover
         document.body.addEventListener('mouseover', (e) => {
             if (state.isMobile()) return;
             const link = e.target.closest(LINK_SELECTOR);
@@ -239,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, { passive: true });
 
+        // Desktop Leave
         document.body.addEventListener('mouseout', (e) => {
             if (state.isMobile()) return;
             const link = e.target.closest(LINK_SELECTOR);
@@ -248,23 +258,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, { passive: true });
 
-        // Navigation Click Guard (Delegated)
+        // Click Guard
         document.body.addEventListener('click', (e) => {
             const link = e.target.closest(LINK_SELECTOR);
             if (!link) return;
 
-            // Desktop: Allow navigation
-            if (!state.isMobile()) return;
+            if (!state.isMobile()) return; // Desktop = Follow Link
 
-            // Mobile: Double-tap logic
+            // Mobile Double-Tap Logic
             if (state.allowClick && state.lastTapped === link) {
                 state.allowClick = false;
-                return; // Allow default action
+                return; // Follow Link
             }
-            e.preventDefault();
+            e.preventDefault(); // Block Link
         });
 
-        // Global Scroll
+        // Mobile Scroll
         window.addEventListener('scroll', () => {
             if (!state.isMobile()) return;
             
@@ -276,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, { passive: true });
 
-        // Global Touch Start
+        // Mobile Touch Start
         document.body.addEventListener('touchstart', (e) => {
             if (!state.isMobile()) return;
             if (!state.stickyLink) ensureMobileInit();
@@ -284,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const link = e.target.closest(LINK_SELECTOR);
 
             if (link) {
-                // Explicit interaction updates anchor
                 state.anchorY = e.touches[0].clientY;
 
                 if (link === state.lastTapped) {
@@ -293,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.allowClick = false;
                     state.lastTapped = link;
                     
-                    // Instant update
+                    // Immediate Feedback
                     clearHighlights();
                     state.stickyLink = link;
                     state.stickyLink.classList.add('mobile-hover');
@@ -301,24 +309,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatePreview(state.stickyLink.href);
                 }
             } else {
-                // Touched empty space -> Just update scroll logic based on existing anchor
                 updateStickyHighlight(false);
             }
         }, { passive: true });
 
-        // Global Touch End (Cleanup)
+        // Mobile Touch End (Clean up any ghost highlights)
         document.body.addEventListener('touchend', () => {
             if (!state.isMobile()) return;
             updateStickyHighlight(true);
         }, { passive: true });
 
-        // Lifecycle
+        // Resize / Orientation Change
         window.addEventListener('resize', () => {
             state.needsLayoutUpdate = true;
             if (state.isMobile()) {
                 ensureMobileInit();
             } else {
-                // Cleanup when going desktop
+                // Reset mobile state if entering desktop mode
                 if (state.stickyLink) {
                     state.stickyLink = null;
                     hidePreview();
@@ -326,7 +333,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Initial Boot
+        // CRITICAL: Final Layout Tune-up
+        window.addEventListener('load', () => {
+            recalculateLayout();
+            if (state.isMobile()) ensureMobileInit();
+        });
+
+        // Start
         recalculateLayout();
         if (state.isMobile()) ensureMobileInit();
     }
