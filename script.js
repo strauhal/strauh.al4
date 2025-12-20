@@ -6,15 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     const CONFIG = {
         DESKTOP_HOVER_DELAY: 40,  // ms: Just enough to skip accidental swipes
-        MOBILE_SCROLL_DELAY: 100, // ms: Snappier mobile response
+        MOBILE_SCROLL_DELAY: 100, // ms: Snappier response after scrolling stops
         CACHE_SIZE: 50,
         DEFAULT_ANCHOR_Y: 10,
+        SCROLL_THRESHOLD: 10,     // px: Movement tolerance to distinguish tap vs scroll
         IMG_EXTS: ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     };
 
     /**
      * CENTRAL STATE MANAGEMENT
-     * Single source of truth for all interactions.
+     * The single source of truth—our score.
      */
     const state = {
         isMobile: () => window.matchMedia("(max-width: 900px)").matches,
@@ -24,12 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
         anchorY: CONFIG.DEFAULT_ANCHOR_Y,
         lastTapped: null,
         allowClick: false,
-        activeImgSrc: null, // The "Conductor's Baton" - dictates what plays
+        activeImgSrc: null, // The "Conductor's Baton" - tracks the currently requested image
         timers: { hover: null, load: null },
-        scrollTicking: false
+        scrollTicking: false,
+        touchStartY: 0,     // Track touch start position
+        isScrolling: false  // Track if user is scrolling
     };
 
-    // Construct optimized selector string once
+    // Construct selector string efficiently once
     const LINK_SELECTOR = CONFIG.IMG_EXTS
         .flatMap(ext => [ext, ext.toUpperCase()])
         .map(ext => `a[href$="${ext}"]`)
@@ -37,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * MODULE: YouTube Embeds
-     * Handles text-to-iframe conversion with toggle functionality.
+     * Handles text-to-iframe conversion.
      */
     function initYouTubeEmbeds() {
         const paragraphs = document.querySelectorAll('p');
@@ -49,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const [fullUrl, _, videoId, startTime] = match;
 
-            // Linkify text URL if plain text
+            // Linkify plain text URL if needed
             if (!p.querySelector(`a[href="${fullUrl}"]`)) {
                 p.innerHTML = p.innerHTML.replace(fullUrl, `<a href="${fullUrl}" target="_blank">${fullUrl}</a>`);
             }
@@ -61,6 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
             embedLink.textContent = '[display]';
 
             const container = document.createElement('div');
+            
+            // Append elements securely
             p.appendChild(embedLink);
             p.appendChild(container);
 
@@ -82,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     container.innerHTML = '';
                 }
                 
-                // Content shift invalidates layout cache
+                // Layout changed, mark for recalc
                 state.needsLayoutUpdate = true;
             });
         });
@@ -90,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * MODULE: Image Preview
-     * Handles all image interaction logic.
+     * The visual performance logic.
      */
     function initImagePreview() {
         // --- 1. DOM Construction ---
@@ -101,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
             position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
             zIndex: '-1', pointerEvents: 'none', display: 'none',
             flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            transform: 'translate3d(0, 0, 0)', // Hardware Accel
+            transform: 'translate3d(0, 0, 0)', // Hardware Acceleration
             webkitTransform: 'translate3d(0, 0, 0)',
             backfaceVisibility: 'hidden'
         });
@@ -117,9 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const getCachedImage = (src) => {
             if (imageCache.has(src)) {
-                // LRU: Re-insert to update order
                 const val = imageCache.get(src);
-                imageCache.delete(src);
+                imageCache.delete(src); // Refresh LRU position
                 imageCache.set(src, val);
                 return val;
             }
@@ -140,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const recalculateLayout = () => {
             const scrollY = window.scrollY;
+            // Batch read to avoid layout thrashing
             state.linkPositions = Array.from(imageLinks).map(link => ({
                 link,
                 top: link.getBoundingClientRect().top + scrollY
@@ -150,21 +155,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 4. Visual Logic ---
         
         const clearHighlights = () => {
-            document.querySelectorAll('.mobile-hover').forEach(el => el.classList.remove('mobile-hover'));
+            const active = document.querySelectorAll('.mobile-hover');
+            for (let i = 0; i < active.length; i++) active[i].classList.remove('mobile-hover');
         };
 
         const updatePreview = (src) => {
-            // Set the "current note" immediately
+            // "The Baton": Mark this specific request as active
             state.activeImgSrc = src;
 
             const cached = getCachedImage(src);
             
-            // Prepare container
             container.style.display = 'flex';
             container.style.zIndex = '-1';
             img.style.display = 'none'; 
 
-            // Apply styles
             Object.assign(img.style, {
                 width: 'auto', height: 'auto',
                 maxWidth: '100%', maxHeight: '100%', 
@@ -172,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const render = () => {
-                // STRICT CHECK: Is this still the active image?
+                // Strict Synchronization: If the conductor moved on, silence this note.
                 if (state.activeImgSrc !== src) return;
 
                 if (img.src !== cached.src) img.src = cached.src;
@@ -184,9 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const hidePreview = () => {
-            state.activeImgSrc = null;
+            state.activeImgSrc = null; // Drop the baton
             container.style.display = 'none';
-            img.src = ''; // Cancel/Clear
+            img.src = ''; // Clear buffer
             clearHighlights();
         };
 
@@ -195,12 +199,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const updateStickyHighlight = (force = false) => {
             if (state.needsLayoutUpdate) recalculateLayout();
 
+            // Adjust targetY to be slightly more centered or based on tap
+            // If the user tapped, anchorY is the tap position. 
+            // If scrolling, anchorY remains where it was last set.
             const targetY = window.scrollY + state.anchorY;
             let closest = null;
             let minDiff = Infinity;
 
-            // Fast Array Scan (O(n))
-            for (const item of state.linkPositions) {
+            // Efficient linear scan (O(n))
+            for (let i = 0; i < state.linkPositions.length; i++) {
+                const item = state.linkPositions[i];
                 const diff = Math.abs(item.top - targetY);
                 if (diff < minDiff) {
                     minDiff = diff;
@@ -208,6 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // Persistence Logic:
+            // 1. If we found a NEW closest link that is different from current sticky link
+            // 2. OR if we are forcing an update (explicit tap)
             if (closest && (closest !== state.stickyLink || force)) {
                 clearHighlights();
                 state.stickyLink = closest;
@@ -217,6 +228,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.timers.load = setTimeout(() => {
                     if (state.stickyLink) updatePreview(state.stickyLink.href);
                 }, CONFIG.MOBILE_SCROLL_DELAY);
+            } 
+            // 3. Fallback: If no change, ensure the current sticky link REMAINS highlighted.
+            // This fixes the "flicker" or "disappearing highlight" issue.
+            else if (state.stickyLink) {
+                if (!state.stickyLink.classList.contains('mobile-hover')) {
+                    state.stickyLink.classList.add('mobile-hover');
+                }
             }
             state.scrollTicking = false;
         };
@@ -231,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // --- 6. Event Delegation (The Conductor) ---
+        // --- 6. Event Delegation ---
 
         // Desktop Hover
         document.body.addEventListener('mouseover', (e) => {
@@ -263,14 +281,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const link = e.target.closest(LINK_SELECTOR);
             if (!link) return;
 
-            if (!state.isMobile()) return; // Desktop = Follow Link
+            if (!state.isMobile()) return; 
 
-            // Mobile Double-Tap Logic
+            // Mobile Double-Tap
             if (state.allowClick && state.lastTapped === link) {
                 state.allowClick = false;
-                return; // Follow Link
+                return; 
             }
-            e.preventDefault(); // Block Link
+            e.preventDefault();
         });
 
         // Mobile Scroll
@@ -288,12 +306,42 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mobile Touch Start
         document.body.addEventListener('touchstart', (e) => {
             if (!state.isMobile()) return;
-            if (!state.stickyLink) ensureMobileInit();
+            
+            state.touchStartY = e.touches[0].clientY;
+            state.isScrolling = false;
 
-            const link = e.target.closest(LINK_SELECTOR);
+            if (!state.stickyLink) ensureMobileInit();
+        }, { passive: true });
+
+        // Mobile Touch Move - Detect Scroll Intent
+        document.body.addEventListener('touchmove', (e) => {
+            if (!state.isMobile()) return;
+            
+            const currentY = e.touches[0].clientY;
+            if (Math.abs(currentY - state.touchStartY) > CONFIG.SCROLL_THRESHOLD) {
+                state.isScrolling = true;
+            }
+        }, { passive: true });
+
+        // Mobile Touch End
+        document.body.addEventListener('touchend', (e) => {
+            if (!state.isMobile()) return;
+
+            // If user scrolled significantly, do NOT update anchor or select new link
+            // Just ensure the CURRENT highlight remains active.
+            if (state.isScrolling) {
+                if (state.stickyLink) state.stickyLink.classList.add('mobile-hover');
+                return; 
+            }
+
+            // User did NOT scroll (Tap intent)
+            const touchY = e.changedTouches[0].clientY;
+            const targetElement = document.elementFromPoint(e.changedTouches[0].clientX, touchY);
+            const link = targetElement ? targetElement.closest(LINK_SELECTOR) : null;
 
             if (link) {
-                state.anchorY = e.touches[0].clientY;
+                // Update anchor to exact tap position
+                state.anchorY = touchY;
 
                 if (link === state.lastTapped) {
                     state.allowClick = true;
@@ -301,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.allowClick = false;
                     state.lastTapped = link;
                     
-                    // Immediate Feedback
+                    // Instant update on Tap
                     clearHighlights();
                     state.stickyLink = link;
                     state.stickyLink.classList.add('mobile-hover');
@@ -309,14 +357,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatePreview(state.stickyLink.href);
                 }
             } else {
+                // Tapped blank space - Do not move anchor, just ensure stickiness
                 updateStickyHighlight(false);
             }
-        }, { passive: true });
-
-        // Mobile Touch End (Clean up any ghost highlights)
-        document.body.addEventListener('touchend', () => {
-            if (!state.isMobile()) return;
-            updateStickyHighlight(true);
         }, { passive: true });
 
         // Resize / Orientation Change
@@ -325,7 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.isMobile()) {
                 ensureMobileInit();
             } else {
-                // Reset mobile state if entering desktop mode
                 if (state.stickyLink) {
                     state.stickyLink = null;
                     hidePreview();
@@ -333,13 +375,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // CRITICAL: Final Layout Tune-up
+        // CRITICAL: Final Layout Tune-up after full load
+        // Ensures mobile highlights snap correctly once fonts/layout settle
         window.addEventListener('load', () => {
             recalculateLayout();
             if (state.isMobile()) ensureMobileInit();
         });
 
-        // Start
+        // Initial Boot
         recalculateLayout();
         if (state.isMobile()) ensureMobileInit();
     }
