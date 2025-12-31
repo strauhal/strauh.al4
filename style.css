@@ -10,6 +10,10 @@ body {
     padding-bottom: 56.25%;
 }
 
+#stamp img {
+	width: 7.5vw;
+}
+
 iframe {
 	width: 80vw;
 	height: 80vh;
@@ -73,6 +77,10 @@ body {
 	body {
 		margin: 0px 0px 0px 0px;
 		word-wrap: break-word;
+	}
+
+	#stamp img {
+	width: 22vw;
 	}
 
 	img {
