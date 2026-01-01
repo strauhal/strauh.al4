@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>strauh.al/museum/mockup</title>
+
+    <!-- Open Graph Meta Tags (for iMessage, Facebook, etc.) -->
+    <meta property="og:title" content="strauh.al/museum/mockup">
+    <meta property="og:description" content="description.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/strauhal/strauh.al/refs/heads/main/banner.gif">
+    <meta property="og:url" content="https://strauh.al/museum/mockup">
+    <meta property="og:type" content="website">
+
+
+    
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="../style.css">
+    
+    <!-- import the webpage's javascript file -->
+    <script src="/script.js" defer></script>
+
+
+        <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: #aaaaaa;
+            font-family: 'Courier New', Courier, monospace;
+            pointer-events: none;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #666;
+            font-family: sans-serif;
+            font-size: 12px;
+            z-index: 10;
+        }
+        #toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #666;
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+        #toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+
+
+  </head>  
+  <body>
+    <!-- <h1>strauh.al</h1> -->
+    <h1><a href="https://strauh.al">strauh.al</a>/<a href="https://strauh.al/museum">museum</a>/mockup</h2>
+
+
+    <!-- Load Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Load OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="info">strauh.al/museum concept // Drifting Partitions</div>
+    <div id="controls">Left Click: Rotate | Right Click: Pan | Scroll: Zoom</div>
+    <button id="toggle-btn">Toggle Mode</button>
+    
+    <script>
+        // --- 1. THE STAGE (Scene Setup) ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+        scene.fog = new THREE.FogExp2(0x1a1a1a, 0.0015);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 80, 260); 
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true; 
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 1.95; 
+        controls.minDistance = 5; 
+        controls.maxDistance = 600;
+
+        // --- 2. LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        dirLight.position.set(120, 250, 150);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 4096;
+        dirLight.shadow.mapSize.height = 4096;
+        const d = 300;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.bias = -0.0005;
+        scene.add(dirLight);
+
+        const rimLight = new THREE.DirectionalLight(0xcc4444, 0.3); 
+        rimLight.position.set(-100, 50, -50);
+        scene.add(rimLight);
+
+
+        // --- 3. THE INSTRUMENTS (Material System) ---
+        
+        let isWireframe = true;
+        const allMeshes = [];
+        const allLines = [];
+
+        // Wireframe Materials
+        const wfShellMat = new THREE.LineBasicMaterial({ color: 0xeeeeee, linewidth: 2, opacity: 0.6, transparent: true });
+        const wfRoomMat = new THREE.LineBasicMaterial({ color: 0x4a90e2, linewidth: 1, opacity: 0.3, transparent: true }); 
+        const wfDetailMat = new THREE.LineBasicMaterial({ color: 0x888888, linewidth: 1, opacity: 0.3, transparent: true });
+        const wfGoldMat = new THREE.LineBasicMaterial({ color: 0xffd700, linewidth: 2, opacity: 0.8, transparent: true });
+        const wfRedMat = new THREE.LineBasicMaterial({ color: 0xff3333, linewidth: 2, opacity: 0.8, transparent: true });
+        const wfBlackMat = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2, opacity: 0.8, transparent: true });
+        const wfSilverMat = new THREE.LineBasicMaterial({ color: 0xcccccc, linewidth: 1, opacity: 0.5, transparent: true });
+
+        // Solid Materials 
+        const solidShellMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.9, metalness: 0.1 }); 
+        const solidRoomMat = new THREE.MeshStandardMaterial({ color: 0x88aacc, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        const solidDetailMat = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.8 });
+        const solidGoldMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.4, metalness: 0.6 });
+        const solidRedMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.6, metalness: 0.1 });
+        const solidBlackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.0 });
+        const solidGehryMat = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide });
+        const solidSilverMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.05, metalness: 0.95, side: THREE.DoubleSide });
+
+        function createObject(geometry, materialType = 'shell', x=0, y=0, z=0, rx=0, ry=0, rz=0, s=1) {
+            const group = new THREE.Group();
+            
+            let solidMat, wfMat;
+
+            switch(materialType) {
+                case 'room': solidMat = solidRoomMat; wfMat = wfRoomMat; break;
+                case 'detail': solidMat = solidDetailMat; wfMat = wfDetailMat; break;
+                case 'gold': solidMat = solidGoldMat; wfMat = wfGoldMat; break;
+                case 'red': solidMat = solidRedMat; wfMat = wfRedMat; break;
+                case 'black': solidMat = solidBlackMat; wfMat = wfBlackMat; break;
+                case 'gehry': solidMat = solidGehryMat; wfMat = wfShellMat; break;
+                case 'silver': solidMat = solidSilverMat; wfMat = wfSilverMat; break;
+                default: solidMat = solidShellMat; wfMat = wfShellMat; break;
+            }
+            
+            const mesh = new THREE.Mesh(geometry, solidMat);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.visible = !isWireframe; 
+            
+            const edgesGeo = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(edgesGeo, wfMat);
+            line.visible = isWireframe;
+
+            allMeshes.push(mesh);
+            allLines.push(line);
+
+            group.add(mesh);
+            group.add(line);
+
+            group.position.set(x, y, z);
+            group.rotation.set(rx, ry, rz);
+            group.scale.set(s, s, s);
+
+            return group;
+        }
+
+        const buildingGroup = new THREE.Group();
+        scene.add(buildingGroup);
+
+
+        // --- 4. THE COMPOSITION ---
+
+        const mainWidth = 240; 
+        const mainDepth = 140;  
+        const groundFloorH = 12; 
+        const firstFloorH = 14;
+        const secondFloorH = 14; 
+        const atticH = 6;
+        
+        const totalHeight = groundFloorH + firstFloorH + secondFloorH + atticH;
+        const baseHeight = 6; 
+        
+        // --- Reference Levels ---
+        const groundFloorY = baseHeight + groundFloorH/2; // Floor 1 (Y ~12)
+        const firstFloorY = baseHeight + groundFloorH + 0.5 + firstFloorH/2; // Floor 2 (Y ~25.5)
+        const secondFloorY = baseHeight + groundFloorH + firstFloorH + 1.0 + secondFloorH/2; // Floor 3 (Y ~40)
+        
+        // NEW KINETIC CENTER: Midpoint of total range [12, 40] = 26
+        const kineticCenterY = (groundFloorY + secondFloorY) / 2; 
+
+        // --- PART A: THE MUSEUM SHELL ---
+        
+        // 1. Base
+        buildingGroup.add(createObject(new THREE.BoxGeometry(mainWidth + 12, baseHeight, mainDepth + 12), 'detail', 0, baseHeight/2, 0));
+        
+        // 2. Wall Construction
+        const shellY = baseHeight + totalHeight/2;
+        const shellThick = 2;
+        
+        buildingGroup.add(createObject(new THREE.BoxGeometry(mainWidth, totalHeight, shellThick), 'shell', 0, shellY, -mainDepth/2));
+        buildingGroup.add(createObject(new THREE.BoxGeometry(shellThick, totalHeight, mainDepth), 'shell', -mainWidth/2, shellY, 0));
+        buildingGroup.add(createObject(new THREE.BoxGeometry(shellThick, totalHeight, mainDepth), 'shell', mainWidth/2, shellY, 0));
+        
+        buildingGroup.add(createObject(new THREE.BoxGeometry(60, totalHeight, shellThick), 'shell', -90, shellY, mainDepth/2));
+        buildingGroup.add(createObject(new THREE.BoxGeometry(140, totalHeight, shellThick), 'shell', 50, shellY, mainDepth/2));
+        
+        const lintelH = 12;
+        buildingGroup.add(createObject(new THREE.BoxGeometry(40, lintelH, shellThick), 'shell', -40, baseHeight + totalHeight - lintelH/2, mainDepth/2));
+        
+        // 3. Roof
+        const roofGeo = new THREE.CylinderGeometry(2, mainDepth/2.2, mainWidth-10, 3, 1);
+        const roof = createObject(roofGeo, 'detail', 0, baseHeight + totalHeight + 15, 0);
+        roof.rotation.set(-Math.PI/2, 0, Math.PI/2);
+        buildingGroup.add(roof);
+
+
+        // --- PART B: THE INTERIOR WINGS (OPEN PLATFORMS & FLOATING PARTITIONS) ---
+        
+        const interiorGroup = new THREE.Group();
+        buildingGroup.add(interiorGroup);
+
+        const wingWidth = 80;
+        const wingDepth = mainDepth - 10;
+        
+        // Helper to add railings
+        function addRailing(w, d, x, y, z) {
+            const railHeight = 3;
+            // Top rail
+            interiorGroup.add(createObject(new THREE.BoxGeometry(w, 0.2, 0.2), 'detail', x, y + railHeight, z - d/2));
+            interiorGroup.add(createObject(new THREE.BoxGeometry(w, 0.2, 0.2), 'detail', x, y + railHeight, z + d/2));
+            interiorGroup.add(createObject(new THREE.BoxGeometry(0.2, 0.2, d), 'detail', x - w/2, y + railHeight, z));
+            interiorGroup.add(createObject(new THREE.BoxGeometry(0.2, 0.2, d), 'detail', x + w/2, y + railHeight, z));
+            // Posts
+            const postGeo = new THREE.BoxGeometry(0.5, railHeight, 0.5);
+            interiorGroup.add(createObject(postGeo, 'detail', x - w/2, y + railHeight/2, z - d/2));
+            interiorGroup.add(createObject(postGeo, 'detail', x + w/2, y + railHeight/2, z - d/2));
+            interiorGroup.add(createObject(postGeo, 'detail', x - w/2, y + railHeight/2, z + d/2));
+            interiorGroup.add(createObject(postGeo, 'detail', x + w/2, y + railHeight/2, z + d/2));
+        }
+
+        const floatingPartitions = []; // Store for animation
+
+        // Function to create a field of partitions
+        function createFloatingPartition(w, h, x, y, z, rotationY = 0) {
+            // A thin wall that hovers slightly above the floor
+            const group = createObject(new THREE.BoxGeometry(w, h, 0.5), 'gehry', x, y + h/2 + 3, z); // +3 for hover
+            group.rotation.y = rotationY;
+            // Store random phase for animation
+            group.userData = { 
+                phase: Math.random() * Math.PI * 2,
+                baseY: group.position.y,
+                speed: 0.0005 + Math.random() * 0.001
+            };
+            interiorGroup.add(group);
+            floatingPartitions.push(group);
+        }
+
+        // Helper to scatter partitions in a wing
+        function scatterPartitions(centerX, centerY, centerZ, width, depth, count) {
+            for(let i=0; i<count; i++) {
+                // Randomize size
+                const w = 5 + Math.random() * 15;
+                const h = 6 + Math.random() * 6;
+                // Randomize position within bounds (padded)
+                const x = centerX + (Math.random() - 0.5) * (width - 10);
+                const z = centerZ + (Math.random() - 0.5) * (depth - 10);
+                // Randomize angle
+                const rot = Math.random() * Math.PI;
+                createFloatingPartition(w, h, x, centerY, z, rot);
+            }
+        }
+
+        // --- L1 West Platform (Ground Floor) ---
+        const l1Y = groundFloorY - groundFloorH/2 + 0.5;
+        const wWingX = -mainWidth/2 + wingWidth/2 + 5;
+        interiorGroup.add(createObject(new THREE.BoxGeometry(wingWidth, 1, wingDepth), 'room', wWingX, l1Y, 0));
+        addRailing(wingWidth, wingDepth, wWingX, l1Y, 0);
+        // Scatter many partitions
+        scatterPartitions(wWingX, l1Y, 0, wingWidth, wingDepth, 15);
+        
+        // --- L2 East Platform (First Floor) ---
+        const l2Y = firstFloorY - firstFloorH/2 + 0.5;
+        const eWingX = mainWidth/2 - wingWidth/2 - 5;
+        interiorGroup.add(createObject(new THREE.BoxGeometry(wingWidth, 1, wingDepth), 'room', eWingX, l2Y, 0));
+        addRailing(wingWidth, wingDepth, eWingX, l2Y, 0);
+        scatterPartitions(eWingX, l2Y, 0, wingWidth, wingDepth, 15);
+
+        // --- L3 North & South Platforms (Second Floor) ---
+        const nsWingWidth = mainWidth - 20; 
+        const nsWingDepth = 25; 
+        const l3Y = secondFloorY - secondFloorH/2 + 0.5;
+        
+        // North Wing
+        const nWingZ = -30;
+        interiorGroup.add(createObject(new THREE.BoxGeometry(nsWingWidth, 1, nsWingDepth), 'room', 0, l3Y, nWingZ));
+        addRailing(nsWingWidth, nsWingDepth, 0, l3Y, nWingZ);
+        scatterPartitions(0, l3Y, nWingZ, nsWingWidth, nsWingDepth, 12);
+        
+        // South Wing
+        const sWingZ = 30;
+        interiorGroup.add(createObject(new THREE.BoxGeometry(nsWingWidth, 1, nsWingDepth), 'room', 0, l3Y, sWingZ));
+        addRailing(nsWingWidth, nsWingDepth, 0, l3Y, sWingZ);
+        scatterPartitions(0, l3Y, sWingZ, nsWingWidth, nsWingDepth, 12);
+
+
+        // --- PART D: THE KINETIC PENROSE LOOP ---
+
+        const kineticGroup = new THREE.Group();
+        kineticGroup.position.set(0, kineticCenterY, 0); 
+        buildingGroup.add(kineticGroup);
+
+        const kineticSteps = [];
+        const stepSize = 6;
+        const stepsPerSide = 8; // Radius is 24 (48 wide total)
+        
+        function addKineticStep(x, z, index, total) {
+            const geo = new THREE.BoxGeometry(stepSize, 1, stepSize * 1.5); 
+            const wrapper = new THREE.Group();
+            const mesh = createObject(geo, 'gold', 0, 0, 0);
+            wrapper.add(mesh);
+            wrapper.position.set(x, 0, z);
+            wrapper.userData = { angle: (index / total) * Math.PI * 2, baseY: 0 };
+            kineticGroup.add(wrapper);
+            kineticSteps.push(wrapper);
+        }
+
+        const totalSteps = stepsPerSide * 4;
+        const halfSide = (stepsPerSide * stepSize) / 2; // = 24
+        
+        for(let i=0; i<stepsPerSide; i++) addKineticStep(-halfSide + (i * stepSize), -halfSide, i, totalSteps);
+        for(let i=0; i<stepsPerSide; i++) addKineticStep(halfSide, -halfSide + (i * stepSize), stepsPerSide + i, totalSteps);
+        for(let i=0; i<stepsPerSide; i++) addKineticStep(halfSide - (i * stepSize), halfSide, stepsPerSide*2 + i, totalSteps);
+        for(let i=0; i<stepsPerSide; i++) addKineticStep(-halfSide, halfSide - (i * stepSize), stepsPerSide*3 + i, totalSteps);
+
+
+        // --- PART F: GRAND ENTRANCE & SHARDS ---
+        
+        const entranceGroup = new THREE.Group();
+        entranceGroup.position.set(-40, 0, mainDepth/2 + 2); 
+        buildingGroup.add(entranceGroup);
+
+        entranceGroup.add(createObject(new THREE.BoxGeometry(10, 40, 10), 'black', -15, 20, 0));
+        entranceGroup.add(createObject(new THREE.BoxGeometry(6, 35, 6), 'red', 15, 17.5, 2));
+
+        const stairWidth = 36;
+        const stairCount = 12;
+        const stairRun = 24; 
+        const stairRise = baseHeight; 
+        const stepDepth = stairRun / stairCount;
+        const stepRise = stairRise / stairCount;
+
+        for(let i=0; i<stairCount; i++) {
+            const y = (i * stepRise) + (stepRise/2);
+            const z = 30 - (i * stepDepth); 
+            entranceGroup.add(createObject(new THREE.BoxGeometry(stairWidth, stepRise, stepDepth), 'detail', 0, y, z));
+        }
+        
+        entranceGroup.add(createObject(new THREE.BoxGeometry(stairWidth, 1, 10), 'detail', 0, baseHeight, 0));
+        entranceGroup.add(createObject(new THREE.BoxGeometry(40, 2, 8), 'black', 0, 30, 0));
+
+        // --- FRAGMENTS ---
+        const artGroup = new THREE.Group();
+        artGroup.position.set(0, 50, 140); 
+        scene.add(artGroup);
+
+        function createPlane(w, h, depth, color, x, y, z, rx, ry, rz) {
+            return createObject(new THREE.BoxGeometry(w, h, depth), color, x, y, z, rx, ry, rz);
+        }
+
+        artGroup.add(createPlane(30, 30, 1, 'black', -60, 10, -10, 0, 0.4, 0.1));
+        artGroup.add(createPlane(60, 4, 1, 'red', -70, 25, 0, 0, 0.1, 0.4));
+        artGroup.add(createPlane(5, 40, 1, 'gehry', -40, -10, 20, 0, -0.3, -0.1));
+        artGroup.add(createPlane(15, 15, 0.5, 'gold', 60, 20, -10, 0.5, -0.5, 0));
+        artGroup.add(createPlane(120, 2, 2, 'red', 0, 50, -20, 0, 0, 0));
+        
+        const shardGroup = new THREE.Group();
+        scene.add(shardGroup);
+
+        for(let i=0; i<80; i++) {
+            const w = Math.random() * 5 + 1;
+            const h = Math.random() * 15 + 2;
+            const d = 0.2;
+            const x = (Math.random() - 0.5) * 280;
+            const y = Math.random() * 50 + 10;
+            const z = 85 + Math.random() * 35; 
+
+            const shard = createObject(new THREE.BoxGeometry(w, h, d), 'silver', x, y, z);
+            shard.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+            shardGroup.add(shard);
+        }
+
+
+        // --- PART G: CONTEXT ---
+        const gridHelper = new THREE.GridHelper(600, 60, 0x333333, 0x222222);
+        gridHelper.position.y = -0.1;
+        scene.add(gridHelper);
+
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(800, 800), 
+            new THREE.MeshStandardMaterial({ color: 0x222222 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
+        function createLion(x, z) {
+            const group = new THREE.Group();
+            group.add(createObject(new THREE.BoxGeometry(6, 8, 12), 'shell', 0, 4, 0)); 
+            group.add(createObject(new THREE.BoxGeometry(3, 5, 8), 'detail', 0, 10, 0));
+            group.add(createObject(new THREE.BoxGeometry(2.5, 3, 3), 'detail', 0, 13, 4));
+            group.position.set(x, 0, z);
+            return group;
+        }
+        buildingGroup.add(createLion(-100, mainDepth/2 + 60));
+
+
+        // --- LOGIC: TOGGLE MODE ---
+        const btn = document.getElementById('toggle-btn');
+        btn.addEventListener('click', () => {
+            isWireframe = !isWireframe;
+            allMeshes.forEach(m => m.visible = !isWireframe);
+            allLines.forEach(l => l.visible = isWireframe);
+
+            if(isWireframe) {
+                scene.background = new THREE.Color(0x1a1a1a);
+                scene.fog.color.setHex(0x1a1a1a);
+                gridHelper.visible = true;
+                ground.visible = false;
+                btn.innerText = "MODE: BLUEPRINT";
+            } else {
+                scene.background = new THREE.Color(0xf0f0f0); 
+                scene.fog.color.setHex(0xf0f0f0); 
+                gridHelper.visible = false;
+                ground.visible = true;
+                ground.material.color.setHex(0xffffff);
+                btn.innerText = "MODE: SOLID";
+            }
+        });
+
+
+        // --- ANIMATION ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            artGroup.rotation.y = Math.sin(Date.now() * 0.0002) * 0.05;
+            artGroup.position.y = 50 + Math.sin(Date.now() * 0.0005) * 1;
+
+            shardGroup.children.forEach((shard, i) => {
+                 shard.rotation.x += 0.002 * (i%2 === 0 ? 1 : -1);
+                 shard.rotation.y += 0.003;
+                 shard.position.y += Math.sin(Date.now() * 0.001 + i) * 0.02;
+            });
+            
+            const time = Date.now() * 0.0005; 
+            const waveAmplitude = 15; 
+            
+            kineticSteps.forEach((stepWrapper) => {
+                const yOffset = Math.sin(time + stepWrapper.userData.angle) * waveAmplitude;
+                stepWrapper.position.y = stepWrapper.userData.baseY + yOffset;
+            });
+
+            // Animate Floating Partitions (Drifting Canvas Effect)
+            floatingPartitions.forEach((p) => {
+                // Bobbing up and down
+                p.position.y = p.userData.baseY + Math.sin(Date.now() * 0.001 + p.userData.phase) * 0.5;
+                // Very slow rotation
+                p.rotation.y += 0.0003;
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+    </script>
+</body>
+</html>
