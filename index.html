@@ -27,14 +27,6 @@
             overflow-x: hidden;
         }
 
-/*        canvas {
-            position: absolute;
-            z-index: 9;
-            position: fixed;
-            margin-top: 0vh;
-
-        }*/
-
         h1, h2, .banner, a {
             position: relative; 
             z-index: 10; 
@@ -81,18 +73,25 @@
     <h1>strauh.al</h2>
 
     <h2><a href= "https://strauh.al/knowledge_base">/knowledge_base</a></h2>
+
+    <h2><a href= "https://strauh.al/all_art">/all_art</a></h2>    
+        <h3><a href= "https://strauh.al/all_art#century-16">/1500s</a></h3>
+        <h3><a href= "https://strauh.al/all_art#century-17">/1600s</a></h3>
+        <h3><a href= "https://strauh.al/all_art#century-18">/1700s</a></h3>
+        <h3><a href= "https://strauh.al/all_art#century-19">/1800s</a></h3>
+        <h3><a href= "https://strauh.al/all_art#century-20">/1900s</a></h3>
+        <h3><a href= "https://strauh.al/all_art#century-21">/2000s</a></h3>
+
+    
+
     <h2><a href= "https://strauh.al/3d_scans">/3d_scans</a></h2>
-    <h2><a href= "https://strauh.al/random_quote">/random_quote</a></h2>
-    <h2><a href= "https://strauh.al/draw_for_me">/draw_for_me</a></h2>
+
     <h2><a href= "https://strauh.al/religious_texts">/religious_texts</a></h2>
     <h2><a href= "https://strauh.al/plans_for_2026">/plans_for_2026</a></h2>
-    <h2><a href= "https://strauh.al/fine_art">/fine_art</a></h2>
-    <h2><a href= "https://strauh.al/more_fine_art">/more_fine_art</a></h2>
-    <h2><a href= "https://strauh.al/aesthetics">/aesthetics</a></h2>
-    <h2><a href= "https://strauh.al/art_misc">/art_misc</a></h2>
-    <h2><a href= "https://strauh.al/2025_art">/2025_art</a></h2>
-    <h2><a href= "https://strauh.al/even_more_art">/even_more_art</a></h2>
-    <h2><a href= "https://strauh.al/somehow_even_more_art">/somehow_even_more_art</a></h2>
+
+    <h2><a href= "https://strauh.al/random_quote">/random_quote</a></h2>
+    <h2><a href= "https://strauh.al/draw_for_me">/draw_for_me</a></h2>
+
     <h2><a href= "https://strauh.al/computers">/computers</a></h2>
     <h2><a href= "https://strauh.al/photography">/photography</a></h2>
     <h2><a href= "https://strauh.al/artists">/artists</a></h2>
@@ -244,253 +243,7 @@
     </script>
 
     <script type="text/javascript">
-        
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/strauhal/strauh.al/refs/heads/main//apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="https://raw.githubusercontent.com/strauhal/strauh.al/refs/heads/main//favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="https://raw.githubusercontent.com/strauhal/strauh.al/refs/heads/main//favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
-
-    <title>strauh.al</title>
-
-    <meta property="og:title" content="strauh.al">
-    <meta property="og:description" content="description.">
-    <meta property="og:image" content="https://raw.githubusercontent.com/strauhal/strauh.al/refs/heads/main/banner.gif">
-    <meta property="og:url" content="https://strauh.al">
-    <meta property="og:type" content="website">
-
-    <link rel="stylesheet" href="style.css">
-    <script src="/script.js" defer></script>
-
-    <style type="text/css">
-
-        body {
-            width: 100%;
-            overflow-x: hidden;
-        }
-
-        canvas {
-            position: absolute;
-            z-index: 9;
-            position: fixed;
-            margin-top: 0vh;
-
-        }
-
-        h1, h2, .banner, a {
-            position: relative; 
-            z-index: 10; 
-            width: fit-content;
-            background-color: #00f;
-        }
-
-        #gallery-container {
-            position: fixed; /* Stays in place while scrolling */
-            top: 0;
-            left: 0pt;
-            width: 100pt;
-            height: 100vh;
-            z-index: 0; /* Behind the text */
-            pointer-events: none; /* Lets you click links through the container */
-        }
-
-        .banner img {
-            margin-top: 15vh;
-            position: fixed;
-            display: block;
-            width: 33vw;
-            margin-left: 50vw;
-            z-index: 5; /* Ensure banner is also above images */
-        }
-
-        .scatter-img {
-            position: absolute;
-            width: 150px; 
-            height: 125px;
-            object-fit: cover;
-            box-shadow: none;
-            border-radius: 0;
-            border: none;
-            opacity: 1; 
-            pointer-events: none;    
-        }
-
-    </style>
-  </head>  
-  <body>
-    <canvas id="canvas"></canvas>
-
-    <h1>strauh.al</h2>
-
-    <h2><a href= "https://strauh.al/knowledge_base">/knowledge_base</a></h2>
-    <h2><a href= "https://strauh.al/3d_scans">/3d_scans</a></h2>
-    <h2><a href= "https://strauh.al/random_quote">/random_quote</a></h2>
-    <h2><a href= "https://strauh.al/draw_for_me">/draw_for_me</a></h2>
-    <h2><a href= "https://strauh.al/religious_texts">/religious_texts</a></h2>
-    <h2><a href= "https://strauh.al/plans_for_2026">/plans_for_2026</a></h2>
-    <h2><a href= "https://strauh.al/fine_art">/fine_art</a></h2>
-    <h2><a href= "https://strauh.al/more_fine_art">/more_fine_art</a></h2>
-    <h2><a href= "https://strauh.al/aesthetics">/aesthetics</a></h2>
-    <h2><a href= "https://strauh.al/art_misc">/art_misc</a></h2>
-    <h2><a href= "https://strauh.al/2025_art">/2025_art</a></h2>
-    <h2><a href= "https://strauh.al/even_more_art">/even_more_art</a></h2>
-    <h2><a href= "https://strauh.al/somehow_even_more_art">/somehow_even_more_art</a></h2>
-    <h2><a href= "https://strauh.al/computers">/computers</a></h2>
-    <h2><a href= "https://strauh.al/photography">/photography</a></h2>
-    <h2><a href= "https://strauh.al/artists">/artists</a></h2>
-    <h2><a href= "https://strauh.al/scripts">/scripts</a></h2>
-    <h2><a href= "https://strauh.al/printing_videos">/printing_videos</a></h2>
-    <h2><a href= "https://strauh.al/album_covers">/album_covers</a></h2>
-    <h2><a href= "https://strauh.al/wallpapers">/wallpapers</a></h2>
-    <h2><a href= "https://strauh.al/comics">/comics</a></h2>
-    <h2><a href= "https://strauh.al/gif_collection">/gif_collection</a></h2>
-    <h2><a href= "https://strauh.al/ukiyo_e">/ukiyo_e</a></h2>
-    <h2><a href= "https://strauh.al/pictures_of_musicians">/pictures_of_musicians</a></h2>
-    <h2><a href= "https://strauh.al/2024_downloadsfolder">/2024_downloadsfolder</a></h2>
-    <h2><a href= "https://strauh.al/2023_downloadsfolder">/2023_downloadsfolder</a></h2>
-    <h2><a href= "https://strauh.al/old_photos">/old_photos</a></h2>
-    <h2><a href= "https://strauh.al/baby_videos">/baby_videos</a></h2>
-    <h2><a href= "https://strauh.al/influences">/influences</a></h2>
-    <h2><a href= "https://strauh.al/implicit_distance">/implicit_distance</a></h2>
-    <h2><a href= "https://strauh.al/dreams">/dreams</a></h2>
-    <h2><a href= "https://strauh.al/ideas_sketchbook_2020-25">/ideas_sketchbook_2020-25</a></h2>
-    <h2><a href= "https://strauh.al/about">/about</a></h2>
-    <h2><a href= "https://strauh.al/disclaimer">/disclaimer</h2>
-    <h2><a href= "https://strauh.al/donate">/donate</h2>
-        
-    <h1><a href= "https://studio.strauh.al">studio.strauh.al</a></h1>
-    <h1><a href= "https://ernest.strauh.al">ernest.strauh.al</a></h1>
-    <h1><a href= "https://computerdrawing.club">computerdrawing.club</a></h1>
-
-
-    <div id="gallery-container"></div>
-
-    <script>
-        // --- CONFIGURATION ---
-        const FOLDER_PATH = 'homepage/';
-        const COOLDOWN_TIME = 10000; 
-        const IMG_WIDTH = 150;
-        const IMG_HEIGHT = 125;
-
-        // The full inventory
-        const filenames = [
-            "ad0000.jpg", "ad0001.jpg", "ad0002.jpg", "ad0003.jpg", "ad0004.jpg",
-            "ad0005.jpg", "ad0006.jpg", "ad0007.jpg", "ad0008.jpg", "ad0009.jpg",
-            "ad0010.jpg", "ad0011.jpg", "ad0012.jpg", "ad0013.jpg", "ad0014.jpg",
-            "ad0015.jpg", "ad0016.jpg", "ad0017.jpg", "ad0018.jpg", "ad0019.jpg",
-            "ad0020.jpg", "ad0021.jpg", "ad0022.jpg", "ad0023.jpg", "movie_ad0000.jpg",
-            "movie_ad0001.jpg", "movie_ad0002.jpg", "movie_ad0003.jpg", "movie_ad0004.jpg",
-            "movie_ad0005.jpg", "movie_ad0006.jpg", "movie_ad0007.jpg", "movie_ad0008.jpg",
-            "movie_ad0009.jpg", "movie_ad0010.jpg", "movie_ad0011.jpg", "movie_ad0012.jpg",
-            "movie_ad0013.jpg", "movie_ad0014.jpg", "movie_ad0015.jpg", "movie_ad0016.jpg",
-            "movie_ad0017.jpg", "movie_ad0018.jpg", "movie_ad0019.jpg", "movie_ad0020.jpg",
-            "movie_ad0021.jpg", "movie_ad0022.jpg", "movie_ad0023.jpg", "movie_ad0024.jpg",
-            "movie_ad0025.jpg", "movie_ad0026.jpg", "movie_ad0027.jpg", "movie_ad0028.jpg",
-            "movie_ad0029.jpg", "movie_ad0030.jpg", "movie_ad0031.jpg", "movie_ad0032.jpg",
-            "movie_ad0033.jpg", "movie_ad0034.jpg", "movie_ad0035.jpg", "movie_ad0036.jpg",
-            "movie_ad0037.jpg", "movie_ad0038.jpg", "movie_ad0039.jpg", "movie_ad0040.jpg",
-            "movie_ad0041.jpg", "movie_ad0042.jpg", "movie_ad0043.jpg", "movie_ad0044.jpg",
-            "movie_ad0045.jpg", "movie_ad0046.jpg", "movie_ad0047.jpg", "movie_ad0048.jpg",
-            "movie_ad0049.jpg", "movie_ad0050.jpg", "movie_ad0051.jpg", "movie_ad0052.jpg",
-            "movie_ad0053.jpg", "movie_ad0054.jpg", "movie_ad0055.jpg", "movie_ad0056.jpg",
-            "movie_ad0057.jpg", "movie_ad0058.jpg", "movie_ad0059.jpg", "movie_ad0060.jpg",
-            "movie_ad0061.jpg", "movie_ad0062.jpg", "movie_ad0063.jpg", "movie_ad0064.jpg",
-            "movie_ad0065.jpg", "movie_ad0066.jpg", "movie_ad0067.jpg", "movie_ad0068.jpg",
-            "movie_ad0069.jpg", "movie_ad0070.jpg", "movie_ad0071.jpg", "movie_ad0072.jpg",
-            "movie_ad0073.jpg", "movie_ad0074.jpg", "movie_ad0075.jpg", "movie_ad0076.jpg",
-            "movie_ad0077.jpg", "movie_ad0078.jpg", "movie_ad0079.jpg", "movie_ad0080.jpg"
-        ];
-
-        const container = document.getElementById('gallery-container');
-        const recentIndices = new Set();
-        let zIndexCounter = 1;
-
-        // --- 1. POSITION CALCULATOR ---
-        function getRandomPosition() {
-            // We use the *current* window size every time a new image spawns
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            
-            // Allow bleed on all sides
-            const maxLeft = w - (IMG_WIDTH / 2);
-            const minLeft = -(IMG_WIDTH / 2);
-            const maxTop = h - (IMG_HEIGHT / 2);
-            const minTop = -(IMG_HEIGHT / 2);
-
-            return {
-                left: Math.floor(Math.random() * (maxLeft - minLeft + 1)) + minLeft,
-                top: Math.floor(Math.random() * (maxTop - minTop + 1)) + minTop
-            };
-        }
-
-        // --- 2. THE SEQUENCER ---
-        function spawnImage() {
-            let randomIndex;
-            
-            // Unique index logic
-            if (recentIndices.size >= filenames.length) {
-                randomIndex = Math.floor(Math.random() * filenames.length);
-            } else {
-                do {
-                    randomIndex = Math.floor(Math.random() * filenames.length);
-                } while (recentIndices.has(randomIndex));
-            }
-
-            // Cooldown Logic
-            recentIndices.add(randomIndex);
-            setTimeout(() => { recentIndices.delete(randomIndex); }, COOLDOWN_TIME);
-
-            // Create Image
-            const img = document.createElement('img');
-            img.src = FOLDER_PATH + filenames[randomIndex];
-            img.className = 'scatter-img';
-            
-            const pos = getRandomPosition();
-            img.style.left = `${pos.left}px`;
-            img.style.top = `${pos.top}px`;
-            img.style.zIndex = zIndexCounter++;
-
-            container.appendChild(img);
-
-            // Loop timing
-            const randomDelay = Math.floor(Math.random() * 1000) + 5;
-            setTimeout(spawnImage, randomDelay);
-        }
-
-        // --- 3. THE CLEANER (Garbage Collection) ---
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                const w = window.innerWidth;
-                const h = window.innerHeight;
-                const images = document.querySelectorAll('.scatter-img');
-
-                images.forEach(img => {
-                    // Check strict position. If the image is entirely outside the NEW window box, delete it.
-                    const left = parseInt(img.style.left);
-                    const top = parseInt(img.style.top);
-
-                    // If the left position is greater than screen width OR 
-                    // top position is greater than screen height, it's gone.
-                    if (left > w || top > h) {
-                        img.remove();
-                    }
-                });
-            }, 100);
-        });
-
-        // Start
-        spawnImage();
-
-    </script>
-
-    <script>
+     
         /**
          * ORGANIC BORDER SYNTHESIZER v7
          * * Changes:
