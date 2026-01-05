@@ -27,6 +27,14 @@
             overflow-x: hidden;
         }
 
+        canvas {
+            position: absolute;
+            z-index: 9;
+            position: fixed;
+            margin-top: 0vh;
+
+        }
+
         h1, h2, .banner, a {
             position: relative; 
             z-index: 10; 
@@ -68,6 +76,8 @@
     </style>
   </head>  
   <body>
+    <canvas id="canvas"></canvas>
+
     <h1>strauh.al</h2>
 
     <h2><a href= "https://strauh.al/knowledge_base">/knowledge_base</a></h2>
@@ -110,7 +120,6 @@
     <h1><a href= "https://ernest.strauh.al">ernest.strauh.al</a></h1>
     <h1><a href= "https://computerdrawing.club">computerdrawing.club</a></h1>
 
-    <div id="blue"></div>
 
     <div id="gallery-container"></div>
 
@@ -233,5 +242,358 @@
         spawnImage();
 
     </script>
+
+    <script>
+        /**
+         * ORGANIC BORDER SYNTHESIZER v7
+         * * Changes:
+         * - Normalized Seek Vectors: Attraction is now consistent at all distances.
+         * - Decoupled Seek: Corners reach aggressively in ALL modes.
+         * - "Digital Corinthian" now bends towards mouse instead of just scaling.
+         */
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let frame = 0;
+        let mouseX = 0;
+        let mouseY = 0; 
+        let targetMorph = 0;
+        let currentMorph = 0; 
+
+        // Configuration
+        const borderPadding = 60;
+        
+        // --- NOISE GENERATOR ---
+        const noise = (function() {
+            const permutation = new Uint8Array(512);
+            for(let i=0; i<256; i++) permutation[i] = i;
+            for(let i=255; i>0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
+                permutation[i+256] = permutation[i];
+            }
+            function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+            function lerp(t, a, b) { return a + t * (b - a); }
+            function grad(hash, x, y, z) {
+                const h = hash & 15;
+                const u = h < 8 ? x : y;
+                const v = h < 4 ? y : h === 12 || h === 14 ? x : z;
+                return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+            }
+            return function(x, y, z) {
+                const X = Math.floor(x) & 255;
+                const Y = Math.floor(y) & 255;
+                const Z = Math.floor(z) & 255;
+                x -= Math.floor(x);
+                y -= Math.floor(y);
+                z -= Math.floor(z);
+                const u = fade(x);
+                const v = fade(y);
+                const w = fade(z);
+                const A = permutation[X] + Y, AA = permutation[A] + Z, AB = permutation[A + 1] + Z;
+                const B = permutation[X + 1] + Y, BA = permutation[B] + Z, BB = permutation[B + 1] + Z;
+                return lerp(w, lerp(v, lerp(u, grad(permutation[AA], x, y, z),
+                    grad(permutation[BA], x - 1, y, z)),
+                    lerp(u, grad(permutation[AB], x, y - 1, z),
+                    grad(permutation[BB], x - 1, y - 1, z))),
+                    lerp(v, lerp(u, grad(permutation[AA + 1], x, y, z - 1),
+                    grad(permutation[BA + 1], x - 1, y, z - 1)),
+                    lerp(u, grad(permutation[AB + 1], x, y - 1, z - 1),
+                    grad(permutation[BB + 1], x - 1, y - 1, z - 1))));
+            };
+        })();
+
+        // --- SEGMENT CONFIGURATION ---
+        const activeSegments = [
+            { start: 0.0, end: 0.25 }, // Top-Left / Bottom-Left Corner area
+            { start: 0.75, end: 1.0 }  // Top-Right / Bottom-Right Corner area
+        ];
+
+        const agents = [];
+        const numAgentsPerSide = 100;
+
+        class Agent {
+            constructor(side, percent) {
+                this.side = side; 
+                this.percent = percent; 
+                this.reset();
+            }
+
+            reset() {
+                const offset = (Math.random() - 0.5) * 5; 
+
+                if (this.side === 'left') {
+                    this.baseX = borderPadding + offset;
+                    this.baseY = height * this.percent;
+                    this.dir = { x: 1, y: 0 };
+                } else if (this.side === 'right') {
+                    this.baseX = width - borderPadding + offset;
+                    this.baseY = height * this.percent;
+                    this.dir = { x: -1, y: 0 };
+                } else if (this.side === 'top') {
+                    this.baseX = width * this.percent;
+                    this.baseY = borderPadding + offset;
+                    this.dir = { x: 0, y: 1 };
+                } else { // bottom
+                    this.baseX = width * this.percent;
+                    this.baseY = height - borderPadding + offset;
+                    this.dir = { x: 0, y: -1 };
+                }
+
+                this.x = this.baseX;
+                this.y = this.baseY;
+
+                this.seed = Math.random() * 1000;
+                this.history = [];
+                this.maxLength = 60; 
+                this.speedOffset = Math.random() * 0.5 + 0.5;
+            }
+
+            update(morph) {
+                let time = frame * 0.005; 
+                
+                // Vector from Base to Mouse (Used for structural bending)
+                let bdx = mouseX - this.baseX;
+                let bdy = mouseY - this.baseY;
+                let bDist = Math.sqrt(bdx*bdx + bdy*bdy);
+                // Normalized Base Direction
+                let bDirX = (bDist > 0) ? bdx / bDist : 0;
+                let bDirY = (bDist > 0) ? bdy / bDist : 0;
+
+                // Vector from Current Tip to Mouse (Used for organic seeking)
+                let dx = mouseX - this.x;
+                let dy = mouseY - this.y;
+                let distToMouse = Math.sqrt(dx*dx + dy*dy);
+                // Normalized Tip Direction
+                let dirX = (distToMouse > 0) ? dx / distToMouse : 0;
+                let dirY = (distToMouse > 0) ? dy / distToMouse : 0;
+
+                // --- 1. DIGITAL CORINTHIAN ---
+                if (morph <= 0.8) { 
+                    const influence = 1.0 - (morph / 0.8);
+                    
+                    let ns = 0.005; 
+                    let nVal = noise(this.baseX * ns, this.baseY * ns, time + this.seed);
+                    
+                    let stepSize = 10;
+                    let steppedVal = Math.floor(nVal * 5) * stepSize;
+                    
+                    let patternX = 0;
+                    let patternY = 0;
+                    
+                    if (this.side === 'left' || this.side === 'right') {
+                        patternX = (steppedVal * 5 * this.dir.x);
+                        patternY = Math.floor(Math.sin(frame * 0.02 + this.seed) * 2) * stepSize;
+                    } else {
+                        patternY = (steppedVal * 5 * this.dir.y);
+                        patternX = Math.floor(Math.sin(frame * 0.02 + this.seed) * 2) * stepSize;
+                    }
+
+                    // NORMALIZED SEEKING:
+                    // Instead of proportional distance, we use a fixed "Reach Magnitude" (200px)
+                    // This ensures close corners bend just as much as far corners.
+                    let reachMagnitude = 200; 
+                    let reachX = bDirX * reachMagnitude * influence;
+                    let reachY = bDirY * reachMagnitude * influence;
+
+                    this.x = this.baseX + patternX * influence + reachX;
+                    this.y = this.baseY + patternY * influence + reachY;
+                }
+
+                // --- 2. MICROCHIP (BIASED WALK) ---
+                if (morph > 0.3 && morph <= 1.0) {
+                    let influence = 0;
+                    if (morph < 0.6) influence = (morph - 0.3) / 0.3;
+                    else influence = 1.0 - ((morph - 0.6) / 0.4);
+
+                    const gridSize = 10; 
+                    let step = Math.floor(frame / 40); 
+                    
+                    let rnd = noise(step * 0.1, this.seed, 0);
+                    
+                    let xOffset = 0;
+                    let yOffset = 0;
+
+                    let biasX = (dx > 0) ? 0.6 : 0.4;
+                    let biasY = (dy > 0) ? 0.6 : 0.4;
+
+                    if (rnd > 0.2) {
+                         let dir = (Math.random() < biasX) ? 1 : -1;
+                         xOffset = gridSize * influence * dir;
+                    } else {
+                         let dir = (Math.random() < biasY) ? 1 : -1;
+                         yOffset = gridSize * influence * dir;
+                    }
+                    
+                    if (this.side === 'left') this.x += xOffset;
+                    if (this.side === 'right') this.x -= xOffset;
+                    if (this.side === 'top') this.y += yOffset;
+                    if (this.side === 'bottom') this.y -= yOffset;
+                    
+                    // Increased Magnetic Pull 
+                    this.x += dirX * 4 * influence;
+                    this.y += dirY * 4 * influence;
+
+                    this.x = this.x * 0.9 + (Math.round(this.x / gridSize) * gridSize) * 0.1;
+                    this.y = this.y * 0.9 + (Math.round(this.y / gridSize) * gridSize) * 0.1;
+                }
+
+                // --- 3. SPIDERY / BIO-MECH (HUNTING) ---
+                if (morph > 0.8) {
+                    let influence = (morph - 0.8) / 1.7; 
+                    if (influence > 1) influence = 1;
+
+                    let flowScale = 0.01;
+                    let flowX = noise(this.x * flowScale, this.y * flowScale, time) - 0.5;
+                    let flowY = noise(this.x * flowScale + 100, this.y * flowScale + 100, time) - 0.5;
+
+                    // Seeking is dominant here
+                    this.x += (flowX * 8 + dirX * 6) * influence;
+                    this.y += (flowY * 8 + dirY * 6) * influence;
+
+                    let spikeProb = noise(frame * 0.1, this.seed, 0);
+                    if (spikeProb > 0.7) {
+                        this.x += this.dir.x * spikeProb * 3.0 * influence;
+                        this.y += this.dir.y * spikeProb * 3.0 * influence;
+                    }
+                }
+
+                this.history.push({x: this.x, y: this.y});
+                if (this.history.length > this.maxLength) {
+                    this.history.shift();
+                }
+            }
+
+            draw(ctx, morph) {
+                if (this.history.length < 2) return;
+
+                ctx.beginPath();
+                ctx.moveTo(this.history[0].x, this.history[0].y);
+
+                ctx.lineWidth = 1; 
+
+                // COLOR: Pure White
+                let alpha = 0.6;
+                if (morph > 1.8) alpha = 0.8; 
+                
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+
+                for (let i = 1; i < this.history.length; i++) {
+                    if (morph < 1.0) {
+                         ctx.lineTo(this.history[i].x, this.history[i].y);
+                    } else {
+                        let p0 = this.history[i-1];
+                        let p1 = this.history[i];
+                        let mx = (p0.x + p1.x) / 2;
+                        let my = (p0.y + p1.y) / 2;
+                        ctx.quadraticCurveTo(p0.x, p0.y, mx, my);
+                    }
+                }
+                
+                ctx.stroke();
+            }
+        }
+
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            window.addEventListener('mousemove', onMouseMove);
+            createAgents();
+            animate();
+        }
+
+        function createAgents() {
+            agents.length = 0; 
+            
+            const spawnSide = (sideName) => {
+                for (let i = 0; i < numAgentsPerSide; i++) {
+                    let rawPct = i / numAgentsPerSide;
+                    
+                    let isActive = false;
+                    for (let seg of activeSegments) {
+                        if (rawPct >= seg.start && rawPct <= seg.end) {
+                            isActive = true;
+                            break;
+                        }
+                    }
+
+                    if (isActive) {
+                        let projectedPos;
+                        if (sideName === 'top' || sideName === 'bottom') {
+                            projectedPos = width * rawPct;
+                            if (projectedPos < borderPadding || projectedPos > width - borderPadding) {
+                                continue; 
+                            }
+                        }
+                        
+                        agents.push(new Agent(sideName, rawPct));
+                    }
+                }
+            };
+
+            spawnSide('left');
+            spawnSide('right');
+            spawnSide('top');
+            spawnSide('bottom');
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            createAgents(); 
+        }
+
+        function onMouseMove(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY; 
+            targetMorph = (mouseX / width) * 2.5;
+        }
+
+        function animate() {
+            currentMorph += (targetMorph - currentMorph) * 0.05;
+            
+            ctx.clearRect(0, 0, width, height);
+
+            agents.forEach(agent => {
+                // DYNAMIC LEASH Logic
+                let dx = agent.x - agent.baseX;
+                let dy = agent.y - agent.baseY;
+                let distFromBase = Math.sqrt(dx*dx + dy*dy);
+                
+                let bdx = mouseX - agent.baseX;
+                let bdy = mouseY - agent.baseY;
+                let distBaseToMouse = Math.sqrt(bdx*bdx + bdy*bdy);
+
+                // Limit is distance to mouse + 50px buffer
+                let limit = distBaseToMouse + 50;
+                
+                // Allow even more reach in high morph
+                if (currentMorph > 1.0) limit += 100;
+
+                if (distFromBase > limit) {
+                     agent.x += (agent.baseX - agent.x) * 0.05;
+                     agent.y += (agent.baseY - agent.y) * 0.05;
+                }
+                
+                if (Math.random() < 0.005) {
+                    agent.x = agent.baseX;
+                    agent.y = agent.baseY;
+                    agent.history = [];
+                }
+
+                agent.update(currentMorph);
+                agent.draw(ctx, currentMorph);
+            });
+
+            frame++;
+            requestAnimationFrame(animate);
+        }
+
+        init();
+
+    </script>
+
   </body>
 </html>
