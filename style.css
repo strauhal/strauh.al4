@@ -15,6 +15,7 @@ body {
 }
 
 canvas {
+	overflow-x: hidden;
     position: absolute;
     z-index: 9;
     position: fixed;
