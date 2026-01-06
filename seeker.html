@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEEKER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* gray-900 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        .container-card {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #1f2937; /* gray-800 */
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            border: 1px solid #374151; /* gray-700 */
+        }
+        .loading-spinner {
+            border: 4px solid #374151;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #urlInput {
+            resize: vertical;
+        }
+        .result-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+        }
+        /* Custom Scrollbar for Dark Mode */
+        .result-table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .result-table-container::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        .result-table-container::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        .result-table-container::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        .status-loading { color: #60a5fa; /* blue-400 */ }
+        .status-success { color: #34d399; /* emerald-400 */ }
+        .status-error { color: #f87171; /* red-400 */ }
+        
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .btn-secondary {
+             background-color: #4b5563; /* gray-600 */
+             color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #374151; /* gray-700 */
+        }
+        .btn-secondary:disabled {
+            background-color: #374151;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        /* Input Styles */
+        input[type="text"], textarea {
+            background-color: #374151; /* gray-700 */
+            color: #f3f4f6;
+            border: 1px solid #4b5563; /* gray-600 */
+        }
+        input[type="text"]:focus, textarea:focus {
+            border-color: #3b82f6;
+            ring: 2px solid #3b82f6;
+            outline: none;
+        }
+        input[type="text"]::placeholder, textarea::placeholder {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-card">
+    <h1 class="text-3xl font-extrabold text-blue-400 mb-4 text-center tracking-tight">SEEKER</h1>
+    <p class="text-gray-400 mb-6 text-center">Paste image filenames (one per line) or HTML code with anchor tags below. The AI will generate structured artwork titles.</p>
+
+    <!-- Folder URL Input -->
+    <div class="mb-4">
+        <label for="folderUrlInput" class="block text-sm font-medium text-gray-300 mb-2">Folder URL (Used if plain filenames are provided)</label>
+        <input type="text" id="folderUrlInput"
+               class="w-full p-3 rounded-lg transition duration-150"
+               value="https://strauh.al/fine_art/">
+    </div>
+
+    <!-- Filename Input --><div class="mb-4">
+        <label for="filenameInput" class="block text-sm font-medium text-gray-300 mb-2">Input (Filenames or HTML)</label>
+        <textarea id="filenameInput" rows="10"
+               class="w-full p-3 rounded-lg transition duration-150 font-mono text-sm"
+               placeholder="<br><a href='...'>filename.jpg</a>
+OR
+1611438913631.jpg
+..."></textarea>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex justify-center items-center space-x-4 mb-6">
+        <button id="generateButton"
+                class="flex items-center justify-center btn-primary font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-[1.02]">
+            Generate Titles
+        </button>
+        <button id="stopButton"
+                class="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-[1.02]"
+                style="display: none;">
+            Stop Generation
+        </button>
+        <div id="loadingIndicator" class="loading-spinner"></div>
+    </div>
+    
+    <div id="progressMessage" class="text-center text-sm text-gray-400 mb-4 h-5"></div>
+
+    <!-- Results Area -->
+    <div class="mt-4">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-xl font-bold text-gray-200">Generated Titles:</h2>
+            <button id="exportButton"
+                    class="btn-secondary font-semibold py-2 px-4 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-[1.02]"
+                    disabled>
+                Export as TXT
+            </button>
+        </div>
+        <div class="result-table-container">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-800 sticky top-0">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider bg-gray-900 border-b border-gray-700">Original Filename</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider bg-gray-900 border-b border-gray-700">Structured Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider bg-gray-900 border-b border-gray-700">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTableBody" class="bg-gray-800 divide-y divide-gray-700">
+                    <!-- Results will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+    const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL_NAME + ':generateContent';
+    const apiKey = ""; // Canvas will automatically provide the key at runtime
+
+    const folderUrlInput = document.getElementById('folderUrlInput');
+    const filenameInput = document.getElementById('filenameInput');
+    const generateButton = document.getElementById('generateButton');
+    const stopButton = document.getElementById('stopButton');
+    const exportButton = document.getElementById('exportButton');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsTableBody = document.getElementById('resultsTableBody');
+    const progressMessage = document.getElementById('progressMessage');
+
+    let isGenerationRunning = false; // Flag to control the loop
+
+    // Schema for structured JSON output
+    const RESPONSE_SCHEMA = {
+        type: "OBJECT",
+        properties: {
+            artist: { type: "STRING", description: "The artist's full name. Use 'Unknown' if not 100% certain." },
+            title: { type: "STRING", description: "The official title. If not known, provide a literal visual description (e.g., 'Oil Painting of a Red House'). Do not guess." },
+            year: { type: "STRING", description: "The year or era. Use 'Unknown Year' if not found." }
+        },
+        required: ["artist", "title", "year"],
+        propertyOrdering: ["artist", "title", "year"]
+    };
+
+    // --- Utility Functions ---
+
+    // Utility function for exponential backoff retry logic
+    async function fetchWithRetries(url, options, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url, options);
+                if (response.ok) {
+                    return response;
+                }
+                if (response.status === 429 && i < retries - 1) { // Too Many Requests, retry
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    console.warn('Rate limit hit. Retrying in ' + (delay / 1000).toFixed(1) + 's...');
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                throw new Error('API request failed with status: ' + response.status);
+            } catch (error) {
+                if (i === retries - 1) throw error;
+            }
+        }
+    }
+
+    // Function to fetch the image from the URL and convert it to a Base64 Data URL
+    async function urlToBase64(url) {
+        // Fetch is subject to CORS policies; this may fail on protected sites.
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch image: ' + response.statusText + ' (' + response.status + ')');
+        }
+        const blob = await response.blob();
+        
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64Data = reader.result.split(',')[1];
+                const mimeType = blob.type;
+                resolve({ base64Data, mimeType });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    // Function to call the Gemini API for structured analysis
+    async function generateStructuredData(base64Data, mimeType) {
+        const userPrompt = "Identify this artwork with high precision. Only provide the specific Artist, Title, and Year if you are absolutely certain and recognize the exact piece from your training data. If you are not 100% certain of the specific metadata, do NOT guess. Instead, provide a simple, literal visual description for the Title (e.g., 'Oil Painting of a Red Barn') and use 'Unknown' for Artist/Year. Accuracy is more important than specificity.";
+        
+        const payload = {
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: userPrompt },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64Data
+                            }
+                        }
+                    ]
+                }
+            ],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: RESPONSE_SCHEMA,
+                temperature: 0.0 // Zero temperature for maximum determinism
+            },
+            systemInstruction: {
+                parts: [{ text: "You are a precise art archivist. Accuracy is paramount. Never guess. If an artwork is unknown, describe it visually." }]
+            }
+        };
+
+        const apiUrl = `${API_BASE_URL}?key=${apiKey}`;
+
+        const response = await fetchWithRetries(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (jsonText) {
+            try {
+                // The AI might sometimes wrap the JSON in markdown code blocks.
+                const cleanedJsonText = jsonText.replace(/^```json\n|\n```$/g, '');
+                return JSON.parse(cleanedJsonText);
+            } catch (e) {
+                console.error("JSON parsing error:", e, "Raw AI response:", jsonText);
+                throw new Error('Could not parse JSON response from AI.');
+            }
+        } else {
+            const errorMessage = result?.error?.message || "Could not retrieve structured data from the API response (no 'text' part).";
+            throw new Error(errorMessage);
+        }
+    }
+
+    // Function to format the structured data into a human-readable title
+    function formatTitle(data) {
+        let artist = data.artist || "Unknown";
+        let title = data.title || "Untitled";
+        let year = data.year || "Unknown Year";
+
+        // Clean up text if needed (Basic checks)
+        if (title.toLowerCase() === 'untitled' || title.toLowerCase() === 'unknown') title = "Untitled";
+
+        if (artist.toLowerCase() === 'unknown' && year.toLowerCase() === 'unknown year') {
+            return title;
+        }
+        if (artist.toLowerCase() === 'unknown') {
+            return `${title} (${year})`;
+        }
+        if (year.toLowerCase() === 'unknown year') {
+            return `${title} by ${artist}`;
+        }
+        
+        return `${title} by ${artist} (${year})`;
+    }
+
+    // --- UI Update Functions ---
+
+    function createResultRow(originalFilename) {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-700 transition duration-150 border-b border-gray-700';
+        
+        const originalFilenameCell = document.createElement('td');
+        originalFilenameCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200 truncate max-w-xs';
+        originalFilenameCell.textContent = originalFilename;
+        
+        const titleCell = document.createElement('td');
+        titleCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-400';
+        titleCell.textContent = '...';
+        
+        const statusCell = document.createElement('td');
+        statusCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-semibold status-loading';
+        statusCell.textContent = 'Waiting';
+
+        row.appendChild(originalFilenameCell);
+        row.appendChild(titleCell);
+        row.appendChild(statusCell);
+        resultsTableBody.appendChild(row);
+
+        return { row, titleCell, statusCell };
+    }
+
+    function updateResultRow(elements, status, result = '') {
+        elements.statusCell.textContent = status;
+        
+        if (status.startsWith('Success')) {
+            elements.titleCell.textContent = result;
+            elements.statusCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-semibold status-success';
+        } else if (status.startsWith('Error')) {
+            elements.titleCell.textContent = result; // Show error message in title cell
+            elements.statusCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-semibold status-error';
+        } else if (status.startsWith('Stopped')) {
+            elements.titleCell.textContent = "Stopped by user";
+            elements.statusCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-semibold status-loading';
+        } else {
+            elements.statusCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-semibold status-loading';
+            elements.titleCell.textContent = 'Processing...';
+        }
+    }
+
+    // --- Main Processing Logic ---
+
+    const processFilenames = async () => {
+        isGenerationRunning = true;
+        generateButton.style.display = 'none';
+        stopButton.style.display = 'flex';
+        stopButton.disabled = false;
+        loadingIndicator.style.display = 'block';
+        exportButton.disabled = true; 
+        resultsTableBody.innerHTML = ''; 
+        progressMessage.textContent = 'Parsing input...';
+
+        const rawInput = filenameInput.value.trim();
+        let itemsToProcess = [];
+
+        // --- Parsing Logic: Check for HTML tags vs Plain Text ---
+        if (rawInput.includes('<a') && rawInput.includes('href=')) {
+            // HTML Mode
+            try {
+                const parser = new DOMParser();
+                // Wrap in body to ensure parsing works for fragments
+                const doc = parser.parseFromString(`<body>${rawInput}</body>`, 'text/html');
+                const links = doc.querySelectorAll('a');
+                
+                if (links.length === 0) throw new Error("No anchor tags found in HTML input.");
+
+                links.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href) {
+                        let fullUrl = href;
+                        // Handle relative URLs if any (though input suggests absolute)
+                        if (!href.startsWith('http')) {
+                             const folderUrl = folderUrlInput.value.trim();
+                             const baseUrl = folderUrl.endsWith('/') ? folderUrl : folderUrl + '/';
+                             fullUrl = baseUrl + href;
+                        }
+                        
+                        // Use text content as the "Original Filename"
+                        let originalName = link.textContent.trim();
+                        if (!originalName) originalName = href.split('/').pop(); // Fallback to filename from URL
+
+                        itemsToProcess.push({
+                            original: originalName,
+                            url: fullUrl
+                        });
+                    }
+                });
+            } catch (e) {
+                alert("Error parsing HTML: " + e.message);
+                isGenerationRunning = false;
+                generateButton.style.display = 'flex';
+                stopButton.style.display = 'none';
+                loadingIndicator.style.display = 'none';
+                return;
+            }
+        } else {
+            // Plain Text Mode (Fallback)
+            const folderUrl = folderUrlInput.value.trim();
+            if (!folderUrl) {
+                progressMessage.textContent = 'Please enter a Folder URL for plain filenames.';
+                isGenerationRunning = false;
+                generateButton.style.display = 'flex';
+                stopButton.style.display = 'none';
+                loadingIndicator.style.display = 'none';
+                return;
+            }
+            const baseUrl = folderUrl.endsWith('/') ? folderUrl : folderUrl + '/';
+
+            const lines = rawInput.split('\n').map(l => l.trim()).filter(l => l !== '');
+            itemsToProcess = lines.map(line => ({
+                original: line,
+                url: baseUrl + line
+            }));
+        }
+            
+        if (itemsToProcess.length === 0) {
+            progressMessage.textContent = 'No valid items found to process.';
+            isGenerationRunning = false;
+            generateButton.style.display = 'flex';
+            stopButton.style.display = 'none';
+            loadingIndicator.style.display = 'none';
+            return;
+        }
+        
+        progressMessage.textContent = `Processing 0 of ${itemsToProcess.length} images.`;
+
+        let successfulGenerations = 0;
+        let i = 0;
+        for (i = 0; i < itemsToProcess.length; i++) {
+            if (!isGenerationRunning) {
+                progressMessage.textContent = `Process stopped by user at ${i} of ${itemsToProcess.length}.`;
+                break; 
+            }
+
+            const item = itemsToProcess[i];
+            const rowElements = createResultRow(item.original);
+            let status = 'Error';
+            let generatedTitle = '';
+
+            try {
+                updateResultRow(rowElements, 'Fetching image...');
+                
+                const { base64Data, mimeType } = await urlToBase64(item.url);
+                
+                if (isGenerationRunning) { 
+                    updateResultRow(rowElements, 'Analyzing image...');
+                    
+                    const structuredData = await generateStructuredData(base64Data, mimeType);
+
+                    generatedTitle = formatTitle(structuredData);
+                    status = 'Success';
+                    successfulGenerations++;
+                } else {
+                    status = 'Stopped';
+                    generatedTitle = 'Stopped while processing'; 
+                }
+
+            } catch (error) {
+                console.error("Processing failed for:", item.original, error);
+                const errorMsg = error.message.substring(0, Math.min(error.message.length, 60)) + (error.message.length > 60 ? '...' : '');
+                status = 'Error: ' + errorMsg;
+                generatedTitle = `Error: ${errorMsg}`;
+            } finally {
+                updateResultRow(rowElements, status, generatedTitle);
+                progressMessage.textContent = `Processing ${i + 1} of ${itemsToProcess.length} images.`;
+                if (itemsToProcess.length > 0) {
+                    exportButton.disabled = false;
+                }
+            }
+
+            if (isGenerationRunning) {
+                // Slower pace for accuracy (500ms)
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+            }
+        }
+        
+        if (isGenerationRunning) {
+            progressMessage.textContent = `Finished processing ${itemsToProcess.length} images.`;
+        }
+        isGenerationRunning = false;
+        generateButton.style.display = 'flex';
+        stopButton.style.display = 'none';
+        loadingIndicator.style.display = 'none';
+    };
+
+    const stopGeneration = () => {
+        isGenerationRunning = false;
+        progressMessage.textContent = 'Stopping...';
+        stopButton.disabled = true; 
+    };
+
+    const exportResultsToTxt = () => {
+        const rows = resultsTableBody.querySelectorAll('tr');
+        let txtContent = '';
+
+        rows.forEach(row => {
+            const originalCell = row.cells[0];
+            const titleCell = row.cells[1];
+            
+            if (originalCell && titleCell) {
+                // Format: Original Filename | Structured Title
+                txtContent += `${originalCell.textContent.trim()} | ${titleCell.textContent.trim()}\n`;
+            }
+        });
+
+        if (txtContent.length === 0) {
+            console.warn("No titles to export.");
+            progressMessage.textContent = "No titles to export.";
+            setTimeout(() => { progressMessage.textContent = ''; }, 3000);
+            return;
+        }
+
+        const element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txtContent));
+        element.setAttribute('download', 'seeker_titles.txt');
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    };
+    
+    // Attaching event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        generateButton.addEventListener('click', processFilenames);
+        stopButton.addEventListener('click', stopGeneration);
+        exportButton.addEventListener('click', exportResultsToTxt);
+    });
+
+</script>
+
+</body>
+</html>
