@@ -242,18 +242,16 @@
 
     </script>
 
-    <script type="text/javascript">
-     
+    <script>
         /**
-         * ORGANIC BORDER SYNTHESIZER v7
+         * ORGANIC BORDER SYNTHESIZER v8.1 (Fixed)
          * * Changes:
-         * - Normalized Seek Vectors: Attraction is now consistent at all distances.
-         * - Decoupled Seek: Corners reach aggressively in ALL modes.
-         * - "Digital Corinthian" now bends towards mouse instead of just scaling.
+         * - Added safety checks in resize() to prevent IndexSizeError (0 width/height).
+         * - Maintains 1-bit bitmap logic.
          */
 
         const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: true }); 
 
         let width, height;
         let frame = 0;
@@ -261,6 +259,10 @@
         let mouseY = 0; 
         let targetMorph = 0;
         let currentMorph = 0; 
+
+        // 1-BIT BUFFER VARIABLES
+        let imgData;
+        let buf32; // 32-bit view of the buffer for speed
 
         // Configuration
         const borderPadding = 60;
@@ -305,10 +307,39 @@
             };
         })();
 
-        // --- SEGMENT CONFIGURATION ---
+        // --- BRESENHAM'S LINE ALGORITHM (1-BIT PLOTTER) ---
+        // Draws a line directly into the 32-bit buffer
+        function plotLine(x0, y0, x1, y1) {
+            x0 |= 0; y0 |= 0; x1 |= 0; y1 |= 0; // Force integer (floor)
+            
+            const dx = Math.abs(x1 - x0);
+            const dy = Math.abs(y1 - y0);
+            const sx = (x0 < x1) ? 1 : -1;
+            const sy = (y0 < y1) ? 1 : -1;
+            let err = dx - dy;
+
+            // Safety bounds to prevent buffer overflow crashes
+            const w = width;
+            const h = height;
+
+            while (true) {
+                // Bounds check before writing
+                if (x0 >= 0 && x0 < w && y0 >= 0 && y0 < h) {
+                    // Set pixel to Solid White (Little Endian: AABBGGRR -> 0xFFFFFFFF)
+                    // Use 0xFFFFFFFF for full opacity white.
+                    buf32[y0 * w + x0] = 0xFFFFFFFF; 
+                }
+
+                if (x0 === x1 && y0 === y1) break;
+                const e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+        }
+
         const activeSegments = [
-            { start: 0.0, end: 0.25 }, // Top-Left / Bottom-Left Corner area
-            { start: 0.75, end: 1.0 }  // Top-Right / Bottom-Right Corner area
+            { start: 0.0, end: 0.25 }, 
+            { start: 0.75, end: 1.0 } 
         ];
 
         const agents = [];
@@ -354,19 +385,15 @@
             update(morph) {
                 let time = frame * 0.005; 
                 
-                // Vector from Base to Mouse (Used for structural bending)
                 let bdx = mouseX - this.baseX;
                 let bdy = mouseY - this.baseY;
                 let bDist = Math.sqrt(bdx*bdx + bdy*bdy);
-                // Normalized Base Direction
                 let bDirX = (bDist > 0) ? bdx / bDist : 0;
                 let bDirY = (bDist > 0) ? bdy / bDist : 0;
 
-                // Vector from Current Tip to Mouse (Used for organic seeking)
                 let dx = mouseX - this.x;
                 let dy = mouseY - this.y;
                 let distToMouse = Math.sqrt(dx*dx + dy*dy);
-                // Normalized Tip Direction
                 let dirX = (distToMouse > 0) ? dx / distToMouse : 0;
                 let dirY = (distToMouse > 0) ? dy / distToMouse : 0;
 
@@ -391,9 +418,6 @@
                         patternX = Math.floor(Math.sin(frame * 0.02 + this.seed) * 2) * stepSize;
                     }
 
-                    // NORMALIZED SEEKING:
-                    // Instead of proportional distance, we use a fixed "Reach Magnitude" (200px)
-                    // This ensures close corners bend just as much as far corners.
                     let reachMagnitude = 200; 
                     let reachX = bDirX * reachMagnitude * influence;
                     let reachY = bDirY * reachMagnitude * influence;
@@ -432,7 +456,6 @@
                     if (this.side === 'top') this.y += yOffset;
                     if (this.side === 'bottom') this.y -= yOffset;
                     
-                    // Increased Magnetic Pull 
                     this.x += dirX * 4 * influence;
                     this.y += dirY * 4 * influence;
 
@@ -449,7 +472,6 @@
                     let flowX = noise(this.x * flowScale, this.y * flowScale, time) - 0.5;
                     let flowY = noise(this.x * flowScale + 100, this.y * flowScale + 100, time) - 0.5;
 
-                    // Seeking is dominant here
                     this.x += (flowX * 8 + dirX * 6) * influence;
                     this.y += (flowY * 8 + dirY * 6) * influence;
 
@@ -466,33 +488,16 @@
                 }
             }
 
-            draw(ctx, morph) {
+            // Updated Draw: Writes directly to buffer
+            drawToBuffer() {
                 if (this.history.length < 2) return;
 
-                ctx.beginPath();
-                ctx.moveTo(this.history[0].x, this.history[0].y);
-
-                ctx.lineWidth = 1; 
-
-                // COLOR: Pure White
-                let alpha = 0.6;
-                if (morph > 1.8) alpha = 0.8; 
-                
-                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-
-                for (let i = 1; i < this.history.length; i++) {
-                    if (morph < 1.0) {
-                         ctx.lineTo(this.history[i].x, this.history[i].y);
-                    } else {
-                        let p0 = this.history[i-1];
-                        let p1 = this.history[i];
-                        let mx = (p0.x + p1.x) / 2;
-                        let my = (p0.y + p1.y) / 2;
-                        ctx.quadraticCurveTo(p0.x, p0.y, mx, my);
-                    }
+                // Draw segments using Bresenham
+                for (let i = 0; i < this.history.length - 1; i++) {
+                    const p1 = this.history[i];
+                    const p2 = this.history[i+1];
+                    plotLine(p1.x, p1.y, p2.x, p2.y);
                 }
-                
-                ctx.stroke();
             }
         }
 
@@ -527,7 +532,6 @@
                                 continue; 
                             }
                         }
-                        
                         agents.push(new Agent(sideName, rawPct));
                     }
                 }
@@ -540,8 +544,22 @@
         }
 
         function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+            // FIX: Ensure positive non-zero dimensions to prevent IndexSizeError
+            width = Math.max(1, window.innerWidth);
+            height = Math.max(1, window.innerHeight);
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Re-initialize buffer on resize
+            try {
+                imgData = ctx.createImageData(width, height);
+                buf32 = new Uint32Array(imgData.data.buffer);
+            } catch (e) {
+                console.warn("Buffer creation failed", e);
+                return;
+            }
+            
             createAgents(); 
         }
 
@@ -554,10 +572,11 @@
         function animate() {
             currentMorph += (targetMorph - currentMorph) * 0.05;
             
-            ctx.clearRect(0, 0, width, height);
+            // 1. Clear Buffer (Set all pixels to Transparent Black)
+            // 0x00000000
+            if (buf32) buf32.fill(0);
 
             agents.forEach(agent => {
-                // DYNAMIC LEASH Logic
                 let dx = agent.x - agent.baseX;
                 let dy = agent.y - agent.baseY;
                 let distFromBase = Math.sqrt(dx*dx + dy*dy);
@@ -566,10 +585,7 @@
                 let bdy = mouseY - agent.baseY;
                 let distBaseToMouse = Math.sqrt(bdx*bdx + bdy*bdy);
 
-                // Limit is distance to mouse + 50px buffer
                 let limit = distBaseToMouse + 50;
-                
-                // Allow even more reach in high morph
                 if (currentMorph > 1.0) limit += 100;
 
                 if (distFromBase > limit) {
@@ -584,8 +600,11 @@
                 }
 
                 agent.update(currentMorph);
-                agent.draw(ctx, currentMorph);
+                if (buf32) agent.drawToBuffer(); // Plot pixels to buf32
             });
+
+            // 2. Push Buffer to Canvas
+            if (imgData) ctx.putImageData(imgData, 0, 0);
 
             frame++;
             requestAnimationFrame(animate);
@@ -594,12 +613,6 @@
         init();
 
     </script>
-
-  </body>
-</html>
-
-    </script>
-
 
   </body>
 </html>
