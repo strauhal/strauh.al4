@@ -13,14 +13,48 @@
     <meta property="og:image" content="https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/art/1743986210062266.png">
     <meta property="og:url" content="https://strauh.al/art">
     <meta property="og:type" content="website">
-
-
     
     <!-- import the webpage's stylesheet -->
     <link rel="stylesheet" href="./style.css">
     
     <!-- import the webpage's javascript file -->
     <script src="script.js" defer></script>
+
+    <style type="text/css">
+
+      	#randomizeBtn {
+      		color: #fff;
+      		text-decoration: underline;
+      		font-size: 14pt;
+      	}
+    	
+		#randomizeBtn:hover {
+			background-color: #fff;
+			cursor: pointer;
+		}
+
+		#searchBar {
+            width: 33vw;
+            box-sizing: border-box;
+            background-color: transparent;
+            border: 1px solid #fff;
+            color: #fff;
+            font-size: 14pt;
+            padding: 8px;
+            font-family: 'Times New Roman', serif;
+            border-radius: 0;
+      }
+
+		::placeholder {
+			color: white;
+			opacity: 1; /* Firefox */
+		}
+
+		#searchBar:focus {
+	        outline: none;
+      }
+
+    </style>
 
   </head>  
   <body>
@@ -29,6 +63,11 @@
             <div class="nav"><p>
 				<a href="#1200s">1200s</a> / <a href="#1300s">1300s</a> / <a href="#1400s">1400s</a> / <a href="#1500s">1500s</a> / <a href="#1600s">1600s</a> / <a href="#1700s">1700s</a> / <a href="#1800s">1800s</a> / <a href="#1900s">1900s</a> / <a href="#2000s">2000s</a> / <a href="#unsorted">unsorted</a>
     </div>
+
+    <p><input type="text" id="searchBar" placeholder="search for sketch, year, artist, oil, photo, digital..." autocomplete="off"></p>
+    <p><a:hover id="randomizeBtn">randomize order</a></p>
+
+<div id="gallery-content">    
 
     <h2 id="1200s"><a href="#1200s">1200s</a></h2><p>
     <br><a href="https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1100s/listening_to_the_qin_ting_qin_tu_by_emperor_huizong_c_1110.jpeg">Listening to the Qin (Ting Qin Tu) by Emperor Huizong (c. 1110)</a>
@@ -4866,6 +4905,112 @@
     <br><a href="https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/unsorted/william_fettes_douglas_alchemist_painting_jpg_webp.webp">william-fettes-douglas-alchemist-painting.jpg.webp</a>
     <br><a href="https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/unsorted/yesiknowthisisagravitysrainbowreference_jpg.jpg">yesiknowthisisagravitysrainbowreference.jpg</a>
     <br><a href="https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/unsorted/taima_mandala_met_dp156281_jpg.jpg">当麻曼荼羅-taima_mandala_met_dp156281.jpg</a>
+
+</div>
+    <script>
+      // 1. "MASTER TAPE" - Save original state
+      const contentDiv = document.getElementById('gallery-content');
+      const originalGalleryHTML = contentDiv.innerHTML;
+      const searchBar = document.getElementById('searchBar');
+
+      // 2. PRE-LOAD THE PALETTE
+      // We collect the links immediately so the search function has data to work with
+      // regardless of whether the user has clicked "Randomize" first.
+      let artLinksCache = [];
+      
+      function collectLinks() {
+        // Create a temporary div to parse the original HTML
+        // This ensures we always get the full list even if the page is currently filtered
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = originalGalleryHTML;
+        const links = tempDiv.querySelectorAll('p a');
+        artLinksCache = Array.from(links);
+      }
+      
+      // Run this immediately
+      collectLinks();
+
+      // 3. SHUFFLE ALGORITHM (The Remix)
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+      }
+
+      // 4. RANDOMIZE LISTENER
+      document.getElementById('randomizeBtn').addEventListener('click', function() {
+        searchBar.value = ''; // Clear search bar for clarity
+        
+        // We use a copy of the cache so we don't mess up the master order for search
+        const linksToShuffle = [...artLinksCache]; 
+        shuffleArray(linksToShuffle);
+
+        contentDiv.innerHTML = '';
+
+        const newHeader = document.createElement('h2');
+        newHeader.textContent = 'Randomized Order';
+        contentDiv.appendChild(newHeader);
+
+        const newParagraph = document.createElement('p');
+        const fragment = document.createDocumentFragment();
+
+        linksToShuffle.forEach(link => {
+          // Clone the node so we don't move the original reference
+          fragment.appendChild(link.cloneNode(true));
+          fragment.appendChild(document.createElement('br'));
+        });
+
+        newParagraph.appendChild(fragment);
+        contentDiv.appendChild(newParagraph);
+      });
+
+      // 5. SEARCH LISTENER (The Filter)
+      searchBar.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+
+        // If search is empty, revert to original composition
+        if (searchTerm === '') {
+          contentDiv.innerHTML = originalGalleryHTML;
+          return;
+        }
+
+        // Filter the palette
+        const matches = artLinksCache.filter(link => 
+          link.textContent.toLowerCase().includes(searchTerm)
+        );
+
+        // Clear canvas
+        contentDiv.innerHTML = '';
+
+        // Add "Search Results" header
+        const searchHeader = document.createElement('h2');
+        searchHeader.textContent = matches.length > 0 ? 'Search Results' : 'No matches found';
+        contentDiv.appendChild(searchHeader);
+
+        // Paint matches
+        const newParagraph = document.createElement('p');
+        const fragment = document.createDocumentFragment();
+
+        matches.forEach(link => {
+          fragment.appendChild(link.cloneNode(true));
+          fragment.appendChild(document.createElement('br'));
+        });
+
+        newParagraph.appendChild(fragment);
+        contentDiv.appendChild(newParagraph);
+      });
+
+      // 6. NAVIGATION SNAP BACK
+      const navLinks = document.querySelectorAll('.nav a');
+      
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          searchBar.value = ''; // Reset the search input
+          contentDiv.innerHTML = originalGalleryHTML; // Restore master tape
+        });
+      });
+    </script>
 
       </body>
 </html>
