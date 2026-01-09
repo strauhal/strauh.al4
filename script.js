@@ -199,9 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const updateStickyHighlight = (force = false) => {
             if (state.needsLayoutUpdate) recalculateLayout();
 
-            // Adjust targetY to be slightly more centered or based on tap
-            // If the user tapped, anchorY is the tap position. 
-            // If scrolling, anchorY remains where it was last set.
             const targetY = window.scrollY + state.anchorY;
             let closest = null;
             let minDiff = Infinity;
@@ -217,8 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Persistence Logic:
-            // 1. If we found a NEW closest link that is different from current sticky link
-            // 2. OR if we are forcing an update (explicit tap)
+            // Only switch highlight if we found a NEW valid link OR if forced (tap)
             if (closest && (closest !== state.stickyLink || force)) {
                 clearHighlights();
                 state.stickyLink = closest;
@@ -229,8 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (state.stickyLink) updatePreview(state.stickyLink.href);
                 }, CONFIG.MOBILE_SCROLL_DELAY);
             } 
-            // 3. Fallback: If no change, ensure the current sticky link REMAINS highlighted.
-            // This fixes the "flicker" or "disappearing highlight" issue.
+            // CRITICAL: Ensure the current sticky link stays lit if no better link is found
             else if (state.stickyLink) {
                 if (!state.stickyLink.classList.contains('mobile-hover')) {
                     state.stickyLink.classList.add('mobile-hover');
@@ -327,8 +322,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.addEventListener('touchend', (e) => {
             if (!state.isMobile()) return;
 
-            // If user scrolled significantly, do NOT update anchor or select new link
-            // Just ensure the CURRENT highlight remains active.
+            // If user scrolled significantly, do NOT select a new link based on touch position.
+            // Just ensure the CURRENT highlight remains robust.
             if (state.isScrolling) {
                 if (state.stickyLink) state.stickyLink.classList.add('mobile-hover');
                 return; 
@@ -357,8 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatePreview(state.stickyLink.href);
                 }
             } else {
-                // Tapped blank space - Do not move anchor, just ensure stickiness
-                updateStickyHighlight(false);
+                // Tapped blank space - Just reinforce the current sticky link
+                if (state.stickyLink) state.stickyLink.classList.add('mobile-hover');
             }
         }, { passive: true });
 
