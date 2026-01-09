@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         CACHE_SIZE: 50,
         DEFAULT_ANCHOR_Y: 10,
         SCROLL_THRESHOLD: 10,     // px: Movement tolerance to distinguish tap vs scroll
+        UNLOCK_DISTANCE: 150,     // px: How far to scroll before unlocking manual selection
         IMG_EXTS: ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     };
 
@@ -29,7 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
         timers: { hover: null, load: null },
         scrollTicking: false,
         touchStartY: 0,     // Track touch start position
-        isScrolling: false  // Track if user is scrolling
+        isScrolling: false,  // Track if user is scrolling
+        manualOverride: false // NEW: Flag to lock highlight on tap
     };
 
     // Construct selector string efficiently once
@@ -140,15 +142,19 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // --- 3. Layout Caching ---
-        const imageLinks = document.querySelectorAll(LINK_SELECTOR);
-
         const recalculateLayout = () => {
             const scrollY = window.scrollY;
-            // Batch read to avoid layout thrashing
-            state.linkPositions = Array.from(imageLinks).map(link => ({
-                link,
-                top: link.getBoundingClientRect().top + scrollY
-            }));
+            
+            // Only select VISIBLE links. Hidden links (display:none from search) should be ignored.
+            const allLinks = document.querySelectorAll(LINK_SELECTOR);
+            
+            state.linkPositions = Array.from(allLinks)
+                .filter(link => link.offsetParent !== null) // Check visibility
+                .map(link => ({
+                    link,
+                    top: link.getBoundingClientRect().top + scrollY
+                }));
+                
             state.needsLayoutUpdate = false;
         };
 
@@ -213,8 +219,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // AUTO-UNLOCK LOGIC:
+            // If manual override is on, check if we've scrolled far enough away to release it.
+            if (state.manualOverride && !force && state.stickyLink && closest) {
+                // Find position of current sticky link
+                const currentStickyPos = state.linkPositions.find(p => p.link === state.stickyLink);
+                if (currentStickyPos) {
+                    const distance = Math.abs(currentStickyPos.top - targetY);
+                    if (distance > CONFIG.UNLOCK_DISTANCE) {
+                        state.manualOverride = false; // Release the lock
+                    } else {
+                        // Keep lock, reinforce highlight
+                        if (!state.stickyLink.classList.contains('mobile-hover')) {
+                            state.stickyLink.classList.add('mobile-hover');
+                        }
+                        state.scrollTicking = false;
+                        return;
+                    }
+                }
+            }
+
             // Persistence Logic:
-            // Only switch highlight if we found a NEW valid link OR if forced (tap)
             if (closest && (closest !== state.stickyLink || force)) {
                 clearHighlights();
                 state.stickyLink = closest;
@@ -236,15 +261,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const ensureMobileInit = () => {
             if (state.needsLayoutUpdate) recalculateLayout();
-            if (!state.stickyLink && imageLinks.length > 0) {
+            if (!state.stickyLink && state.linkPositions.length > 0) {
                 state.anchorY = CONFIG.DEFAULT_ANCHOR_Y;
-                state.stickyLink = imageLinks[0];
+                // Default to first visible link
+                state.stickyLink = state.linkPositions[0].link;
                 state.stickyLink.classList.add('mobile-hover');
                 updatePreview(state.stickyLink.href);
             }
         };
 
-        // --- 6. Event Delegation ---
+        // --- 6. Observers & Search Handling (New) ---
+
+        // Observe layout changes (randomizer, etc.)
+        const contentObserver = new MutationObserver(() => {
+            state.needsLayoutUpdate = true;
+            // Force re-snap after DOM settles
+            if (state.isMobile()) {
+                requestAnimationFrame(() => updateStickyHighlight(true)); 
+            }
+        });
+
+        // Watch the gallery content area for changes
+        const galleryContent = document.getElementById('gallery-content') || document.body;
+        contentObserver.observe(galleryContent, { childList: true, subtree: true });
+
+        // Watch Search Input
+        const searchInput = document.getElementById('searchBar');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                // Wait briefly for filtering logic to hide/show elements
+                setTimeout(() => {
+                    state.needsLayoutUpdate = true;
+                    // Reset manual override if current selection disappears
+                    if (state.stickyLink && state.stickyLink.offsetParent === null) {
+                        state.manualOverride = false; 
+                        state.stickyLink = null;
+                    }
+                    if (state.isMobile()) updateStickyHighlight(true);
+                }, 100);
+            });
+        }
+
+        // --- 7. Event Delegation ---
 
         // Desktop Hover
         document.body.addEventListener('mouseover', (e) => {
@@ -308,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!state.stickyLink) ensureMobileInit();
         }, { passive: true });
 
-        // Mobile Touch Move - Detect Scroll Intent
+        // Mobile Touch Move
         document.body.addEventListener('touchmove', (e) => {
             if (!state.isMobile()) return;
             
@@ -322,8 +380,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.addEventListener('touchend', (e) => {
             if (!state.isMobile()) return;
 
-            // If user scrolled significantly, do NOT select a new link based on touch position.
-            // Just ensure the CURRENT highlight remains robust.
             if (state.isScrolling) {
                 if (state.stickyLink) state.stickyLink.classList.add('mobile-hover');
                 return; 
@@ -335,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const link = targetElement ? targetElement.closest(LINK_SELECTOR) : null;
 
             if (link) {
-                // Update anchor to exact tap position
+                state.manualOverride = true;
                 state.anchorY = touchY;
 
                 if (link === state.lastTapped) {
@@ -344,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.allowClick = false;
                     state.lastTapped = link;
                     
-                    // Instant update on Tap
                     clearHighlights();
                     state.stickyLink = link;
                     state.stickyLink.classList.add('mobile-hover');
@@ -352,12 +407,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatePreview(state.stickyLink.href);
                 }
             } else {
-                // Tapped blank space - Just reinforce the current sticky link
+                // Tapped blank space - Keep current selection lit
                 if (state.stickyLink) state.stickyLink.classList.add('mobile-hover');
             }
         }, { passive: true });
 
-        // Resize / Orientation Change
+        // Resize
         window.addEventListener('resize', () => {
             state.needsLayoutUpdate = true;
             if (state.isMobile()) {
@@ -370,14 +425,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // CRITICAL: Final Layout Tune-up after full load
-        // Ensures mobile highlights snap correctly once fonts/layout settle
+        // Load
         window.addEventListener('load', () => {
             recalculateLayout();
             if (state.isMobile()) ensureMobileInit();
         });
 
-        // Initial Boot
+        // Init
         recalculateLayout();
         if (state.isMobile()) ensureMobileInit();
     }
