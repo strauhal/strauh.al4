@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VantaNode Visualizer // Performance Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+        
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            background-color: #050505; color: #fff; font-family: 'Inter', sans-serif;
+        }
+
+        canvas { display: block; width: 100vw; height: 100vh; }
+
+        /* Remote UI Styles */
+        .remote-body { background: #0a0a0a; padding: 30px; height: 100vh; overflow-y: auto; }
+        .slider-group { margin-bottom: 25px; border-bottom: 1px solid #1a1a1a; padding-bottom: 20px; }
+        .slider-group label { display: block; font-size: 10px; color: #555; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        input[type=range] { width: 100%; height: 4px; background: #222; border-radius: 2px; appearance: none; outline: none; }
+        input[type=range]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; background: #00ffaa; border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px rgba(0,255,170,0.5); }
+        
+        select { background: #111; color: #00ffaa; border: 1px solid #222; padding: 12px; width: 100%; border-radius: 4px; font-size: 12px; outline: none; font-family: monospace; }
+
+        /* Visualizer UI */
+        #ui-trigger {
+            position: fixed; bottom: 20px; left: 20px; opacity: 0.1; transition: 0.3s;
+            cursor: pointer; font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+            z-index: 1000; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 2px;
+        }
+        #ui-trigger:hover { opacity: 1; background: rgba(255,255,255,0.1); border-color: #fff; }
+        
+        #status-bar {
+            position: fixed; top: 15px; left: 15px; font-family: monospace;
+            font-size: 10px; color: #00ffaa; pointer-events: none; z-index: 100; opacity: 0.7;
+            text-shadow: 0 0 8px #00ffaa;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-root"></div>
+
+<!-- SHADERS -->
+<script id="vertexShader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+    varying float vDisplacement;
+    uniform float uTime;
+    uniform float uDepth;
+    uniform sampler2D uTexture;
+
+    void main() {
+        vUv = uv;
+        vec4 color = texture2D(uTexture, uv);
+        float luma = (color.r + color.g + color.b) / 3.0;
+        vDisplacement = luma;
+        vec3 pos = position;
+        pos.z += luma * uDepth * 130.0;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+    uniform sampler2D uTexture;
+    uniform sampler2D uAsciiAtlas;
+    uniform float uTime;
+    uniform vec2 uResolution;
+    uniform float uEdgeThreshold;
+    uniform float uTiling;
+    
+    uniform int uVisualMode;
+    uniform int uPrevVisualMode;
+    uniform float uVisualEase;
+    
+    uniform int uColorMode;
+    uniform int uPrevColorMode;
+    uniform float uColorEase;
+    
+    uniform float uAsciiSize;
+    varying vec2 vUv;
+
+    float rand(vec2 co){
+        return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+    }
+
+    float noise(vec2 p) {
+        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    vec2 escherTile(vec2 uv, float count) {
+        uv *= count;
+        vec2 i_uv = floor(uv);
+        vec2 f_uv = fract(uv);
+        if(mod(i_uv.x, 2.0) > 0.5) f_uv.x = 1.0 - f_uv.x;
+        if(mod(i_uv.y, 2.0) > 0.5) f_uv.y = 1.0 - f_uv.y;
+        float rot = mod(i_uv.x + i_uv.y, 2.0);
+        if(rot > 0.5) f_uv = vec2(f_uv.y, f_uv.x);
+        return f_uv;
+    }
+
+    vec3 getEdges(vec2 uv) {
+        float offset = 1.5 / uResolution.x;
+        vec3 t1 = texture2D(uTexture, uv + vec2(-offset, -offset)).rgb;
+        vec3 t3 = texture2D(uTexture, uv + vec2(offset, -offset)).rgb;
+        vec3 t4 = texture2D(uTexture, uv + vec2(-offset, 0.0)).rgb;
+        vec3 t6 = texture2D(uTexture, uv + vec2(offset, 0.0)).rgb;
+        vec3 t7 = texture2D(uTexture, uv + vec2(-offset, offset)).rgb;
+        vec3 t9 = texture2D(uTexture, uv + vec2(offset, offset)).rgb;
+        vec3 gx = -1.0*t1 + 1.0*t3 + -2.0*t4 + 2.0*t6 + -1.0*t7 + 1.0*t9;
+        vec3 gy = -1.0*t1 + -2.0*t3 + 1.0*t7 + 1.0*t9;
+        return vec3(step(uEdgeThreshold, length(gx) + length(gy)));
+    }
+
+    vec3 applyAlgorithm(int mode, vec2 uv, vec3 tex, float b) {
+        vec3 res = vec3(0.0);
+        
+        if (mode == 0) { // Canny Edges
+            res = getEdges(uv);
+        } 
+        else if (mode == 1) { // MONOSPACE ASCII MATRIX (Grid Atlas Sampling)
+            float density = 20.0 + uAsciiSize * 3.0;
+            vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
+            vec2 gridUv = uv * density * aspect;
+            vec2 cellId = floor(gridUv);
+            vec2 localUv = fract(gridUv);
+            
+            float val = texture2D(uTexture, cellId / (density * aspect)).r;
+            
+            // 8 rows x 12 cols = 96 slots
+            float charId = floor(rand(cellId) * 94.0 + uTime * 15.0);
+            charId = mod(charId, 94.0);
+            
+            float col = mod(charId, 12.0);
+            float row = floor(charId / 12.0);
+            
+            // Map character grid to atlas texture
+            vec2 atlasUv = (vec2(col, row) + localUv) / vec2(12.0, 8.0);
+            float bit = texture2D(uAsciiAtlas, atlasUv).r;
+            
+            res = vec3(bit * step(0.05, val) * val);
+        }
+        else if (mode == 2) { // Escher
+            res = getEdges(uv) + tex * 0.2;
+        }
+        else if (mode == 3) { // 3D Mesh
+            res = getEdges(uv) + (tex * 0.4);
+        }
+        else if (mode == 4) { // Hyper Glitch
+            vec2 sUv = uv + vec2(sin(uTime*12.0)*0.015 * getEdges(uv).r, cos(uTime*10.0)*0.01);
+            res = getEdges(sUv);
+            if(rand(uv + uTime) > 0.98) res = vec3(1.0);
+        }
+        else if (mode == 5) { // Liquid Wave Ripple
+            float dist = distance(uv, vec2(0.5));
+            float ripple = sin(dist * 40.0 - uTime * 10.0) * 0.02;
+            res = getEdges(uv + ripple);
+        }
+        else if (mode == 6) { // Atmospheric Mist
+            float n = noise(uv * 5.0 + uTime * 0.5);
+            res = getEdges(uv) * (0.3 + 0.7 * n);
+        }
+        else if (mode == 7) { // Ethereal Plasma Fluid
+            vec2 p = uv * 2.0;
+            float plas = sin(p.x + uTime) + sin(p.y + uTime) + sin(p.x + p.y + uTime);
+            res = getEdges(uv + plas * 0.01);
+        }
+        else if (mode == 8) { // Tasteful Temporal Interlace
+            float scanline = step(0.5, sin(uv.y * uResolution.y * 0.8));
+            vec2 off = vec2(0.01 * sin(uTime * 10.0), 0.0);
+            vec3 e1 = getEdges(uv);
+            vec3 e2 = getEdges(uv + off);
+            res = mix(e1, e2, scanline);
+        }
+        else if (mode == 9) { // Kinetic Data Mosh (Subtle)
+            float block = 20.0;
+            vec2 mUv = floor(uv * block) / block;
+            float drift = noise(vec2(uTime * 0.1, mUv.y)) * 0.1;
+            res = getEdges(uv + vec2(drift, 0.0)) * step(0.1, getEdges(uv).r);
+        }
+        else if (mode == 10) { // Analog Signal Drift
+            float lineNoise = pow(noise(vec2(uTime * 15.0, uv.y)), 10.0) * 0.05;
+            float scan = sin(uv.y * 400.0 + uTime * 20.0) * 0.002;
+            res = getEdges(uv + vec2(lineNoise + scan, 0.0));
+            res.r = getEdges(uv + vec2(lineNoise + 0.005, 0.0)).r;
+            res.b = getEdges(uv + vec2(lineNoise - 0.005, 0.0)).b;
+        }
+        
+        return res;
+    }
+
+    vec3 applyPalette(vec3 color, int mode, float brightness, vec2 uv) {
+        if (mode == 0) return color;
+        if (mode == 1) return vec3(color.r * 2.5, color.r * 0.4, 1.0 - color.r);
+        if (mode == 2) {
+            float pulse = 0.5 + 0.5 * sin(uTime * 4.0);
+            return (length(color) > 0.1) ? color * vec3(0.0, 1.0, 0.9) + vec3(0.9, 0.1, 0.9) * pulse * 0.5 : color * vec3(0.0, 1.0, 0.9);
+        }
+        if (mode == 3) { // Tie-Dye Swirl
+            vec2 p = uv * 3.0;
+            for(int i=1; i<4; i++){
+                float val = float(i);
+                p.x += 0.3 / val * sin(val * 3.0 * p.y + uTime + 0.3 * val) + 0.5;
+                p.y += 0.3 / val * sin(val * 3.0 * p.x + uTime + 0.3 * val + 10.0) + 0.5;
+            }
+            vec3 tieDye = 0.5 + 0.5 * cos(uTime + p.xyx + vec3(0,2,4));
+            return color * tieDye * 4.0;
+        }
+        if (mode == 4) return mix(vec3(1.0, 0.5, 0.1), vec3(0.1, 0.8, 0.9), 0.5 + 0.5 * sin(uTime * 2.0 + uv.y * 5.0)) * color * 2.5;
+        if (mode == 5) return mix(vec3(0.1, 0.2, 1.0), vec3(0.7, 0.0, 1.0), 0.5 + 0.5 * cos(uTime * 1.5 + length(uv - 0.5) * 15.0)) * color * 3.0;
+        if (mode == 6) return mix(vec3(1.0, 0.1, 0.0), vec3(1.0, 0.8, 0.0), uv.y + 0.2 * sin(uTime + uv.x * 10.0)) * color * 4.0;
+        if (mode == 7) return mix(vec3(0.2, 1.0, 0.4), vec3(0.0, 1.0, 1.0), 0.5 + 0.5 * sin(uTime * 0.5 + uv.x * 3.0 + uv.y * 2.0)) * color * 2.5;
+        if (mode == 8) return mix(vec3(1.0, 0.0, 0.5), vec3(0.0, 0.5, 1.0), 0.5 + 0.5 * sin(uTime * 8.0 + uv.x * 20.0)) * color * 3.0;
+        if (mode == 9) return mix(vec3(0.1, 0.2, 0.1), vec3(0.5, 1.0, 0.0), 0.5 + 0.5 * sin(uTime * 12.0 + length(uv) * 30.0)) * color * 3.5;
+        if (mode == 10) return mix(vec3(0.05, 0.0, 0.1), vec3(0.5, 0.8, 1.0), pow(0.5 + 0.5 * sin(uTime * 2.0), 4.0) * brightness) * color * 5.0;
+        if (mode == 11) return (mix(vec3(0.8, 0.8, 0.9), vec3(0.7, 0.4, 0.2), uv.y) + step(0.95, fract(uv.y * 20.0 + uTime * 5.0))) * color * 2.0;
+        return color;
+    }
+
+    void main() {
+        vec2 uv = vUv;
+        if (uVisualMode == 2 || uVisualMode == 4) uv = escherTile(vUv, uTiling);
+
+        vec3 texColor = texture2D(uTexture, uv).rgb;
+        float b = (texColor.r + texColor.g + texColor.b) / 3.0;
+
+        // Fading Visual Algorithms
+        vec3 resPrev = applyAlgorithm(uPrevVisualMode, uv, texColor, b);
+        vec3 resNext = applyAlgorithm(uVisualMode, uv, texColor, b);
+        vec3 finalAlgColor = mix(resPrev, resNext, uVisualEase);
+
+        // Fading Color Palettes
+        vec3 colPrev = applyPalette(finalAlgColor, uPrevColorMode, b, uv);
+        vec3 colNext = applyPalette(finalAlgColor, uColorMode, b, uv);
+        
+        gl_FragColor = vec4(mix(colPrev, colNext, uColorEase), 1.0);
+    }
+</script>
+
+<script>
+    const isRemote = window.location.search.includes('mode=remote');
+    const LERP_SPEED = 0.08;
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    // --- MODE 1: REMOTE CONTROLLER WINDOW ---
+    if (isRemote) {
+        document.title = "VantaNode // CONTROLLER";
+        document.getElementById('app-root').innerHTML = `
+            <div class="remote-body">
+                <div class="mb-10 border-b border-gray-900 pb-6">
+                    <h1 class="text-xs font-bold tracking-[0.4em] uppercase text-cyan-400">VANTA_CORE REMOTE</h1>
+                    <p class="text-[9px] text-gray-700 mt-2">CROSS_DOMAIN_BRIDGE: ACTIVE</p>
+                </div>
+
+                <div class="slider-group">
+                    <label>Edge Sensitivity (Canny)</label>
+                    <input type="range" data-param="edgeThreshold" min="0" max="1" step="0.001" value="0.5">
+                </div>
+
+                <div class="slider-group">
+                    <label>Escher Symmetery Tiling</label>
+                    <input type="range" data-param="tiling" min="1" max="12" step="0.01" value="1">
+                </div>
+
+                <div class="slider-group">
+                    <label>ASCII Character Density</label>
+                    <input type="range" data-param="asciiSize" min="1" max="50" step="0.1" value="10">
+                </div>
+
+                <div class="slider-group">
+                    <label>3D Warp Amplitude</label>
+                    <input type="range" data-param="depth" min="0" max="12" step="0.01" value="1.5">
+                </div>
+
+                <div class="slider-group">
+                    <label>Visual Engine (Fading Transitions)</label>
+                    <select data-param="visualMode">
+                        <option value="0">Strict Edge Detection</option>
+                        <option value="1">Monospace Character Matrix</option>
+                        <option value="2">Escher Symmetry Ornament</option>
+                        <option value="3">3D Topographic Mesh</option>
+                        <option value="4">Hyper-Feedback Glitch</option>
+                        <option value="5">Liquid Wave Ripple</option>
+                        <option value="6">Atmospheric Mist</option>
+                        <option value="7">Ethereal Plasma Fluid</option>
+                        <option value="8">Temporal Interlace (Scanline)</option>
+                        <option value="9">Kinetic Data Mosh (Subtle)</option>
+                        <option value="10">Analog Signal Drift</option>
+                    </select>
+                </div>
+
+                <div class="slider-group">
+                    <label>Chrominance Palettes</label>
+                    <select data-param="colorMode">
+                        <option value="0">Monochrome Silver</option>
+                        <option value="1">Infrared Thermal</option>
+                        <option value="2">Cyber-Neon Pulse</option>
+                        <option value="3">Psycho-Acid (Tie-Dye)</option>
+                        <option value="4">Solar Glitch (Orange/Teal)</option>
+                        <option value="5">Interstellar Plasma</option>
+                        <option value="6">Nuclear Sunset</option>
+                        <option value="7">Neon Aurora</option>
+                        <option value="8">Nebula Glitch</option>
+                        <option value="9">Radioactive Moss</option>
+                        <option value="10">Deep Void Pulse</option>
+                        <option value="11">Chrome Horizon</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-10">
+                    <button id="reset-btn" class="bg-gray-900 border border-gray-800 text-[10px] p-3 uppercase tracking-widest text-gray-400 hover:text-white">Reset Mesh</button>
+                    <button id="toggle-auto" class="bg-gray-900 border border-gray-800 text-[10px] p-3 uppercase tracking-widest text-gray-400 hover:text-white">Auto-Tilt On/Off</button>
+                </div>
+            </div>
+        `;
+
+        document.querySelectorAll('[data-param]').forEach(el => {
+            el.oninput = (e) => {
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'PARAM_UPDATE',
+                        key: e.target.dataset.param,
+                        value: parseFloat(e.target.value)
+                    }, "*");
+                }
+            };
+        });
+
+        document.getElementById('reset-btn').onclick = () => window.opener?.postMessage({ type: 'CMD', val: 'RESET' }, "*");
+        document.getElementById('toggle-auto').onclick = () => window.opener?.postMessage({ type: 'CMD', val: 'AUTO_TILT' }, "*");
+
+    } 
+    
+    // --- MODE 2: VISUALIZER ENGINE ---
+    else {
+        document.getElementById('app-root').innerHTML = `
+            <div id="status-bar">LIVE_CORE: INITIALIZING...</div>
+            <a id="ui-trigger" onclick="launchRemote()">[ Launch External Remote ]</a>
+            <video id="video" style="display:none" autoplay playsinline></video>
+            <canvas id="tracking-canvas" width="32" height="32" style="display:none"></canvas>
+        `;
+
+        let scene, camera, renderer, video, texture, mesh, uniforms, trackingCtx;
+        let isDragging = false, prevMouseX = 0, prevMouseY = 0;
+
+        const params = {
+            edgeThreshold: { current: 0.5, target: 0.5 },
+            tiling: { current: 1, target: 1 },
+            asciiSize: { current: 10, target: 10 },
+            depth: { current: 1.5, target: 1.5 },
+            visualMode: 0,
+            prevVisualMode: 0,
+            visualEase: { current: 1.0, target: 1.0 },
+            colorMode: 0,
+            prevColorMode: 0,
+            colorEase: { current: 1.0, target: 1.0 },
+            autoTilt: false,
+            trackingPos: { x: 0, y: 0 }
+        };
+
+        window.launchRemote = function() {
+            const w = 380, h = 850;
+            const left = (screen.width/2)-(w/2);
+            const top = (screen.height/2)-(h/2);
+            window.open(window.location.href + '?mode=remote', 'VantaControl', `width=${w},height=${h},top=${top},left=${left},resizable=yes`);
+        };
+
+        window.addEventListener('message', (e) => {
+            const data = e.data;
+            if (data.type === 'PARAM_UPDATE') {
+                const { key, value } = data;
+                if (params[key] !== undefined) {
+                    if (typeof params[key] === 'object' && params[key].hasOwnProperty('target')) {
+                        params[key].target = value;
+                    } else {
+                        if (key === 'colorMode' && value !== params.colorMode) {
+                            params.prevColorMode = params.colorMode;
+                            params.colorEase.current = 0;
+                            if (uniforms) uniforms.uPrevColorMode.value = params.prevColorMode;
+                        }
+                        if (key === 'visualMode' && value !== params.visualMode) {
+                            params.prevVisualMode = params.visualMode;
+                            params.visualEase.current = 0;
+                            if (uniforms) uniforms.uPrevVisualMode.value = params.prevVisualMode;
+                        }
+                        params[key] = value;
+                        if(uniforms) {
+                            if(key === 'visualMode') uniforms.uVisualMode.value = value;
+                            if(key === 'colorMode') uniforms.uColorMode.value = value;
+                        }
+                    }
+                }
+            } else if (data.type === 'CMD') {
+                if (data.val === 'RESET') resetCamera();
+                if (data.val === 'AUTO_TILT') params.autoTilt = !params.autoTilt;
+            }
+        });
+
+        // Robust Grid-Based ASCII Character Atlas Texture
+        function createAsciiAtlas() {
+            const canvas = document.createElement('canvas');
+            const chars = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+            const cols = 12;
+            const rows = 8;
+            const size = 128; // Resolution per character
+            canvas.width = size * cols; // 1536
+            canvas.height = size * rows; // 1024
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = `bold ${size * 0.9}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            
+            for (let i = 0; i < chars.length; i++) {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                ctx.fillText(chars[i], col * size + size / 2, row * size + size / 2);
+            }
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.minFilter = THREE.NearestFilter;
+            tex.magFilter = THREE.NearestFilter;
+            tex.needsUpdate = true;
+            return tex;
+        }
+
+        async function init() {
+            video = document.getElementById('video');
+            trackingCtx = document.getElementById('tracking-canvas').getContext('2d');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+                video.srcObject = stream;
+                video.play();
+                setupThree();
+                animate();
+            } catch (err) {
+                document.getElementById('status-bar').innerText = "ERROR: WEBCAM_DENIED";
+            }
+        }
+
+        function setupThree() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
+            camera.position.z = 700;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+
+            texture = new THREE.VideoTexture(video);
+            
+            uniforms = {
+                uTexture: { value: texture },
+                uAsciiAtlas: { value: createAsciiAtlas() },
+                uTime: { value: 0.0 },
+                uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                uEdgeThreshold: { value: params.edgeThreshold.current },
+                uTiling: { value: params.tiling.current },
+                uVisualMode: { value: params.visualMode },
+                uPrevVisualMode: { value: params.prevVisualMode },
+                uVisualEase: { value: params.visualEase.current },
+                uColorMode: { value: params.colorMode },
+                uPrevColorMode: { value: params.prevColorMode },
+                uColorEase: { value: params.colorEase.current },
+                uAsciiSize: { value: params.asciiSize.current },
+                uDepth: { value: params.depth.current }
+            };
+
+            const geo = new THREE.PlaneBufferGeometry(window.innerWidth * 1.6, window.innerHeight * 1.6, 256, 256);
+            const mat = new THREE.ShaderMaterial({
+                uniforms,
+                vertexShader: document.getElementById('vertexShader').textContent,
+                fragmentShader: document.getElementById('fragmentShader').textContent,
+                side: THREE.DoubleSide
+            });
+
+            mesh = new THREE.Mesh(geo, mat);
+            scene.add(mesh);
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth/window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+            });
+
+            window.addEventListener('wheel', (e) => {
+                camera.position.z = Math.max(200, Math.min(2000, camera.position.z + e.deltaY));
+            }, { passive: true });
+
+            window.addEventListener('contextmenu', (e) => e.preventDefault());
+            window.addEventListener('mousedown', (e) => { if(e.target.tagName === 'CANVAS') { isDragging = true; prevMouseX = e.clientX; prevMouseY = e.clientY; }});
+            window.addEventListener('mousemove', (e) => {
+                if(isDragging) {
+                    mesh.rotation.y += (e.clientX - prevMouseX) * 0.005;
+                    mesh.rotation.x += (e.clientY - prevMouseY) * 0.005;
+                    prevMouseX = e.clientX; prevMouseY = e.clientY;
+                }
+            });
+            window.addEventListener('mouseup', () => isDragging = false);
+        }
+
+        function resetCamera() {
+            camera.position.z = 700;
+            mesh.rotation.set(0, 0, 0);
+        }
+
+        function trackSubject() {
+            if(!video.readyState) return;
+            trackingCtx.drawImage(video, 0, 0, 32, 32);
+            const data = trackingCtx.getImageData(0, 0, 32, 32).data;
+            let tw = 0, wx = 0, wy = 0;
+            for(let i=0; i<1024; i++) {
+                let b = (data[i*4]+data[i*4+1]+data[i*4+2])/3;
+                if(b > 75) { let w = b*b; tw += w; wx += (i%32)*w; wy += Math.floor(i/32)*w; }
+            }
+            if(tw > 0) {
+                params.trackingPos.x = lerp(params.trackingPos.x, (wx/tw/32)-0.5, 0.05);
+                params.trackingPos.y = lerp(params.trackingPos.y, (wy/tw/32)-0.5, 0.05);
+            }
+        }
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            uniforms.uTime.value = time / 1000.0;
+
+            if (params.autoTilt && !isDragging) {
+                trackSubject();
+                mesh.rotation.y = lerp(mesh.rotation.y, -params.trackingPos.x * 0.6, 0.05);
+                mesh.rotation.x = lerp(mesh.rotation.x, params.trackingPos.y * 0.6, 0.05);
+            }
+            
+            // Smoothing for params
+            params.edgeThreshold.current = lerp(params.edgeThreshold.current, params.edgeThreshold.target, LERP_SPEED);
+            params.tiling.current = lerp(params.tiling.current, params.tiling.target, LERP_SPEED);
+            params.asciiSize.current = lerp(params.asciiSize.current, params.asciiSize.target, LERP_SPEED);
+            params.depth.current = lerp(params.depth.current, params.depth.target, LERP_SPEED);
+            
+            params.colorEase.current = lerp(params.colorEase.current, 1.0, 0.04);
+            params.visualEase.current = lerp(params.visualEase.current, 1.0, 0.04);
+
+            uniforms.uEdgeThreshold.value = params.edgeThreshold.current;
+            uniforms.uTiling.value = params.tiling.current;
+            uniforms.uAsciiSize.value = params.asciiSize.current;
+            uniforms.uDepth.value = params.depth.current;
+            
+            uniforms.uColorEase.value = params.colorEase.current;
+            uniforms.uVisualEase.value = params.visualEase.current;
+
+            if (Math.random() > 0.98) document.getElementById('status-bar').innerText = "LIVE_IO: " + ["SYNC_OK", "ATLAS_STABLE", "CORE_UP", "SIGNAL_LOCK"][Math.floor(Math.random()*4)];
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    }
+</script>
+</body>
+</html>
