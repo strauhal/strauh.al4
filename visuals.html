@@ -310,6 +310,13 @@
                     </select>
                 </div>
 
+                <div class="slider-group">
+                    <label>Video Input Source</label>
+                    <select id="camera-select">
+                        <option value="">Loading Cameras...</option>
+                    </select>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4 mt-10">
                     <button id="reset-btn" class="bg-gray-900 border border-gray-800 text-[10px] p-3 uppercase tracking-widest text-gray-400 hover:text-white">Reset Mesh</button>
                     <button id="toggle-auto" class="bg-gray-900 border border-gray-800 text-[10px] p-3 uppercase tracking-widest text-gray-400 hover:text-white">Auto-Tilt On/Off</button>
@@ -331,6 +338,32 @@
 
         document.getElementById('reset-btn').onclick = () => window.opener?.postMessage({ type: 'CMD', val: 'RESET' }, "*");
         document.getElementById('toggle-auto').onclick = () => window.opener?.postMessage({ type: 'CMD', val: 'AUTO_TILT' }, "*");
+
+        // Enumerate available cameras
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+            const camSelect = document.getElementById('camera-select');
+            if (!camSelect) return;
+            camSelect.innerHTML = '';
+            const videoInputs = devices.filter(d => d.kind === 'videoinput');
+            
+            if (videoInputs.length === 0) {
+                camSelect.innerHTML = '<option value="">No cameras found</option>';
+                return;
+            }
+            
+            videoInputs.forEach((cam, index) => {
+                const opt = document.createElement('option');
+                opt.value = cam.deviceId;
+                opt.text = cam.label || `Camera ${index + 1}`;
+                camSelect.appendChild(opt);
+            });
+        }).catch(err => console.error("Error enumerating devices:", err));
+
+        document.getElementById('camera-select').onchange = (e) => {
+            if (window.opener) {
+                window.opener.postMessage({ type: 'CMD', val: 'SWITCH_CAMERA', deviceId: e.target.value }, "*");
+            }
+        };
 
     } 
     
@@ -396,6 +429,7 @@
             } else if (data.type === 'CMD') {
                 if (data.val === 'RESET') resetCamera();
                 if (data.val === 'AUTO_TILT') params.autoTilt = !params.autoTilt;
+                if (data.val === 'SWITCH_CAMERA') switchCamera(data.deviceId);
             }
         });
 
@@ -524,6 +558,24 @@
             if(tw > 0) {
                 params.trackingPos.x = lerp(params.trackingPos.x, (wx/tw/32)-0.5, 0.05);
                 params.trackingPos.y = lerp(params.trackingPos.y, (wy/tw/32)-0.5, 0.05);
+            }
+        }
+
+        async function switchCamera(deviceId) {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { deviceId: { exact: deviceId }, width: 1280, height: 720 }, 
+                    audio: false 
+                });
+                video.srcObject = stream;
+                await video.play();
+                document.getElementById('status-bar').innerText = "LIVE_CORE: CAMERA SWITCHED";
+            } catch (err) {
+                console.error("Camera switch failed", err);
+                document.getElementById('status-bar').innerText = "ERROR: CAMERA_SWITCH_FAILED";
             }
         }
 
