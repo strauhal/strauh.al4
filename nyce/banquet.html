@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>strauh.al/nyce/banquet</title>
+
+    <!-- Open Graph Meta Tags (for iMessage, Facebook, etc.) -->
+    <meta property="og:title" content="strauh.al/nyce/banquet">
+    <meta property="og:description" content="description.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/portraits/wedding1.png">
+    <meta property="og:url" content="https://strauh.al/nyce/banquet">
+    <meta property="og:type" content="website">
+
+
+    
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="../style.css">
+    
+    <!-- import the webpage's javascript file -->
+    <script src="/script.js" defer></script>
+
+    <style>
+      img {
+          width: 50vw;
+          margin-left: 10vw;
+      }
+
+      @media (max-width: 900px) {
+
+  img {
+    width: 80vw;
+  }
+
+    </style>
+
+  </head>  
+  <body>
+    <!-- <h1>strauh.al</h1> -->
+    <h1><a href="https://strauh.al">strauh.al</a>/nyce/banquet
+
+      <h2>you are formally invited to: <br>ernest strauhal and megan nyce's wedding banquet.  <br>
+      <a href="banquet/california.html"><br>click here for the california banquet</a>
+      <a href="banquet/new_mexico.html"><br><br>click here for the new mexico banquet</a>
+      <br><br>
+
+      <img id="hueImage" src="https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/portraits/wedding1.png">
+
+    </a><br><br>
+
+    </h1>
+
+    <script>
+const img = document.getElementById('hueImage');
+
+// Detect mobile
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+// Track state
+let currentHue = 0;
+let targetHue = 0;
+let currentSaturation = 150;
+let targetSaturation = 150;
+let userActive = false;
+let userTimeout;
+let hueIncreasing = true;
+
+// Ease factor — higher = faster change
+const ease = 0.2;
+
+// Animate loop
+function animate() {
+  currentHue += (targetHue - currentHue) * ease;
+  currentSaturation += (targetSaturation - currentSaturation) * ease;
+  img.style.filter = `hue-rotate(${currentHue}deg) saturate(${currentSaturation}%)`;
+  requestAnimationFrame(animate);
+}
+animate();
+
+// Reset user interaction
+function resetUserTimer() {
+  userActive = true;
+  clearTimeout(userTimeout);
+  userTimeout = setTimeout(() => {
+    userActive = false;
+  }, 1000); // User remains "active" for 1s after input
+}
+
+// Throttle helper
+function throttle(fn, limit) {
+  let lastCall = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - lastCall >= limit) {
+      lastCall = now;
+      fn.apply(this, args);
+    }
+  };
+}
+
+// Scroll-based hue (MOBILE)
+if (isMobile) {
+  window.addEventListener(
+    'scroll',
+    throttle(() => {
+      const scrollY = window.scrollY;
+      targetHue = scrollY % 360;
+      targetSaturation = 200;
+      resetUserTimer();
+    }, 50), // Run max every 50ms
+    { passive: true }
+  );
+} else {
+  // Mousemove-based hue (DESKTOP)
+  window.addEventListener(
+    'mousemove',
+    throttle((e) => {
+      const xRatio = e.clientX / window.innerWidth;
+      const yRatio = e.clientY / window.innerHeight;
+      targetHue = Math.floor(xRatio * 360);
+      targetSaturation = 100 + yRatio * 100;
+      resetUserTimer();
+    }, 30) // Max every 30ms
+  );
+}
+
+// Auto hue oscillation when idle
+setInterval(() => {
+  if (!userActive) {
+    const step = isMobile ? 2 : 4; // slower on mobile
+    if (hueIncreasing) {
+      targetHue += step;
+      if (targetHue >= 360) {
+        targetHue = 360;
+        hueIncreasing = false;
+      }
+    } else {
+      targetHue -= step;
+      if (targetHue <= 0) {
+        targetHue = 0;
+        hueIncreasing = true;
+      }
+    }
+    targetSaturation = 150;
+  }
+}, 60); // smoother but slower interval for performance
+
+</script>
+
+    <!-- <script src="https://button.glitch.me/button.js" defer></script> -->
+  </body>
+</html>
+
