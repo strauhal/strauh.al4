@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEEKER 2 — local folder renamer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    body { font-family: 'Inter', sans-serif; background:#111827; color:#f3f4f6; }
+    .container-card { max-width:1100px; margin:2rem auto; padding:2rem; background:#1f2937;
+        border-radius:1rem; box-shadow:0 10px 25px -5px rgba(0,0,0,.5); border:1px solid #374151; }
+    .spin { border:4px solid #374151; border-top:4px solid #3b82f6; border-radius:50%;
+        width:22px; height:22px; animation:spin 1s linear infinite; display:none; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .table-wrap { max-height:52vh; overflow:auto; border:1px solid #374151; border-radius:.5rem; }
+    .table-wrap::-webkit-scrollbar { width:8px; height:8px; }
+    .table-wrap::-webkit-scrollbar-thumb { background:#4b5563; border-radius:4px; }
+    input[type=text], input[type=password], input[type=number] { background:#374151; color:#f3f4f6; border:1px solid #4b5563; }
+    input:focus { border-color:#3b82f6; outline:none; }
+    .st-wait{color:#9ca3af} .st-run{color:#60a5fa} .st-ok{color:#34d399} .st-err{color:#f87171} .st-skip{color:#a78bfa} .st-done{color:#34d399}
+    td .newname { width:100%; background:#111827; border:1px solid #374151; color:#f3f4f6; padding:4px 6px; border-radius:4px; font-size:12px; }
+    .badge{font-size:10px;padding:1px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em}
+    .b-artwork{background:#065f46;color:#d1fae5}.b-photograph{background:#1e3a8a;color:#dbeafe}
+    .b-screenshot{background:#4b5563;color:#e5e7eb}.b-diagram{background:#78350f;color:#fef3c7}
+    .b-illustration{background:#5b21b6;color:#ede9fe}.b-comic{background:#831843;color:#fce7f3}
+    .b-document{background:#374151;color:#e5e7eb}.b-other{background:#374151;color:#9ca3af}
+    button:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div class="container-card">
+    <h1 class="text-3xl font-extrabold text-blue-400 mb-1 text-center tracking-tight">SEEKER 2</h1>
+    <p class="text-gray-400 mb-5 text-center text-sm">Pick a local folder → the AI identifies each image → review the proposed names → rename the files in place.<br>
+       <span class="text-gray-500">Chrome/Edge only (uses the File System Access API). Nothing is uploaded except each image to the Gemini API you configure.</span></p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div class="md:col-span-2">
+            <label class="block text-xs text-gray-400 mb-1">Gemini API key (stored locally in your browser)</label>
+            <input type="password" id="apiKey" class="w-full p-2 rounded-lg text-sm" placeholder="AIza…">
+        </div>
+        <div>
+            <label class="block text-xs text-gray-400 mb-1">Model</label>
+            <select id="model" class="w-full p-2 rounded-lg text-sm bg-gray-700 border border-gray-600 text-gray-100">
+                <option value="gemini-2.5-pro">gemini-2.5-pro (most accurate)</option>
+                <option value="gemini-2.5-flash" selected>gemini-2.5-flash (fast)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 mb-3">
+        <button id="pickBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow">1 · Choose Folder</button>
+        <button id="genBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow" disabled>2 · Generate Names</button>
+        <button id="applyBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow" disabled>3 · Apply Renames</button>
+        <button id="stopBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow" style="display:none">Stop</button>
+        <button id="undoBtn" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2.5 px-4 rounded-xl shadow" disabled>Download undo script</button>
+        <div id="spin" class="spin"></div>
+        <label class="flex items-center gap-2 text-sm text-gray-400 ml-auto"><input type="checkbox" id="skipNamed" checked> skip already-named</label>
+        <label class="flex items-center gap-2 text-sm text-gray-400">concurrency <input type="number" id="conc" value="4" min="1" max="8" class="w-14 p-1 rounded text-sm"></label>
+    </div>
+    <div id="progress" class="text-sm text-gray-400 mb-3 h-5"></div>
+
+    <div class="table-wrap">
+        <table class="min-w-full text-sm">
+            <thead class="sticky top-0 bg-gray-900 text-gray-400 text-xs uppercase">
+                <tr><th class="text-left px-3 py-2">Original</th><th class="text-left px-3 py-2">Type</th>
+                    <th class="text-left px-3 py-2">Proposed name (editable)</th><th class="text-left px-3 py-2">Status</th></tr>
+            </thead>
+            <tbody id="rows" class="divide-y divide-gray-700"></tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const apiKeyEl=$('apiKey'), modelEl=$('model'), rowsEl=$('rows'), progressEl=$('progress'), spinEl=$('spin');
+const pickBtn=$('pickBtn'), genBtn=$('genBtn'), applyBtn=$('applyBtn'), stopBtn=$('stopBtn'), undoBtn=$('undoBtn');
+
+apiKeyEl.value = localStorage.getItem('seeker_key') || '';
+apiKeyEl.addEventListener('change', ()=>localStorage.setItem('seeker_key', apiKeyEl.value.trim()));
+
+const IMG_EXT = /\.(jpe?g|png|gif|webp|bmp|tiff?|heic|avif)$/i;
+let dirHandle=null, items=[], running=false, applied=[];
+
+const SCHEMA = { type:"OBJECT", properties:{
+    category:{type:"STRING", description:"One of: artwork, photograph, screenshot, diagram, illustration, comic, document, other. 'artwork' ONLY for a fine-art painting/print/sculpture/drawing you can attribute."},
+    artist:{type:"STRING", description:"Creator's full name, or 'Unknown' if not certain."},
+    title:{type:"STRING", description:"Official title if certain; else empty."},
+    year:{type:"STRING", description:"Year or range (e.g. 1879, 1599-1600, c. 1440, 1970s) or 'Unknown'."},
+    description:{type:"STRING", description:"Short Title-Case description for non-artworks, <=10 words, no slashes/colons (e.g. 'Abstract Blue Glowing Figure')."}
+  }, required:["category","artist","title","year","description"],
+  propertyOrdering:["category","artist","title","year","description"] };
+
+const SYS = "You are a precise art & image archivist. Accuracy over specificity — NEVER guess an artist, title or year. Only use category 'artwork' with a real artist/title when you positively recognise the exact piece; otherwise pick the correct category and give a plain visual description.";
+
+// ---- helpers ----
+const known = v => v && !/^\s*(unknown|untitled|n\/?a|none)\s*$/i.test(v.trim());
+function sanitize(base){            // keep colons/parens/accents (they match the target format); strip only what a filename truly can't hold
+    return base.replace(/[\/\\]/g,'-').replace(/[<>"|?*\x00-\x1f]/g,'').replace(/\s+/g,' ').replace(/[. ]+$/,'').trim().slice(0,190);
+}
+function buildName(d){
+    const cat=(d.category||'other').toLowerCase();
+    if(cat==='artwork'){
+        let s = known(d.title)?d.title.trim():'Untitled';
+        if(known(d.artist)) s+=' by '+d.artist.trim();
+        if(known(d.year)) s+=' ('+d.year.trim()+')';
+        return s;
+    }
+    const prefix={photograph:'Photograph',screenshot:'Screenshot',diagram:'Diagram',illustration:'Illustration',comic:'Comic',document:'Document',other:'Image'}[cat]||'Image';
+    let s = prefix+' - '+(known(d.description)?d.description.trim():(known(d.title)?d.title.trim():'Untitled'));
+    if(known(d.artist)) s+=' by '+d.artist.trim();
+    return s;
+}
+const looksNamed = n => / by .+\(.+\)\.[a-z0-9]+$/i.test(n) || /^(Photograph|Screenshot|Diagram|Illustration|Comic|Document|Image) - /i.test(n);
+function ext(name){ const m=name.match(/\.[a-z0-9]+$/i); return m?m[0].toLowerCase().replace('.jpeg','.jpeg'):''; }
+function blobToBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onloadend=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); }); }
+
+async function fetchRetry(url, opts, tries=4){
+    for(let i=0;i<tries;i++){
+        let resp;
+        try{ resp=await fetch(url,opts); }catch(e){ if(i===tries-1) throw e; await sleep(2**i*800); continue; }
+        if(resp.ok) return resp;
+        if((resp.status===429||resp.status>=500)&&i<tries-1){ await sleep(2**i*1000+Math.random()*800); continue; }
+        throw new Error('API '+resp.status+': '+(await resp.text()).slice(0,120));
+    }
+}
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+async function identify(base64, mime, oldName){
+    const model=modelEl.value, key=apiKeyEl.value.trim();
+    if(!key) throw new Error('Set your Gemini API key first.');
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+    const payload={ contents:[{role:"user",parts:[
+        {text:`Classify and name this image. Its current filename (may or may not be a useful hint): "${oldName}"`},
+        {inlineData:{mimeType:mime,data:base64}} ]}],
+        systemInstruction:{parts:[{text:SYS}]},
+        generationConfig:{responseMimeType:"application/json",responseSchema:SCHEMA,temperature:0} };
+    const resp=await fetchRetry(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const j=await resp.json();
+    const txt=j?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!txt) throw new Error(j?.error?.message||'No response text');
+    return JSON.parse(txt.replace(/^```json\n?|\n?```$/g,''));
+}
+
+// ---- 1. pick folder ----
+pickBtn.onclick = async ()=>{
+    if(!window.showDirectoryPicker){ alert('This needs Chrome or Edge (File System Access API).'); return; }
+    try{ dirHandle = await window.showDirectoryPicker({mode:'readwrite'}); }
+    catch(e){ return; }
+    items=[]; rowsEl.innerHTML='';
+    for await (const entry of dirHandle.values()){
+        if(entry.kind==='file' && IMG_EXT.test(entry.name)) items.push({handle:entry, name:entry.name});
+    }
+    items.sort((a,b)=>a.name.localeCompare(b.name));
+    items.forEach(it=>{
+        const tr=document.createElement('tr'); tr.className='hover:bg-gray-700/40';
+        tr.innerHTML=`<td class="px-3 py-2 text-gray-300 max-w-[280px] truncate" title="${it.name}">${it.name}</td>
+            <td class="px-3 py-2"><span class="badge b-other" data-cat>—</span></td>
+            <td class="px-3 py-2"><input class="newname" data-new value=""></td>
+            <td class="px-3 py-2 st-wait" data-st>waiting</td>`;
+        rowsEl.appendChild(tr); it.row=tr;
+    });
+    progressEl.textContent=`${items.length} images found in "${dirHandle.name}".`;
+    genBtn.disabled = items.length===0;
+    applyBtn.disabled = true; undoBtn.disabled = true;
+};
+
+// ---- 2. generate names (concurrent) ----
+genBtn.onclick = async ()=>{
+    running=true; genBtn.disabled=true; pickBtn.disabled=true; applyBtn.disabled=true;
+    stopBtn.style.display='inline-block'; spinEl.style.display='block';
+    const skipNamed=$('skipNamed').checked; let done=0, ok=0;
+    const queue=items.slice(); const conc=Math.max(1,Math.min(8,+$('conc').value||4));
+    async function worker(){
+        while(running && queue.length){
+            const it=queue.shift();
+            const stEl=it.row.querySelector('[data-st]'), catEl=it.row.querySelector('[data-cat]'), newEl=it.row.querySelector('[data-new]');
+            if(skipNamed && looksNamed(it.name)){ stEl.textContent='skipped (already named)'; stEl.className='px-3 py-2 st-skip'; newEl.value=it.name; done++; continue; }
+            stEl.textContent='analysing…'; stEl.className='px-3 py-2 st-run';
+            try{
+                const file=await it.handle.getFile();
+                if(!/^image\//.test(file.type)){ throw new Error('unsupported type ('+(file.type||'?')+')'); }
+                const b64=await blobToBase64(file);
+                const data=await identify(b64,file.type,it.name);
+                it.data=data;
+                const base=sanitize(buildName(data));
+                newEl.value= base + ext(it.name);
+                catEl.textContent=(data.category||'other'); catEl.className='badge b-'+((data.category||'other').toLowerCase());
+                stEl.textContent='ready'; stEl.className='px-3 py-2 st-ok'; ok++;
+            }catch(e){
+                stEl.textContent='error: '+e.message.slice(0,50); stEl.className='px-3 py-2 st-err';
+            }
+            progressEl.textContent=`Analysed ${++done} / ${items.length}.`;
+            await sleep(120);
+        }
+    }
+    await Promise.all(Array.from({length:conc},worker));
+    running=false; stopBtn.style.display='none'; spinEl.style.display='none';
+    pickBtn.disabled=false; genBtn.disabled=false; applyBtn.disabled = ok===0;
+    progressEl.textContent=`Done — ${ok} names proposed. Review/edit, then Apply.`;
+};
+
+stopBtn.onclick = ()=>{ running=false; progressEl.textContent='Stopping…'; };
+
+// ---- 3. apply renames in place ----
+applyBtn.onclick = async ()=>{
+    if(!confirm('Rename the files on disk to the proposed names? (An undo script is offered afterwards.)')) return;
+    applyBtn.disabled=true; pickBtn.disabled=true; genBtn.disabled=true; spinEl.style.display='block';
+    applied=[]; const used=new Set(items.map(i=>i.name.toLowerCase())); let n=0;
+    for(const it of items){
+        const stEl=it.row.querySelector('[data-st]'); const newEl=it.row.querySelector('[data-new]');
+        let target=newEl.value.trim();
+        if(!target || target===it.name || stEl.className.includes('st-skip')) continue;
+        // collision-safe within the folder
+        const dot=target.lastIndexOf('.'); const stem=dot>0?target.slice(0,dot):target; const e=dot>0?target.slice(dot):'';
+        let cand=target, k=2; while(used.has(cand.toLowerCase())){ cand=`${stem} (${k++})${e}`; }
+        target=cand;
+        try{
+            if(it.handle.move){ await it.handle.move(target); }
+            else{
+                const nh=await dirHandle.getFileHandle(target,{create:true});
+                const w=await nh.createWritable(); await w.write(await it.handle.getFile()); await w.close();
+                await dirHandle.removeEntry(it.name);
+            }
+            used.delete(it.name.toLowerCase()); used.add(target.toLowerCase());
+            applied.push({from:it.name,to:target}); it.name=target;
+            stEl.textContent='renamed'; stEl.className='px-3 py-2 st-done'; n++;
+        }catch(e){ stEl.textContent='rename failed: '+e.message.slice(0,40); stEl.className='px-3 py-2 st-err'; }
+    }
+    spinEl.style.display='none'; pickBtn.disabled=false; genBtn.disabled=false;
+    undoBtn.disabled = applied.length===0;
+    progressEl.textContent=`Renamed ${n} file(s).`;
+};
+
+// ---- undo script ----
+undoBtn.onclick = ()=>{
+    const lines=['#!/bin/bash','# run inside the folder to revert SEEKER 2 renames',
+        ...applied.slice().reverse().map(a=>`mv -n ${JSON.stringify(a.to)} ${JSON.stringify(a.from)}`)];
+    const blob=new Blob([lines.join('\n')+'\n'],{type:'text/plain'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='seeker2_undo.sh'; a.click();
+};
+</script>
+</body>
+</html>
