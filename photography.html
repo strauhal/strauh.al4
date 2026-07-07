@@ -23,6 +23,15 @@
     <script src="script.js" defer></script>
 
     <style type="text/css">
+      #randomizeBtn {
+        color: #fff;
+        text-decoration: underline;
+        font-size: 14pt;
+      }
+      #randomizeBtn:hover {
+        background-color: #fff;
+        cursor: pointer;
+      }
       #searchBar {
             width: 33vw;
             box-sizing: border-box;
@@ -54,7 +63,7 @@
 
     <p><input type="text" id="searchBar" placeholder="search..." autocomplete="off"></p>
     <i><p>search for terms like portrait, street, aerial, or subject name</p></i>
-
+    <p><a:hover id="randomizeBtn">randomize order</a></p>
 
 
 
@@ -1118,6 +1127,37 @@
         photoLinksCache = Array.from(tempDiv.querySelectorAll('p a'));
       }
       collectLinks();
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+      }
+
+      document.getElementById('randomizeBtn').addEventListener('click', function() {
+        searchBar.value = ''; // Clear search bar for clarity
+
+        const linksToShuffle = [...photoLinksCache];
+        shuffleArray(linksToShuffle);
+
+        contentDiv.innerHTML = '';
+
+        const newHeader = document.createElement('h2');
+        newHeader.textContent = 'randomized order';
+        contentDiv.appendChild(newHeader);
+
+        const newParagraph = document.createElement('p');
+        const fragment = document.createDocumentFragment();
+
+        linksToShuffle.forEach(link => {
+          fragment.appendChild(link.cloneNode(true));
+          fragment.appendChild(document.createElement('br'));
+        });
+
+        newParagraph.appendChild(fragment);
+        contentDiv.appendChild(newParagraph);
+      });
 
       searchBar.addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
