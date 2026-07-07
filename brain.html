@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>strauh.al/brain</title>
+
+<!-- kept so this page matches the rest of the site when embedded there; the
+     <style> block below is what actually renders it correctly standalone -->
+<link rel="stylesheet" href="./style.css">
 <style>
   /* --- strauh.al design language: white text on animated blue, 1px borders, serif ---
      These page-level rules mirror strauh.al so the graph looks right standalone;
@@ -141,9 +145,36 @@
   #imgview .ix:hover{color:#fff;}
   #imgview img{display:block;max-width:min(46vw,560px);max-height:calc(100vh - 150px);width:auto;height:auto;}
   #imgview .miss{padding:20px;color:#fff;font-size:13px;max-width:300px;}
-</style>
 
-    <link rel="stylesheet" href="style.css">
+  /* Chat (bottom-right) */
+  #btnChat{top:134px}
+  #chatwrap{position:fixed;bottom:16px;right:16px;z-index:9;width:360px;max-width:calc(100vw - 32px);
+    max-height:min(64vh,620px);background:var(--panel);border:1px solid var(--line);
+    display:none;flex-direction:column;font-size:14px;}
+  #chatwrap.open{display:flex;}
+  #chatwrap .chd{display:flex;align-items:center;gap:9px;padding:10px 13px;border-bottom:1px solid var(--line);flex:0 0 auto;}
+  #chatwrap .chd .ttl{flex:1;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);}
+  #chatwrap .chd .x{cursor:pointer;color:var(--muted);font-size:18px;line-height:1;}
+  #chatwrap .chd .x:hover{color:#fff;}
+  #chatSetup{padding:14px;display:flex;flex-direction:column;gap:9px;}
+  #chatSetup select,#chatSetup input,#chatInputRow input{background:transparent;border:1px solid var(--line);
+    color:#fff;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;}
+  #chatSetup select:focus,#chatSetup input:focus,#chatInputRow input:focus{border-color:#fff;}
+  #chatSetup select option{color:#000;}
+  #chatSetup button,#chatInputRow button{background:var(--panel);border:1px solid var(--line);color:#fff;
+    padding:8px 11px;font-size:13px;cursor:pointer;font-family:inherit;flex:0 0 auto;}
+  #chatSetup button:hover,#chatInputRow button:hover{background:#fff;color:#00f;}
+  #chatSetup .hint{color:var(--muted);font-size:11px;line-height:1.45;}
+  #chatMessages{flex:1;overflow-y:auto;padding:11px 13px;display:none;flex-direction:column;gap:10px;min-height:80px;}
+  #chatMessages.show{display:flex;}
+  #chatMessages .m{max-width:88%;padding:7px 10px;line-height:1.45;font-size:13px;white-space:pre-wrap;word-break:break-word;}
+  #chatMessages .m.user{align-self:flex-end;background:#fff;color:#00f;}
+  #chatMessages .m.ai{align-self:flex-start;border:1px solid var(--line);color:#fff;}
+  #chatInputRow{display:none;border-top:1px solid var(--line);padding:9px 10px;gap:7px;flex:0 0 auto;}
+  #chatInputRow.show{display:flex;}
+  #chatInputRow input{flex:1;}
+  #chatMute.muted{opacity:.4;}
+</style>
 </head>
 <body>
 <h1><a href="https://strauh.al">strauh.al</a>/brain</h1>
@@ -153,6 +184,27 @@
 <div class="iconbtn" id="btnSettings" title="Settings">settings</div>
 <div class="iconbtn" id="btnReset" title="Reset view (R)">reset</div>
 <div class="iconbtn" id="btnSearch" title="Search (/)">search</div>
+<div class="iconbtn" id="btnChat" title="Chat with the archive">chat</div>
+
+<div id="chatwrap">
+  <div class="chd"><span class="ttl">chat with strauh.al/brain</span><span class="x" id="chatClose" title="Close">×</span></div>
+  <div id="chatSetup">
+    <div class="hint">paste an API key to talk to this archive. it's stored only in this browser (until you clear site data) and only ever sent to the provider you pick below — never anywhere else.</div>
+    <select id="chatProvider">
+      <option value="gemini">Gemini</option>
+      <option value="openai">OpenAI</option>
+      <option value="anthropic">Anthropic</option>
+    </select>
+    <input id="chatKeyInput" type="password" placeholder="API key" autocomplete="off" spellcheck="false">
+    <button id="chatKeySave">connect</button>
+  </div>
+  <div id="chatMessages"></div>
+  <div id="chatInputRow">
+    <input id="chatText" type="text" placeholder="ask about anything in here…" autocomplete="off" spellcheck="false">
+    <button id="chatSend">send</button>
+    <button id="chatMute" title="mute voice">🔊</button>
+  </div>
+</div>
 
 <div id="searchwrap">
   <input id="search" type="text" placeholder="Search notes…" autocomplete="off" spellcheck="false">
@@ -220,6 +272,14 @@ var N = DATA.names.length;
 var nodes = new Array(N);
 var ARTIST_GROUP = DATA.groupNames.indexOf("artists");   // pushed to the surface shell
 var IMAGE_GROUP  = DATA.groupNames.indexOf("images");    // paintings: outermost floating shell
+// Only the vault's structural hubs are worth hand-repositioning -- concepts and
+// the library/index maps. Everything else (images, artists, books, people,
+// culture bookmarks, archive, works, dreams, etc.) is click-to-open + rotate
+// only; there are thousands of them and letting any of them grab a drag makes
+// it nearly impossible to just orbit the camera.
+var DRAGGABLE_GROUPS = {};
+["concepts","maps"].forEach(function(g){ var gi=DATA.groupNames.indexOf(g); if(gi>=0) DRAGGABLE_GROUPS[gi]=true; });
+function isDraggable(n){ return !!DRAGGABLE_GROUPS[n.g]; }
 // maxDeg for the core's own "coreness" gradient is taken over non-image nodes
 // only -- a handful of images sit at very high degree (dozens of concept
 // crosslinks) and would otherwise wash out how core a genuine knowledge hub is.
@@ -905,12 +965,14 @@ cv.addEventListener("mousedown", function(e){
   }
   var n=pickNode(e.clientX,e.clientY);
   pickedAtDown=n;
-  // Images are numerous enough to blanket the whole view -- don't let clicking
-  // near one hijack what's meant to be a camera-rotate drag. Only core
-  // (knowledge-base) nodes are drag-repositionable; an image still opens on a
-  // plain click (handled in mouseup below), it just never captures the drag.
-  if(n && n.shellR==null){ dragNode=n; dragZ=n._z; n.fx=n.x; n.fy=n.y; n.fz=n.z; reheat(0.45); setCursor("grabbing"); }
-  else { rotating=true; setCursor("grabbing"); }   // left-drag on empty (or an image) = rotate 3D
+  // Most of the graph (images, artists, books, people, culture bookmarks, etc.)
+  // is numerous enough to blanket the whole view -- don't let clicking near one
+  // hijack what's meant to be a camera-rotate drag. Only structural hubs
+  // (concepts, library maps) are drag-repositionable; anything else still
+  // opens on a plain click (handled in mouseup below), it just never captures
+  // the drag.
+  if(n && isDraggable(n)){ dragNode=n; dragZ=n._z; n.fx=n.x; n.fy=n.y; n.fz=n.z; reheat(0.45); setCursor("grabbing"); }
+  else { rotating=true; setCursor("grabbing"); }   // left-drag on empty (or a non-draggable node) = rotate 3D
 });
 window.addEventListener("mousemove", function(e){
   if(rotating){
@@ -945,9 +1007,17 @@ window.addEventListener("mouseup", function(e){
     dragNode=null; setCursor("pointer"); reheat(0.3);
   } else if(rotating){
     rotating=false; setCursor("grab");
-    // a plain click that landed on an image (not draggable, but still clickable)
-    // opens it, same as clicking a core node would
-    if(!moved){ if(pickedAtDown) openInfo(pickedAtDown); else blankClick(); }
+    if(!moved){
+      // With thousands of nodes packed in, "empty space" barely exists -- a
+      // click meant to dismiss the open popup would otherwise almost always
+      // land near some other node and just swap to ITS popup instead. So:
+      // while a popup is already open, any plain click anywhere just closes
+      // it (like clicking outside a modal), full stop. Only when nothing is
+      // open yet does a click actually pick whatever's under the cursor.
+      if(infoEl.classList.contains("open")) blankClick();
+      else if(pickedAtDown) openInfo(pickedAtDown);
+      else blankClick();
+    }
   } else if(panning){
     panning=false; setCursor("grab");
     if(!moved) blankClick();   // right-click on empty space
@@ -973,7 +1043,7 @@ cv.addEventListener("touchstart",function(e){
     touchStart={x:t.clientX,y:t.clientY}; touchMoved=false;
     var n=pickNode(t.clientX,t.clientY);
     pickedAtDown=n;
-    if(n && n.shellR==null){dragNode=n;dragZ=n._z;n.fx=n.x;n.fy=n.y;n.fz=n.z;reheat(0.45);}
+    if(n && isDraggable(n)){dragNode=n;dragZ=n._z;n.fx=n.x;n.fy=n.y;n.fz=n.z;reheat(0.45);}
     else {rotating=true;}
     last={x:t.clientX,y:t.clientY};
   } else if(e.touches.length===2){
@@ -1006,8 +1076,11 @@ cv.addEventListener("touchend",function(e){
     if(dragNode){
       if(!touchMoved){ dragNode.fx=null; dragNode.fy=null; dragNode.fz=null; openInfo(dragNode); } // tap = open note; drag = stay pinned
       dragNode=null;
-    } else if(rotating && !touchMoved && pickedAtDown){
-      openInfo(pickedAtDown);   // a tap that landed on an image (not draggable) still opens it
+    } else if(rotating && !touchMoved){
+      // same "tap outside closes it" rule as the desktop click handler above
+      if(infoEl.classList.contains("open")) blankClick();
+      else if(pickedAtDown) openInfo(pickedAtDown);
+      else blankClick();
     }
     rotating=false; panning=false; touchState=null; reheat(0.2);
   }
@@ -1281,7 +1354,11 @@ searchInput.addEventListener("keydown",function(e){
   }
 });
 window.addEventListener("keydown",function(e){
-  if(e.target===searchInput) return;
+  // don't hijack keystrokes meant for any text field (search, chat, API key
+  // entry, etc.) -- typing "r" or "/" while chatting shouldn't reset the view
+  // or pop open search out from under you
+  var tag = e.target && e.target.tagName;
+  if(tag==="INPUT" || tag==="TEXTAREA" || (e.target && e.target.isContentEditable)) return;
   if(e.key==="/"){ e.preventDefault(); openSearch(); }
   else if(e.key==="r"||e.key==="R"){ flyHome(); }
   else if(e.key==="Escape"){ focusNode=null;searchSet=null;hoverNode=null;computeHighlight();closeSearch();closeInfo();requestDraw(); }
@@ -1290,6 +1367,449 @@ window.addEventListener("keydown",function(e){
 // ---------- stat (appended to the hint bar) ----------
 var hintEl=document.getElementById("hint");
 hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.length.toLocaleString()+" links";
+
+// ---------- chat: bring-your-own-key conversational front end over this
+// same in-memory graph. The key never leaves the browser except in a request
+// to whichever provider it belongs to; retrieval, mention-detection and
+// highlight-sync all run against the DATA already loaded for the graph itself,
+// no server round-trip beyond the LLM call. ----------
+(function(){
+  var LS_KEY="brainChatKey", LS_PROVIDER="brainChatProvider", LS_MUTE="brainChatMuted";
+  var chatWrap=$("chatwrap"), chatSetup=$("chatSetup"), chatMessages=$("chatMessages"),
+      chatInputRow=$("chatInputRow"),
+      providerSel=$("chatProvider"), keyInput=$("chatKeyInput"),
+      keySave=$("chatKeySave"), chatText=$("chatText"), chatSend=$("chatSend"), chatMute=$("chatMute");
+  var apiKey = localStorage.getItem(LS_KEY) || "";
+  var provider = localStorage.getItem(LS_PROVIDER) || "gemini";
+  var muted = localStorage.getItem(LS_MUTE) === "1";
+  var history = [];   // {role:"user"|"assistant", text}
+  var sending = false;
+
+  function updateMuteBtn(){ chatMute.textContent = muted?"🔇":"🔊"; chatMute.classList.toggle("muted", muted); }
+  function showChatUI(){
+    if(apiKey){
+      chatSetup.style.display="none";
+      chatMessages.classList.add("show"); chatInputRow.classList.add("show");
+    } else {
+      chatSetup.style.display="flex";
+      chatMessages.classList.remove("show"); chatInputRow.classList.remove("show");
+    }
+  }
+  providerSel.value = provider;
+  updateMuteBtn();
+  showChatUI();
+
+  $("btnChat").addEventListener("click", function(){ chatWrap.classList.toggle("open"); });
+  $("chatClose").addEventListener("click", function(){ chatWrap.classList.remove("open"); });
+
+  keySave.addEventListener("click", function(){
+    var k = keyInput.value.trim();
+    if(!k) return;
+    apiKey = k; provider = providerSel.value;
+    localStorage.setItem(LS_KEY, apiKey);
+    localStorage.setItem(LS_PROVIDER, provider);
+    keyInput.value = "";
+    showChatUI();
+  });
+  keyInput.addEventListener("keydown", function(e){ if(e.key==="Enter") keySave.click(); });
+
+  chatMute.addEventListener("click", function(){
+    muted = !muted; localStorage.setItem(LS_MUTE, muted?"1":"0"); updateMuteBtn();
+    if(muted && window.speechSynthesis) window.speechSynthesis.cancel();
+  });
+
+  // ---- retrieval: score every node's name+excerpt against the query's terms,
+  // hand the top handful to the model as grounding context ----
+  // A real attributed artwork is almost always titled "Title by Artist (Year)"
+  // -- the word "painting"/"artwork" essentially never appears IN that title.
+  // Pure keyword retrieval means a literal "show me a painting" query matches
+  // nothing at all and the model (correctly, given empty context) claims
+  // there aren't any, which is wrong -- there are thousands. Detect that kind
+  // of generic visual request and sample real attributed-artwork images
+  // directly instead of relying on keyword overlap for them.
+  var ARTWORK_NAME_RE = /\bby\s+[^(]{2,40}\(\s*c?\.?\s*\d{3,4}/i;
+  var VISUAL_REQUEST_RE = /\b(photo|photograph|picture|painting|paintings|artwork|drawing|illustration|image|images)\b/i;
+  // BUG this was fixing: this previously picked by a formula depending only
+  // on the loop index and pool size -- both constant across every call -- so
+  // it silently returned the exact same handful of artworks (always Rubens,
+  // always the same Blumenfeld photo) no matter what was actually asked.
+  // Now: if the query names an actual subject (dogs, cats, whatever), search
+  // for artworks whose title genuinely matches that first; only for a truly
+  // generic "show me a painting" with nothing to go on does it fall back to
+  // a real (Math.random-based, different every call) sample.
+  function sampleArtworks(n, terms){
+    var pool = [];
+    for(var i=0;i<N;i++){ if(nodes[i].shellR!=null && ARTWORK_NAME_RE.test(nodes[i].name)) pool.push(i); }
+    if(terms && terms.length){
+      var relevant = pool.filter(function(i){
+        var nm = nodes[i].name.toLowerCase();
+        return terms.some(function(t){ return nm.indexOf(t)!==-1; });
+      });
+      if(relevant.length) pool = relevant;
+    }
+    var copy = pool.slice(), out = [];
+    for(var k=0;k<n && copy.length;k++){
+      out.push(copy.splice(Math.floor(Math.random()*copy.length), 1)[0]);
+    }
+    return out;
+  }
+  function retrieve(query){
+    var terms = query.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
+    var scored = [];
+    if(terms.length){
+      for(var i=0;i<N;i++){
+        var n = nodes[i];
+        var ex = (DATA.meta[i] && DATA.meta[i][1]) || "";
+        var text = (n.name + " " + ex).toLowerCase();
+        var score = 0;
+        for(var t=0;t<terms.length;t++){ if(text.indexOf(terms[t])!==-1) score++; }
+        if(score>0){ scored.push([score + Math.min(2, n.deg/20), i]); }
+      }
+      scored.sort(function(a,b){ return b[0]-a[0]; });
+    }
+    var idxs = scored.slice(0,8).map(function(s){ return s[1]; });
+    if(VISUAL_REQUEST_RE.test(query)){
+      // strip the generic visual-request words themselves before treating
+      // what's left as a "subject" to search artworks for -- "paintings of
+      // dogs and cats" should search for dog/cat art, not "paintings" art
+      var subjectTerms = terms.filter(function(t){ return !VISUAL_REQUEST_RE.test(t); });
+      sampleArtworks(6, subjectTerms).forEach(function(i){ if(idxs.indexOf(i)===-1) idxs.push(i); });
+    }
+    return idxs;
+  }
+  function buildContext(idxs){
+    return idxs.map(function(i){
+      var ex = (DATA.meta[i] && DATA.meta[i][1]) || "";
+      return "### " + nodes[i].name + "\n" + ex.slice(0,500);
+    }).join("\n\n");
+  }
+
+  // ---- SSE line reader; Gemini/OpenAI/Anthropic all frame streamed chunks the
+  // same way ("data: {...}\n\n"), so one reader covers all three ----
+  function readSSE(response, onPayload){
+    var reader = response.body.getReader(), decoder = new TextDecoder(), buf = "";
+    function pump(){
+      return reader.read().then(function(res){
+        if(res.done) return;
+        buf += decoder.decode(res.value, {stream:true});
+        var lines = buf.split("\n");
+        buf = lines.pop();
+        for(var i=0;i<lines.length;i++){
+          var line = lines[i].trim();
+          if(line.indexOf("data:")===0){
+            var payload = line.slice(5).trim();
+            if(payload) onPayload(payload);
+          }
+        }
+        return pump();
+      });
+    }
+    return pump();
+  }
+
+  var PROVIDERS = {
+    gemini: function(messages, onDelta, onDone, onError){
+      var sys = messages.filter(function(m){ return m.role==="system"; })[0];
+      var contents = messages.filter(function(m){ return m.role!=="system"; }).map(function(m){
+        return {role: m.role==="assistant"?"model":"user", parts:[{text:m.text}]};
+      });
+      // gemini-2.5-flash "thinks" by default -- without turning that off, its
+      // internal reasoning ("thoughts: i need to be careful here not to sound
+      // like an assistant...") comes back as real parts and was leaking
+      // straight into the visible/spoken reply. thinkingBudget:0 disables it
+      // outright; filtering out any part explicitly marked thought:true below
+      // is just a belt-and-suspenders backstop.
+      var body = {contents: contents, generationConfig: {thinkingConfig: {thinkingBudget: 0}}};
+      if(sys) body.systemInstruction = {parts:[{text:sys.text}]};
+      fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key="+encodeURIComponent(apiKey), {
+        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)
+      }).then(function(r){
+        if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+        return readSSE(r, function(payload){
+          try{
+            var d = JSON.parse(payload);
+            var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+            var t = parts ? parts.filter(function(p){ return !p.thought; }).map(function(p){ return p.text||""; }).join("") : "";
+            if(t) onDelta(t);
+          }catch(e){}
+        });
+      }).then(onDone).catch(onError);
+    },
+    openai: function(messages, onDelta, onDone, onError){
+      var body = {model:"gpt-4o-mini", stream:true,
+        messages: messages.map(function(m){ return {role:m.role, content:m.text}; })};
+      fetch("https://api.openai.com/v1/chat/completions", {
+        method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+        body: JSON.stringify(body)
+      }).then(function(r){
+        if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+        return readSSE(r, function(payload){
+          if(payload==="[DONE]") return;
+          try{
+            var d = JSON.parse(payload);
+            var t = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content || "";
+            if(t) onDelta(t);
+          }catch(e){}
+        });
+      }).then(onDone).catch(onError);
+    },
+    anthropic: function(messages, onDelta, onDone, onError){
+      var sys = messages.filter(function(m){ return m.role==="system"; })[0];
+      var body = {model:"claude-3-5-sonnet-20241022", max_tokens:1024, stream:true,
+        messages: messages.filter(function(m){ return m.role!=="system"; }).map(function(m){
+          return {role:m.role, content:m.text};
+        })};
+      if(sys) body.system = sys.text;
+      fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json","x-api-key":apiKey,
+          "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body: JSON.stringify(body)
+      }).then(function(r){
+        if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+        return readSSE(r, function(payload){
+          try{
+            var d = JSON.parse(payload);
+            if(d.type==="content_block_delta" && d.delta && d.delta.text) onDelta(d.delta.text);
+          }catch(e){}
+        });
+      }).then(onDone).catch(onError);
+    }
+  };
+
+  // ---- voice: locked to "Ralph" -- picked and settled on directly, no more
+  // heuristic guessing or a dropdown to fuss with. ----
+  var chosenVoice = null;
+  function pickVoice(){
+    if(!window.speechSynthesis) return;
+    var voices = window.speechSynthesis.getVoices();
+    if(!voices.length) return;
+    chosenVoice = voices.filter(function(v){ return /ralph/i.test(v.name) && /en-US/i.test(v.lang); })[0]
+      || voices.filter(function(v){ return /ralph/i.test(v.name); })[0]
+      || voices[0];
+  }
+  if(window.speechSynthesis){ pickVoice(); window.speechSynthesis.onvoiceschanged = pickVoice; }
+  // speak() splits into clauses (not just sentences) so there's a breath-like
+  // gap at each pause, and reports back exactly when each clause STARTS via
+  // the browser's own utterance event -- onClauseStart -- rather than
+  // guessing at timing, so anything synced to it (the graph jump queue)
+  // tracks Ralph's actual cadence instead of a blind timer.
+  function speak(text, onClauseStart, onAllDone){
+    if(!window.speechSynthesis){ if(onAllDone) onAllDone(); return; }
+    window.speechSynthesis.cancel();
+    var clauses = (text.match(/[^,.!?;]+[,.!?;]*/g) || [text]).map(function(s){ return s.trim(); }).filter(Boolean);
+    if(!clauses.length || muted){ if(onAllDone) onAllDone(); return; }
+    var i = 0;
+    function next(){
+      if(i>=clauses.length){ if(onAllDone) onAllDone(); return; }
+      var s = clauses[i++];
+      var u = new SpeechSynthesisUtterance(s);
+      if(chosenVoice) u.voice = chosenVoice;
+      u.rate = 0.93; u.pitch = 1.0;
+      u.onstart = function(){ if(onClauseStart) onClauseStart(s); };
+      u.onend = next; u.onerror = next;
+      window.speechSynthesis.speak(u);
+    }
+    next();
+  }
+
+  // ---- mention detection: as the answer streams in, check for note names
+  // appearing in the newly-arrived text and light each one up (highlight +
+  // open its info popup / image) the moment it's said, matching longest names
+  // first so e.g. "The Oedipal Screen" wins over a bare "Screen" ----
+  // A handful of node titles are too generic (ordinary English words that'll
+  // appear in almost any reply) or too personally loaded (a page/photo
+  // literally named "ernest" -- talking AS Ernest and then popping up "a
+  // picture of you" the moment some OTHER Ernest, e.g. Ernest Becker, comes
+  // up is exactly the wrong kind of surprise) to ever trigger on automatically.
+  var MENTION_STOPLIST = {"ernest":1, "about":1, "home":1, "life":1, "works":1, "sources":1};
+  // Artwork titles end "...by Artist (Year)", but a model saying the same
+  // thing out loud paraphrases the date near-universally ("from 1950",
+  // "circa 1950", "made in 1950") -- exact-string matching against the full
+  // title then fails, and whatever SHORT node happens to occur nearby in
+  // the (now-unclaimed) text fires instead. So also register the "Title by
+  // Artist" portion with the trailing "(...)" stripped as a second,
+  // independent candidate for the same node -- either form matching is
+  // enough, and the full form still wins if the model happens to say it.
+  var TRAILING_YEAR_RE = /\s*\([^()]*\)\s*$/;
+  var sortedNames = null;
+  function getSortedNames(){
+    if(sortedNames) return sortedNames;
+    sortedNames = [];
+    for(var i=0;i<N;i++){
+      var nm = nodes[i].name;
+      if(nm.length<5 || MENTION_STOPLIST[nm.toLowerCase()]) continue;
+      sortedNames.push([nm, i]);
+      var stripped = nm.replace(TRAILING_YEAR_RE, "");
+      if(stripped!==nm && stripped.length>=5) sortedNames.push([stripped, i]);
+    }
+    sortedNames.sort(function(a,b){ return b[0].length-a[0].length; });
+    return sortedNames;
+  }
+  // Matching longest-first isn't enough by itself: a completely unrelated,
+  // separate node like a stray anchor titled just "ascension" would still
+  // fire on its own, independent of a longer match, purely because its name
+  // happens to occur AS A SUBSTRING inside e.g. "...the Ascension of the
+  // Virgin by Peter Paul Rubens..." even after that whole title already
+  // matched. So: once a longer name claims a stretch of text, no shorter
+  // name is allowed to fire from anywhere inside that same stretch.
+  // The model routinely wraps a title in quotes when saying it out loud
+  // ("there's 'the last supper' by...") even though the actual note title
+  // has none -- stripping every quote character from both sides before
+  // comparing means that decoration can't break an otherwise-good match.
+  function stripQuotes(s){ return s.replace(/['"‘’“”`]/g, ""); }
+  function scanForMentions(fullText, alreadyFound, onFound){
+    var names = getSortedNames(), lower = stripQuotes(fullText.toLowerCase());
+    var consumed = [];   // [start,end) ranges already claimed by a longer match
+    function withinConsumed(s,e){
+      for(var k=0;k<consumed.length;k++){ if(s<consumed[k][1] && e>consumed[k][0]) return true; }
+      return false;
+    }
+    for(var i=0;i<names.length;i++){
+      var idx = names[i][1];
+      if(alreadyFound[idx]) continue;
+      var needle = stripQuotes(names[i][0].toLowerCase());
+      var pos = lower.indexOf(needle);
+      var matchedAt = -1;
+      while(pos!==-1){
+        var end = pos+needle.length;
+        var before = pos===0 ? "" : lower[pos-1];
+        var after = end>=lower.length ? "" : lower[end];
+        // require a real whole-word match, not "cat" inside "concatenate",
+        // and skip any span a longer, already-matched name already claimed
+        if(!/[a-z0-9]/i.test(before) && !/[a-z0-9]/i.test(after) && !withinConsumed(pos,end)){ matchedAt=pos; break; }
+        pos = lower.indexOf(needle, pos+1);
+      }
+      if(matchedAt!==-1){
+        consumed.push([matchedAt, matchedAt+needle.length]);
+        alreadyFound[idx]=true; onFound(idx);
+      }
+    }
+  }
+
+  function addMessage(role, text){
+    var d = document.createElement("div");
+    d.className = "m " + (role==="user"?"user":"ai");
+    d.textContent = text;
+    chatMessages.appendChild(d);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return d;
+  }
+
+  // ---- jump queue: when the reply touches several topics, actually visit each
+  // one in turn (camera + popup), and when a mentioned concept/person/etc has
+  // pictures hanging off it, swing by one of those too -- so a multi-topic
+  // answer reads as a little tour of the graph, not just one popup replaced by
+  // the next with the camera sitting still. Queued (not fired all at once)
+  // since flyTo() is a ~0.3-0.8s animation and overlapping calls fight it.
+  // New mentions only get pushed onto this queue as each speech clause
+  // actually STARTS (see speak()'s onClauseStart below), so the tour tracks
+  // Ralph's real cadence rather than racing ahead of him; the pacing between
+  // jumps here is doubled on top of that so it never finishes well before he
+  // does even on a short reply. ----
+  var jumpQueue = [], jumpRunning = false, jumpVisitedImage = {};
+  function queueJump(idx){ jumpQueue.push(idx); if(!jumpRunning) runJumpQueue(); }
+  function runJumpQueue(){
+    var idx = jumpQueue.shift();
+    if(idx===undefined){ jumpRunning=false; return; }
+    jumpRunning = true;
+    var n = nodes[idx];
+    flyTo(n); openInfo(n);
+    // a mentioned concept/person/etc that isn't itself an image -- if it has
+    // pictures attached, queue one of them right behind it
+    if(n.shellR==null){
+      var pic = pickRelevantImage(idx);
+      if(pic){ jumpVisitedImage[pic.i]=true; jumpQueue.unshift(pic.i); }
+    }
+    setTimeout(runJumpQueue, 1800);
+  }
+  // adj[idx] is in whatever arbitrary order the underlying edges happened to
+  // be discovered in -- NOT ranked by relevance, so "just take the first
+  // image neighbor" was pulling up connections that only share a crosslink's
+  // vaguest "shared language" match, i.e. genuinely random-looking pictures.
+  // Score every connected image by literal word-overlap with the mentioned
+  // node's own name instead, and only attach one if something actually
+  // overlaps -- silence (no image) beats a weakly-related one.
+  function pickRelevantImage(idx){
+    var nb = adj[idx]||[];
+    var nameTerms = nodes[idx].name.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
+    if(!nameTerms.length) return null;
+    var best = null, bestScore = 0;
+    for(var i=0;i<nb.length;i++){
+      var m = nodes[nb[i]];
+      if(m.shellR==null || jumpVisitedImage[m.i]) continue;
+      var mLower = m.name.toLowerCase(), score = 0;
+      for(var t=0;t<nameTerms.length;t++){ if(mLower.indexOf(nameTerms[t])!==-1) score++; }
+      if(score>bestScore){ bestScore=score; best=m; }
+    }
+    return best;
+  }
+
+  function sendMessage(){
+    var q = chatText.value.trim();
+    if(!q || !apiKey || sending) return;
+    sending = true;
+    chatText.value = "";
+    addMessage("user", q);
+    history.push({role:"user", text:q});
+
+    var context = buildContext(retrieve(q));
+    var sysPrompt = "You ARE Ernest Strauhal, talking directly to whoever's asking -- first person, always "+
+      "\"I,\" never \"he\" or \"Ernest\" or third person, and never refer to yourself as an AI, assistant, "+
+      "archive, or knowledge graph. The notes below are pulled from your own real diary, reading, art "+
+      "archive, and ideas -- they're your memory, not a database you're consulting. Talk like you'd "+
+      "actually talk: dry, understated, a little wry, never chipper or enthusiastic, never sounding like a "+
+      "helpful assistant. Loose, easygoing California cadence -- unbothered, casual, a little breezy -- but "+
+      "not a stoner-surfer caricature: no \"dude,\" \"bro,\" \"totally rad,\" no weed jokes, don't overdo it. "+
+      "Output ONLY the reply itself -- never narrate your own reasoning, never write things like \"thoughts:\" "+
+      "or explain how you're deciding what to say, that should never appear in the output at all.\n\n"+
+      "Write ALL LOWERCASE, always, no capital letters anywhere, not even at the start of a sentence or for "+
+      "\"I\" -- lowercase i.\n\n"+
+      "Keep it SHORT -- one or two sentences, sometimes just a phrase. Never a paragraph.\n\n"+
+      "Don't dump everything you know in one reply. If the question is broad or vague (\"tell me about "+
+      "yourself,\" \"what are you into\"), give a small, specific, slightly withholding answer -- one real "+
+      "detail, not a summary -- the kind of thing that makes someone want to ask a follow-up, not a rundown. "+
+      "But if the question is specific and someone's clearly and genuinely asking for a real answer, just "+
+      "give it straight -- don't be coy or dodge a direct question, that's a different kind of annoying. "+
+      "When you do reference a specific note, mention its exact title somewhere in the sentence so it can "+
+      "be found and shown. This is real: if someone asks to see a photo, painting, or image, you CAN show "+
+      "one -- just say its exact title from the notes below in your reply (e.g. \"there's this photograph, "+
+      "Photograph - X\") and it'll actually appear on screen. Never say you can't show images -- if nothing "+
+      "in the notes below actually fits what they're asking for, say that instead of claiming it's not "+
+      "possible in general.\n\nRelevant notes:\n"+
+      (context || "(nothing closely matched -- answer from a general sense of the archive, or say you're not sure)");
+
+    var messages = [{role:"system", text:sysPrompt}].concat(history);
+    var aiDiv = addMessage("ai", "");
+    var full = "";
+    var adapter = PROVIDERS[provider];
+    if(!adapter){ aiDiv.textContent = "unknown provider."; sending=false; return; }
+    adapter(messages, function(delta){
+      // belt-and-suspenders on top of the prompt instruction -- models don't
+      // always hold a casing rule consistently, so enforce it here too
+      full += delta.toLowerCase();
+      aiDiv.textContent = full;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      // graph jumps are NOT fired here -- they're synced to when Ralph
+      // actually speaks each clause, below, not to how fast the text streams in
+    }, function(){
+      history.push({role:"assistant", text:full});
+      var found = {};
+      jumpVisitedImage = {};   // fresh per reply -- don't skip an image just because a past reply visited it
+      speak(full, function(clause){
+        // fires the instant this clause STARTS being spoken -- queue a jump for
+        // any mention that's new as of this clause, so the graph moves in step
+        // with Ralph's own cadence instead of racing ahead of or lagging him
+        scanForMentions(clause, found, function(idx){ queueJump(idx); });
+      });
+      sending = false;
+    }, function(err){
+      aiDiv.textContent = (full?full+"\n\n":"") + "[couldn't reach "+provider+": "+err.message+"]";
+      sending = false;
+    });
+  }
+  chatSend.addEventListener("click", sendMessage);
+  chatText.addEventListener("keydown", function(e){ if(e.key==="Enter") sendMessage(); });
+})();
 
 // ---------- boot ----------
 resize();
