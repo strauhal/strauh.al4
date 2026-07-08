@@ -18,6 +18,7 @@
     --line:rgba(255,255,255,0.55);
     --panel:#00f;
     --accent:#fff;
+    --edge:16px;   /* one shared margin for every fixed panel's outer edge */
   }
   *{box-sizing:border-box}
   @keyframes changeColor{0%{background-color:#00f}50%{background-color:#20f}100%{background-color:#00f}}
@@ -38,17 +39,22 @@
   h1 a{pointer-events:auto;}
 
   /* Buttons top-right (text labels) */
-  .iconbtn{position:fixed;right:16px;z-index:6;
+  .iconbtn{position:fixed;right:var(--edge);z-index:6;
     background:var(--panel);border:1px solid var(--line);color:#fff;
     display:flex;align-items:center;justify-content:center;cursor:pointer;
     font-size:15px;padding:5px 13px;white-space:nowrap;}
   .iconbtn:hover{background:#fff;color:#00f;}
-  #btnSettings{top:14px}
-  #btnReset{top:54px}
-  #btnSearch{top:94px}
+  #btnSettings{top:var(--edge)}
+  #btnReset{top:calc(var(--edge) + 40px)}
+  #btnSearch{top:calc(var(--edge) + 80px)}
 
-  /* Settings panel */
-  #panel{position:fixed;top:14px;right:60px;z-index:7;width:288px;max-height:calc(100vh - 28px);
+  /* Settings panel -- sits left of the button column with a clearance wide
+     enough that the two never crowd each other even at narrow widths, and its
+     own max-height leaves the SAME edge margin at the bottom as at the top so
+     it reads as a centred column rather than stretching to fill whatever
+     space happens to be free. */
+  #panel{position:fixed;top:var(--edge);right:calc(var(--edge) + 84px);z-index:7;width:288px;
+    max-height:min(calc(100vh - 2*var(--edge)), 70vh);
     overflow-y:auto;background:var(--panel);border:1px solid var(--line);
     padding:12px 15px 15px;display:none;font-size:14px;}
   #panel.open{display:block}
@@ -73,7 +79,7 @@
   .legend .lg:hover .ct{color:#00f;}
 
   /* Search (fixed width so long paths clip instead of overflowing the page) */
-  #searchwrap{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:7;display:none;
+  #searchwrap{position:fixed;top:var(--edge);left:50%;transform:translateX(-50%);z-index:7;display:none;
     width:min(460px,calc(100vw - 130px));}
   #searchwrap.open{display:block;}
   #search{width:100%;background:var(--panel);border:1px solid var(--line);
@@ -100,8 +106,8 @@
   #hint b{color:#fff;font-weight:400;}
 
   /* Node info popup (top-left) */
-  #info{position:fixed;top:62px;left:16px;z-index:9;width:370px;max-width:calc(100vw - 32px);
-    max-height:calc(100vh - 90px);overflow-y:auto;background:var(--panel);
+  #info{position:fixed;top:62px;left:var(--edge);z-index:9;width:370px;max-width:calc(100vw - 2*var(--edge));
+    max-height:calc(100vh - 62px - var(--edge));overflow-y:auto;background:var(--panel);
     border:1px solid var(--line);display:none;font-size:14px;
     transform:translateY(-6px);opacity:0;transition:opacity .16s ease,transform .16s ease;}
   #info.open{display:block;transform:none;opacity:1;}
@@ -135,8 +141,9 @@
   #info .il:hover,#info .il.on{background:#fff;color:#00f;}
 
   /* image viewer (to the right of the note popup) — same language as #info */
-  #imgview{position:fixed;top:62px;left:402px;z-index:9;max-width:calc(100vw - 418px);
-    max-height:calc(100vh - 90px);background:#00f;border:1px solid var(--line);display:none;}
+  #imgview{position:fixed;top:62px;left:calc(2*var(--edge) + 370px);z-index:9;
+    max-width:calc(100vw - 3*var(--edge) - 370px);
+    max-height:calc(100vh - 62px - var(--edge));background:#00f;border:1px solid var(--line);display:none;}
   #imgview.open{display:block;}
   #imgview .ihd{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid var(--line);}
   #imgview .ittl{flex:1;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -147,9 +154,10 @@
   #imgview .miss{padding:20px;color:#fff;font-size:13px;max-width:300px;}
 
   /* Chat (bottom-right) */
-  #btnChat{top:134px}
-  #chatwrap{position:fixed;bottom:16px;right:16px;z-index:9;width:360px;max-width:calc(100vw - 32px);
-    max-height:min(64vh,620px);background:var(--panel);border:1px solid var(--line);
+  #btnChat{top:calc(var(--edge) + 120px)}
+  #chatwrap{position:fixed;bottom:var(--edge);right:var(--edge);z-index:9;width:360px;
+    max-width:calc(100vw - 2*var(--edge));
+    max-height:min(55vh,560px);background:var(--panel);border:1px solid var(--line);
     display:none;flex-direction:column;font-size:14px;}
   #chatwrap.open{display:flex;}
   #chatwrap .chd{display:flex;align-items:center;gap:9px;padding:10px 13px;border-bottom:1px solid var(--line);flex:0 0 auto;}
@@ -1468,6 +1476,16 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       scored.sort(function(a,b){ return b[0]-a[0]; });
     }
     var idxs = scored.slice(0,8).map(function(s){ return s[1]; });
+    // Be generous about surfacing paintings/photographs even in ordinary
+    // conversation, not only when someone explicitly says "show me" -- but
+    // gated on an actual keyword match (score>0 from the same scoring pass
+    // above), never just tacked on regardless of topic. Images compete for
+    // the top-8 on equal footing with text notes, but a rich prose excerpt
+    // gives a concept/diary entry far more surface area to match a query
+    // than an image's bare title -- so reserve a couple of slots specifically
+    // for the best-scoring images that didn't otherwise make the cut.
+    var topImages = scored.filter(function(s){ return nodes[s[1]].shellR!=null; }).slice(0,2);
+    topImages.forEach(function(s){ if(idxs.indexOf(s[1])===-1) idxs.push(s[1]); });
     if(VISUAL_REQUEST_RE.test(query)){
       // strip the generic visual-request words themselves before treating
       // what's left as a "subject" to search artworks for -- "paintings of
@@ -1477,10 +1495,60 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     }
     return idxs;
   }
-  function buildContext(idxs){
+  // Most notes' excerpts are short (<=900 chars) so slicing the first 500 was
+  // fine. But the few DEEP_EXCERPT notes (diary, sketchbook) are now up to
+  // 20,000 chars specifically so the actual matching passage can be *found* --
+  // and always taking chars[0:500] would still only ever show that passage's
+  // opening lines, never the part that actually matched. Instead: locate
+  // wherever the query's terms actually hit inside the excerpt and take a
+  // window around THAT, falling back to the start only if nothing hit.
+  // NOT just "the earliest match wins" -- generic query words ("about", "with",
+  // "your") show up almost immediately in any sufficiently long text, so the
+  // first pass of this (picking whichever term hit first) kept anchoring on
+  // those instead of the specific, meaningful term ("cafe", "dad") that
+  // actually mattered, several thousand characters later. Instead: find every
+  // occurrence of every distinct query term, then pick the occurrence with the
+  // most OTHER distinct terms clustered near it -- "cafe" and "dad" sitting a
+  // few words apart outscores an isolated "about" with nothing else around it.
+  // Generic filler words are common enough that SEVERAL of them cluster
+  // together purely by chance in almost any stretch of a long personal diary
+  // -- so even the distinct-term-density scoring above kept getting outvoted
+  // by an accidental pile-up of "tell"/"about"/"with"/"your" near the start,
+  // never actually reaching the one place "cafe" and "dad" sit near each
+  // other. Filtering these out before anchoring is what actually fixes it --
+  // only genuinely specific words should get a say in WHERE to look.
+  var GENERIC_TERMS = {"tell":1,"about":1,"you":1,"your":1,"used":1,"with":1,"the":1,"and":1,
+    "that":1,"this":1,"have":1,"has":1,"had":1,"were":1,"was":1,"are":1,"for":1,"from":1,
+    "what":1,"when":1,"where":1,"which":1,"who":1,"how":1,"why":1,"can":1,"could":1,"would":1,
+    "should":1,"will":1,"just":1,"like":1,"know":1,"think":1,"really":1,"much":1,"more":1,
+    "some":1,"any":1,"all":1,"one":1,"get":1,"got":1,"going":1,"go":1,"went":1,"say":1,"said":1};
+  function relevantSlice(ex, terms, maxLen){
+    if(ex.length<=maxLen) return ex;
+    var specific = terms.filter(function(t){ return !GENERIC_TERMS[t]; });
+    if(specific.length) terms = specific;   // only fall back to generic terms if nothing specific was asked
+    var low = ex.toLowerCase(), occ = [], seen = {};
+    terms.forEach(function(t){
+      if(seen[t]) return; seen[t]=true;
+      var p = low.indexOf(t);
+      while(p!==-1){ occ.push({pos:p, term:t}); p = low.indexOf(t, p+1); }
+    });
+    if(!occ.length) return ex.slice(0,maxLen).trim()+" …";
+    var half = maxLen/2, bestPos = occ[0].pos, bestScore = -1;
+    occ.forEach(function(o){
+      var distinct = {};
+      occ.forEach(function(o2){ if(Math.abs(o2.pos-o.pos)<=half) distinct[o2.term]=true; });
+      var score = Object.keys(distinct).length;
+      if(score>bestScore){ bestScore=score; bestPos=o.pos; }
+    });
+    var start = Math.max(0, bestPos - Math.floor(maxLen*0.35));
+    var end = Math.min(ex.length, start+maxLen);
+    var snippet = ex.slice(start,end).trim();
+    return (start>0?"… ":"")+snippet+(end<ex.length?" …":"");
+  }
+  function buildContext(idxs, terms){
     return idxs.map(function(i){
       var ex = (DATA.meta[i] && DATA.meta[i][1]) || "";
-      return "### " + nodes[i].name + "\n" + ex.slice(0,500);
+      return "### " + nodes[i].name + "\n" + relevantSlice(ex, terms||[], 900);
     }).join("\n\n");
   }
 
@@ -1631,6 +1699,7 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
   // independent candidate for the same node -- either form matching is
   // enough, and the full form still wins if the model happens to say it.
   var TRAILING_YEAR_RE = /\s*\([^()]*\)\s*$/;
+  var TRAILING_BY_RE = /\s+by\s+[a-z][^,]*$/i;
   var sortedNames = null;
   function getSortedNames(){
     if(sortedNames) return sortedNames;
@@ -1639,8 +1708,18 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       var nm = nodes[i].name;
       if(nm.length<5 || MENTION_STOPLIST[nm.toLowerCase()]) continue;
       sortedNames.push([nm, i]);
+      // Titles are usually "Description by Artist (Year)" -- the model
+      // reliably says the description when talking naturally but doesn't
+      // always tack the exact " by Artist (Year)" suffix back on, so match
+      // on each successively-shorter real chunk of the title too. Same min
+      // length (5) at every fallback level, not a rising one -- a short but
+      // specific proper-noun title ("Akira", "Crumb") is exactly the case
+      // this fallback exists for; a stricter bar for shorter strings was
+      // silently excluding the single-word titles that needed it the most.
       var stripped = nm.replace(TRAILING_YEAR_RE, "");
       if(stripped!==nm && stripped.length>=5) sortedNames.push([stripped, i]);
+      var descOnly = stripped.replace(TRAILING_BY_RE, "");
+      if(descOnly!==stripped && descOnly.length>=5) sortedNames.push([descOnly, i]);
     }
     sortedNames.sort(function(a,b){ return b[0].length-a[0].length; });
     return sortedNames;
@@ -1752,7 +1831,8 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     addMessage("user", q);
     history.push({role:"user", text:q});
 
-    var context = buildContext(retrieve(q));
+    var qTerms = q.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
+    var context = buildContext(retrieve(q), qTerms);
     var sysPrompt = "You ARE Ernest Strauhal, talking directly to whoever's asking -- first person, always "+
       "\"I,\" never \"he\" or \"Ernest\" or third person, and never refer to yourself as an AI, assistant, "+
       "archive, or knowledge graph. The notes below are pulled from your own real diary, reading, art "+
@@ -1762,6 +1842,13 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       "not a stoner-surfer caricature: no \"dude,\" \"bro,\" \"totally rad,\" no weed jokes, don't overdo it. "+
       "Output ONLY the reply itself -- never narrate your own reasoning, never write things like \"thoughts:\" "+
       "or explain how you're deciding what to say, that should never appear in the output at all.\n\n"+
+      "HARD RULE, no exceptions: never state a specific biographical fact -- where you grew up, family "+
+      "details, a specific past event, a relationship, a date, a place you lived -- unless it is explicitly "+
+      "written in the notes below. Do not infer, guess, round up, or fill in a plausible-sounding detail from "+
+      "general pattern-matching (e.g. a relative's history is NOT your own history -- never blend the two). "+
+      "If a specific fact isn't in the notes and you're not certain of it, say plainly you don't have that "+
+      "written down or aren't sure, rather than answering with something invented. Getting a hard fact wrong "+
+      "is much worse than admitting you don't know.\n\n"+
       "Write ALL LOWERCASE, always, no capital letters anywhere, not even at the start of a sentence or for "+
       "\"I\" -- lowercase i.\n\n"+
       "Keep it SHORT -- one or two sentences, sometimes just a phrase. Never a paragraph.\n\n"+
@@ -1775,7 +1862,13 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       "one -- just say its exact title from the notes below in your reply (e.g. \"there's this photograph, "+
       "Photograph - X\") and it'll actually appear on screen. Never say you can't show images -- if nothing "+
       "in the notes below actually fits what they're asking for, say that instead of claiming it's not "+
-      "possible in general.\n\nRelevant notes:\n"+
+      "possible in general. You don't need to be asked first, either -- if a painting or photograph in the "+
+      "notes below genuinely fits what's being talked about, bring it up on your own, the same way you'd "+
+      "casually gesture at something while telling a story. But only when it actually fits -- naming some "+
+      "unrelated image just to have a picture on screen is worse than not showing one at all.\n\n"+
+      "The same goes for a specific book, movie, or album if one's in the notes below: say the specific "+
+      "work by name (not a vague \"a book about X\") so it actually opens, but only when the conversation is "+
+      "genuinely about it.\n\nRelevant notes:\n"+
       (context || "(nothing closely matched -- answer from a general sense of the archive, or say you're not sure)");
 
     var messages = [{role:"system", text:sysPrompt}].concat(history);
