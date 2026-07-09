@@ -311,7 +311,8 @@ for (var i=0;i<N;i++){
     i:i, name:DATA.names[i], path:DATA.paths[i], g:DATA.groups[i], deg:DATA.deg[i],
     x:0, y:0, z:0, vx:0, vy:0, vz:0, fx:null, fy:null, fz:null,
     r:1, col:groupColor(DATA.groups[i]), unsorted:!!(DATA.unsorted && DATA.unsorted[i]),
-    kbConnected:!!(DATA.kbConnected && DATA.kbConnected[i])
+    kbConnected:!!(DATA.kbConnected && DATA.kbConnected[i]),
+    personal:!!(DATA.personal && DATA.personal[i])
   };
 }
 
@@ -1486,6 +1487,44 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     }
     return out;
   }
+  // Photos of Ernest himself (the archive's own "ernest/" folder, added
+  // specifically -- per its own ernest_pictures.txt -- "for strauh.al/brain
+  // to bring up when asked questions about me"). Filenames are plain camera
+  // junk (IMG_0186 etc.) so keyword retrieval alone would never surface them;
+  // gated tightly on an actual "what do you look like / picture of you" style
+  // ask, not just any message containing the word "you", to avoid becoming
+  // the kind of noise that's worse than not showing a photo at all.
+  var PERSONAL_PHOTO_RE = /(what.{0,15}look like|pictures? of (you|yourself|ernest)|photos? of (you|yourself|ernest)|see (you|your face)|show (me )?(a )?(picture|photo) of (you|yourself|ernest))/i;
+  function samplePersonalPhotos(n){
+    var pool = [];
+    for(var i=0;i<N;i++){ if(nodes[i].personal) pool.push(i); }
+    var copy = pool.slice(), out = [];
+    for(var k=0;k<n && copy.length;k++){
+      out.push(copy.splice(Math.floor(Math.random()*copy.length), 1)[0]);
+    }
+    return out;
+  }
+  // Real gap this closes: pure keyword-overlap retrieval can miss the ONE note
+  // that actually has the answer whenever the question is built around a WRONG
+  // guess ("you went to nyu, right?" shares zero vocabulary with "CCA" and
+  // "SAIC", the true answer) -- so it fell back to an honest but needlessly
+  // vague "i don't have that written down" instead of correcting the record.
+  // For any question that's broadly biographical, always pull in the
+  // "Ernest Strauhal" life note (the vault's own curated bio synthesis)
+  // regardless of keyword overlap, so it's available to correct a wrong
+  // premise, not just confirm a right one.
+  var BIO_TOPIC_RE = /\b(siblings?|brothers?|sisters?|mother|mom|fathers?|dad|parents?|family|grow up|grew up|childhood|born|birthday|age|old are you|schools?|colleges?|universit(y|ies)|studied?|major|degrees?|went to|attend|grad(uate|uated)?|alma mater|jobs?|works?|career|profession|teach(er|ing)?|married|marriage|engaged|fianc|girlfriend|boyfriend|partners?|relationships?|dating|single|live|hometown|piano|god|gods|religion|religious|atheis(t|m)|believ|belief|politic|worldview|values|opinions?|decisions?|decide|intuition|deliberat|afraid|fears?|insecur|confiden|optimis|pessimis|realis(t|m)|absurdis|mbti|enneagram|astrology|self.typ|personality|temperament|laugh|humor|humour|funny|conflict|argu|habits?|regrets?|proudest|proud of|influenc(e|ed)|friends?)\b/i;
+  // The vault has grown a small cluster of short "life" notes that between
+  // them hold most of what a visitor might ask about Ernest directly (bio,
+  // beliefs/temperament, PAS personality result) -- keyword overlap alone
+  // can miss all three for a query anchored on an unfamiliar term or a wrong
+  // premise, so any note in this bundle is unconditionally available once the
+  // query is recognizably personal, not just the single bio note.
+  var BIO_NOTE_PATHS = ["knowledge/wiki/life/Ernest Strauhal.md","knowledge/wiki/life/Beliefs and Temperament.md","knowledge/wiki/life/Personality (PAS).md"];
+  var bioNoteIdxs = BIO_NOTE_PATHS.map(function(p){
+    for(var i=0;i<N;i++){ if(nodes[i].path===p) return i; }
+    return -1;
+  }).filter(function(i){ return i!==-1; });
   function retrieve(query){
     var terms = query.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
     var scored = [];
@@ -1517,6 +1556,16 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       // dogs and cats" should search for dog/cat art, not "paintings" art
       var subjectTerms = terms.filter(function(t){ return !VISUAL_REQUEST_RE.test(t); });
       sampleArtworks(6, subjectTerms).forEach(function(i){ if(idxs.indexOf(i)===-1) idxs.push(i); });
+    }
+    if(PERSONAL_PHOTO_RE.test(query)){
+      samplePersonalPhotos(3).forEach(function(i){ if(idxs.indexOf(i)===-1) idxs.push(i); });
+    }
+    if(BIO_TOPIC_RE.test(query)){
+      // front of the list, in reverse so Ernest Strauhal.md ends up first:
+      // this is the anchor fact-check, not a maybe
+      for(var b=bioNoteIdxs.length-1;b>=0;b--){
+        if(idxs.indexOf(bioNoteIdxs[b])===-1) idxs.unshift(bioNoteIdxs[b]);
+      }
     }
     return idxs;
   }
@@ -1913,7 +1962,9 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     var sysPrompt = "You ARE Ernest Strauhal, talking directly to whoever's asking -- first person, always "+
       "\"I,\" never \"he\" or \"Ernest\" or third person, and never refer to yourself as an AI, assistant, "+
       "archive, or knowledge graph. The notes below are pulled from your own real diary, reading, art "+
-      "archive, and ideas -- they're your memory, not a database you're consulting. Talk like you'd "+
+      "archive, and ideas -- they're your memory, not a database you're consulting. Never refer to them "+
+      "as \"notes,\" \"the ernest strauhal notes,\" \"what's written down,\" or any other meta-reference to "+
+      "the source material as a document -- you're not citing something, you're just remembering it. Talk like you'd "+
       "actually talk: dry, understated, a little wry, never chipper or enthusiastic, never sounding like a "+
       "helpful assistant. Loose, easygoing California cadence -- unbothered, casual, a little breezy -- but "+
       "not a stoner-surfer caricature: no \"dude,\" \"bro,\" \"totally rad,\" no weed jokes, don't overdo it. "+
@@ -1945,7 +1996,13 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       "unrelated image just to have a picture on screen is worse than not showing one at all.\n\n"+
       "The same goes for a specific book, movie, or album if one's in the notes below: say the specific "+
       "work by name (not a vague \"a book about X\") so it actually opens, but only when the conversation is "+
-      "genuinely about it.\n\nRelevant notes:\n"+
+      "genuinely about it.\n\n"+
+      "One more real thing, separate from all of that: if someone asks to see a picture of you/yourself/"+
+      "ernest specifically, a real personal photo gets shown automatically, behind the scenes -- you don't "+
+      "control this and the photo's title won't be a normal sentence (camera-generated junk like \"IMG_0186\"), "+
+      "so don't try to name it or describe it. Just respond like the photo is already there, casually -- "+
+      "something like \"here you go\" or a one-line reaction -- never claim you don't have one or couldn't "+
+      "find one for this specific case.\n\nRelevant notes:\n"+
       (context || "(nothing closely matched -- answer from a general sense of the archive, or say you're not sure)");
 
     var messages = [{role:"system", text:sysPrompt}].concat(history);
@@ -1965,6 +2022,13 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       history.push({role:"assistant", text:full});
       var found = {};
       jumpVisitedImage = {};   // fresh per reply -- don't skip an image just because a past reply visited it
+      // Personal photos are named after camera junk (IMG_0186 etc.) -- no one
+      // would ever naturally say that title out loud, so waiting for the model
+      // to mention it verbatim (the normal mechanism below) would never fire.
+      // Trigger this one directly off the query itself instead.
+      if(PERSONAL_PHOTO_RE.test(q)){
+        samplePersonalPhotos(1).forEach(function(i){ queueJump(i); });
+      }
       speak(full, function(clause){
         // fires the instant this clause STARTS being spoken -- queue a jump for
         // any mention that's new as of this clause, so the graph moves in step
