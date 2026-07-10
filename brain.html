@@ -2258,6 +2258,16 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       fuzzyMatchCandidates(full, matchedIdxs.concat(spark), found).forEach(function(idx){
         found[idx] = true; queueJump(idx);
       });
+      // Guarantee the graph always moves, even on a purely conversational
+      // reply that never names anything specific or calls show -- without
+      // this, "nothing happening" was the common outcome on casual
+      // back-and-forth, not the exception. Checks the actual jump
+      // queue/runner state, not just this function's own `found` bookkeeping,
+      // since a tool-called show() or the personal-photo trigger above both
+      // queue independently of `found`.
+      if(!jumpQueue.length && !jumpRunning && matchedIdxs.length){
+        queueJump(matchedIdxs[0]);
+      }
       speak(full, function(clause){
         // fires the instant this clause STARTS being spoken -- queue a jump for
         // any mention that's new as of this clause, so the graph moves in step
