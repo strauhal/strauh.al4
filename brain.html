@@ -178,6 +178,8 @@
   #chatMessages .m{max-width:88%;padding:7px 10px;line-height:1.45;font-size:13px;white-space:pre-wrap;word-break:break-word;}
   #chatMessages .m.user{align-self:flex-end;background:#fff;color:#00f;}
   #chatMessages .m.ai{align-self:flex-start;border:1px solid var(--line);color:#fff;}
+  #chatMessages .m.ai .mention-link{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;cursor:pointer;}
+  #chatMessages .m.ai .mention-link:hover{color:#fff;background:rgba(255,255,255,0.15);}
   #chatInputRow{display:none;border-top:1px solid var(--line);padding:9px 10px;gap:7px;flex:0 0 auto;}
   #chatInputRow.show{display:flex;}
   #chatInputRow input{flex:1;}
@@ -2091,6 +2093,74 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     }
   }
 
+  // stripQuotes removes characters (apostrophes etc.), which shifts every
+  // index after the first removal -- fine for the auto-jump scan above since
+  // it only ever needs "did this occur, yes/no", but linkifying has to slice
+  // the ORIGINAL reply text at the right spots, so this keeps a parallel
+  // index back to that original string alongside the stripped one.
+  function buildStripMap(s){
+    var stripped = "", map = [];
+    for(var i=0;i<s.length;i++){
+      if(/['"‘’“”`]/.test(s[i])) continue;
+      stripped += s[i]; map.push(i);
+    }
+    return {stripped:stripped, map:map};
+  }
+  function escapeHTML(s){
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  // Same longest-match-first, whole-word, non-overlapping logic as
+  // scanForMentions -- but instead of firing a jump the moment speech reaches
+  // it, this wraps every match found ANYWHERE in the finished reply in a
+  // clickable span, so the transcript itself stays a permanent, clickable
+  // record of what got mentioned, not just a one-time flyover while it's
+  // being spoken.
+  function linkifyMentions(text){
+    var names = getSortedNames();
+    var sm = buildStripMap(text.toLowerCase());
+    var stripped = sm.stripped, map = sm.map;
+    var consumed = [], spans = [];
+    function withinConsumed(s,e){ for(var k=0;k<consumed.length;k++){ if(s<consumed[k][1] && e>consumed[k][0]) return true; } return false; }
+    for(var i=0;i<names.length;i++){
+      var idx = names[i][1];
+      var needle = stripQuotes(names[i][0].toLowerCase());
+      if(!needle) continue;
+      var pos = stripped.indexOf(needle), matchedAt=-1, matchedEnd=-1;
+      while(pos!==-1){
+        var end = pos+needle.length;
+        var before = pos===0 ? "" : stripped[pos-1];
+        var after = end>=stripped.length ? "" : stripped[end];
+        if(!/[a-z0-9]/i.test(before) && !/[a-z0-9]/i.test(after) && !withinConsumed(pos,end)){ matchedAt=pos; matchedEnd=end; break; }
+        pos = stripped.indexOf(needle, pos+1);
+      }
+      if(matchedAt!==-1){
+        consumed.push([matchedAt, matchedEnd]);
+        spans.push({start: map[matchedAt], end: map[matchedEnd-1]+1, idx: idx});
+      }
+    }
+    spans.sort(function(a,b){ return a.start-b.start; });
+    var html = "", cursor = 0;
+    spans.forEach(function(sp){
+      if(sp.start < cursor) return;   // guard against any accidental overlap post-sort
+      html += escapeHTML(text.slice(cursor, sp.start));
+      html += '<span class="mention-link" data-idx="'+sp.idx+'">' + escapeHTML(text.slice(sp.start, sp.end)) + '</span>';
+      cursor = sp.end;
+    });
+    html += escapeHTML(text.slice(cursor));
+    return html;
+  }
+  // One delegated listener covers every past and future ai message -- clicking
+  // a linked word jumps immediately, unqueued, since this is a direct manual
+  // action from the person reading the transcript, not part of the
+  // auto-narrated tour that queueJump paces out during speech.
+  chatMessages.addEventListener("click", function(e){
+    var el = e.target.closest && e.target.closest(".mention-link");
+    if(!el) return;
+    var idx = parseInt(el.getAttribute("data-idx"), 10);
+    if(isNaN(idx) || !nodes[idx]) return;
+    flyTo(nodes[idx]); openInfo(nodes[idx]);
+  });
+
   function addMessage(role, text){
     var d = document.createElement("div");
     d.className = "m " + (role==="user"?"user":"ai");
@@ -2243,6 +2313,11 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       // actually speaks each clause, below, not to how fast the text streams in
     }, function(){
       history.push({role:"assistant", text:full});
+      // Swap the plain streamed text for the linkified version now that the
+      // reply is complete -- every mention becomes a clickable word so
+      // someone reading back over the transcript can jump to it themselves,
+      // not just watch it fly by once while it's being spoken.
+      aiDiv.innerHTML = linkifyMentions(full);
       var found = {};
       jumpVisitedImage = {};   // fresh per reply -- don't skip an image just because a past reply visited it
       // Personal photos are named after camera junk (IMG_0186 etc.) -- no one
