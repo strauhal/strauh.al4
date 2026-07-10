@@ -1548,8 +1548,15 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     // gives a concept/diary entry far more surface area to match a query
     // than an image's bare title -- so reserve a couple of slots specifically
     // for the best-scoring images that didn't otherwise make the cut.
-    var topImages = scored.filter(function(s){ return nodes[s[1]].shellR!=null; }).slice(0,2);
-    topImages.forEach(function(s){ if(idxs.indexOf(s[1])===-1) idxs.push(s[1]); });
+    // Randomly draw 2 from the top *8* image matches rather than always the
+    // literal top 2 -- otherwise any query that scores similarly keeps
+    // surfacing the identical pair of images every single time.
+    var imageBand = scored.filter(function(s){ return nodes[s[1]].shellR!=null; }).slice(0,8);
+    var addedImages = 0;
+    while(addedImages<2 && imageBand.length){
+      var pick = imageBand.splice(Math.floor(Math.random()*imageBand.length),1)[0][1];
+      if(idxs.indexOf(pick)===-1){ idxs.push(pick); addedImages++; }
+    }
     if(VISUAL_REQUEST_RE.test(query)){
       // strip the generic visual-request words themselves before treating
       // what's left as a "subject" to search artworks for -- "paintings of
@@ -1619,11 +1626,84 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     var snippet = ex.slice(start,end).trim();
     return (start>0?"… ":"")+snippet+(end<ex.length?" …":"");
   }
+  // Every entry gets a stable numeric [id] (just its node index) printed
+  // alongside the title -- this is what "show" actually keys off, NOT the
+  // title text. Real archive titles are often auto-generated camera junk or
+  // mangled/OCR'd strings ("1956armon a autorretrato sugerente painted in "+
+  // "1956 jpg large jpg" for what's really "Armonía"), or the model
+  // paraphrases/describes an image instead of reproducing its exact title --
+  // either way, fuzzy string-matching a title back to a node was a silent
+  // failure mode: the reply describes something real, nothing ever shows.
+  // An id the model just echoes back removes that whole class of mismatch.
   function buildContext(idxs, terms){
     return idxs.map(function(i){
       var ex = (DATA.meta[i] && DATA.meta[i][1]) || "";
-      return "### " + nodes[i].name + "\n" + relevantSlice(ex, terms||[], 900);
+      return "### [" + i + "] " + nodes[i].name + "\n" + relevantSlice(ex, terms||[], 900);
     }).join("\n\n");
+  }
+  // Deterministic keyword-scoring means near-identical questions keep
+  // surfacing the exact same handful of notes/images every time -- fine for
+  // an explicit search, but conversationally it makes the archive feel much
+  // smaller than it is. Mixed into the static context alongside whatever
+  // actually scored: a few genuinely random connected nodes each message, so
+  // there's always fresh, real material to riff on beyond the same repeat
+  // offenders, without ever displacing what actually matched the question.
+  function sampleRandomSpark(n, exclude){
+    var pool = [];
+    for(var i=0;i<N;i++){ if(exclude.indexOf(i)===-1) pool.push(i); }
+    var out = [];
+    for(var k=0;k<n && pool.length;k++){
+      out.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
+    }
+    return out;
+  }
+
+  // ---- tool-calling: the static context above is a keyword-scored guess,
+  // capped at 8 notes, computed ONCE before the model has said anything --
+  // it's the reason every one of these retrieval bugs so far has been "the
+  // right note existed, the guess just didn't surface it." Giving the model
+  // an actual search tool means it can go look for itself when what's in
+  // front of it doesn't cover the question, instead of a human having to
+  // notice the gap and hand-wire another always-include special case.
+  // "show" is the same idea for the OTHER long-running fragile mechanism
+  // (mention-detection below, which only fires if the model happens to
+  // reproduce a note's exact title inside a normal sentence) -- an explicit
+  // tool call is a much more reliable trigger. Mention-detection is kept
+  // as-is, not replaced: not every provider/model calls tools reliably every
+  // time, so this is a second, better path layered on top, not a swap.
+  var TOOL_DEFS = [
+    {
+      name: "search_archive",
+      description: "Search your own memory (diary, art, reading, ideas) for anything relevant that "+
+        "wasn't already handed to you below. Use this whenever a question reaches beyond what you've "+
+        "already got -- look it up rather than guessing or saying you don't know too early.",
+      params: {query: {type:"string", description:"what to search for"}}
+    },
+    {
+      name: "show",
+      description: "Actually display a specific photo, painting, or note on screen, using the [id] number "+
+        "printed right next to it below (or in a search_archive result) -- e.g. for \"### [4213] Some Title\" "+
+        "call show with id 4213. Use the id, NOT the title text -- real titles are sometimes messy/auto-"+
+        "generated and won't match. This is the reliable way to make something appear -- use it whenever "+
+        "you're about to reference a specific image or note, in addition to naming it in your reply, not "+
+        "instead of.",
+      params: {id: {type:"integer", description:"the [id] number printed next to the note/image, e.g. 4213"}}
+    }
+  ];
+  function execTool(name, args){
+    if(name==="search_archive"){
+      var q = (args && args.query) || "";
+      var terms = q.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
+      var ctx = buildContext(retrieve(q).slice(0,12), terms);
+      return {result: ctx || "nothing matched that search."};
+    }
+    if(name==="show"){
+      var idx = parseInt(args && args.id, 10);
+      if(isNaN(idx) || idx<0 || idx>=N || !nodes[idx]) return {found:false};
+      queueJump(idx);
+      return {found:true, title:nodes[idx].name};
+    }
+    return {error:"unknown tool"};
   }
 
   // ---- SSE line reader; Gemini/OpenAI/Anthropic all frame streamed chunks the
@@ -1649,72 +1729,168 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     return pump();
   }
 
+  // Tool-call rounds happen BEFORE any text is allowed to reach onDelta for
+  // that round -- a round that only returns function calls has no text parts
+  // at all, so nothing gets shown prematurely; the recursive round only
+  // stops (and calls onDone) once a round comes back with plain text and no
+  // further calls, or the depth cap is hit. Capped at 4 rounds total so a
+  // model that won't stop calling tools can't loop forever on someone's key.
+  var TOOL_DEPTH_CAP = 4;
   var PROVIDERS = {
     gemini: function(messages, onDelta, onDone, onError){
       var sys = messages.filter(function(m){ return m.role==="system"; })[0];
       var contents = messages.filter(function(m){ return m.role!=="system"; }).map(function(m){
         return {role: m.role==="assistant"?"model":"user", parts:[{text:m.text}]};
       });
+      var tools = [{functionDeclarations: TOOL_DEFS.map(function(t){
+        var props = {}; Object.keys(t.params).forEach(function(k){
+          props[k] = {type: t.params[k].type.toUpperCase(), description: t.params[k].description};
+        });
+        return {name:t.name, description:t.description,
+          parameters:{type:"OBJECT", properties:props, required:Object.keys(t.params)}};
+      })}];
+      var sysPart = sys ? {parts:[{text:sys.text}]} : null;
       // gemini-2.5-flash "thinks" by default -- without turning that off, its
       // internal reasoning ("thoughts: i need to be careful here not to sound
       // like an assistant...") comes back as real parts and was leaking
       // straight into the visible/spoken reply. thinkingBudget:0 disables it
       // outright; filtering out any part explicitly marked thought:true below
       // is just a belt-and-suspenders backstop.
-      var body = {contents: contents, generationConfig: {thinkingConfig: {thinkingBudget: 0}}};
-      if(sys) body.systemInstruction = {parts:[{text:sys.text}]};
-      fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key="+encodeURIComponent(apiKey), {
-        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)
-      }).then(function(r){
-        if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
-        return readSSE(r, function(payload){
-          try{
-            var d = JSON.parse(payload);
-            var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
-            var t = parts ? parts.filter(function(p){ return !p.thought; }).map(function(p){ return p.text||""; }).join("") : "";
-            if(t) onDelta(t);
-          }catch(e){}
-        });
-      }).then(onDone).catch(onError);
+      function round(contents, depth){
+        var body = {contents: contents, tools: tools, generationConfig: {thinkingConfig: {thinkingBudget: 0}}};
+        if(sysPart) body.systemInstruction = sysPart;
+        var calls = [];
+        fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key="+encodeURIComponent(apiKey), {
+          method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)
+        }).then(function(r){
+          if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+          return readSSE(r, function(payload){
+            try{
+              var d = JSON.parse(payload);
+              var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+              if(!parts) return;
+              parts.forEach(function(p){
+                if(p.thought) return;
+                if(p.functionCall) calls.push(p.functionCall);
+                else if(p.text) onDelta(p.text);
+              });
+            }catch(e){}
+          });
+        }).then(function(){
+          if(calls.length && depth<TOOL_DEPTH_CAP){
+            var next = contents.concat([
+              {role:"model", parts: calls.map(function(c){ return {functionCall:c}; })},
+              {role:"user", parts: calls.map(function(c){
+                return {functionResponse:{name:c.name, response: execTool(c.name, c.args||{})}};
+              })}
+            ]);
+            round(next, depth+1);
+          } else onDone();
+        }).catch(onError);
+      }
+      round(contents, 0);
     },
     openai: function(messages, onDelta, onDone, onError){
-      var body = {model:"gpt-4o-mini", stream:true,
-        messages: messages.map(function(m){ return {role:m.role, content:m.text}; })};
-      fetch("https://api.openai.com/v1/chat/completions", {
-        method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
-        body: JSON.stringify(body)
-      }).then(function(r){
-        if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
-        return readSSE(r, function(payload){
-          if(payload==="[DONE]") return;
-          try{
-            var d = JSON.parse(payload);
-            var t = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content || "";
-            if(t) onDelta(t);
-          }catch(e){}
-        });
-      }).then(onDone).catch(onError);
+      var tools = TOOL_DEFS.map(function(t){
+        var props = {}; Object.keys(t.params).forEach(function(k){ props[k] = t.params[k]; });
+        return {type:"function", function:{name:t.name, description:t.description,
+          parameters:{type:"object", properties:props, required:Object.keys(t.params)}}};
+      });
+      function round(msgs, depth){
+        var body = {model:"gpt-4o-mini", stream:true, messages: msgs, tools: tools};
+        var toolCalls = {};
+        fetch("https://api.openai.com/v1/chat/completions", {
+          method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+          body: JSON.stringify(body)
+        }).then(function(r){
+          if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+          return readSSE(r, function(payload){
+            if(payload==="[DONE]") return;
+            try{
+              var d = JSON.parse(payload);
+              var delta = d.choices && d.choices[0] && d.choices[0].delta;
+              if(!delta) return;
+              if(delta.content) onDelta(delta.content);
+              if(delta.tool_calls){
+                delta.tool_calls.forEach(function(tc){
+                  var slot = toolCalls[tc.index] || (toolCalls[tc.index] = {id:"", name:"", args:""});
+                  if(tc.id) slot.id = tc.id;
+                  if(tc.function && tc.function.name) slot.name += tc.function.name;
+                  if(tc.function && tc.function.arguments) slot.args += tc.function.arguments;
+                });
+              }
+            }catch(e){}
+          });
+        }).then(function(){
+          var calls = Object.keys(toolCalls).map(function(k){ return toolCalls[k]; }).filter(function(c){ return c.name; });
+          if(calls.length && depth<TOOL_DEPTH_CAP){
+            var assistantMsg = {role:"assistant", content:null, tool_calls: calls.map(function(c){
+              return {id:c.id, type:"function", function:{name:c.name, arguments:c.args||"{}"}};
+            })};
+            var toolMsgs = calls.map(function(c){
+              var args = {}; try{ args = JSON.parse(c.args||"{}"); }catch(e){}
+              return {role:"tool", tool_call_id:c.id, content: JSON.stringify(execTool(c.name, args))};
+            });
+            round(msgs.concat([assistantMsg]).concat(toolMsgs), depth+1);
+          } else onDone();
+        }).catch(onError);
+      }
+      round(messages.map(function(m){ return {role:m.role, content:m.text}; }), 0);
     },
     anthropic: function(messages, onDelta, onDone, onError){
       var sys = messages.filter(function(m){ return m.role==="system"; })[0];
-      var body = {model:"claude-3-5-sonnet-20241022", max_tokens:1024, stream:true,
-        messages: messages.filter(function(m){ return m.role!=="system"; }).map(function(m){
-          return {role:m.role, content:m.text};
-        })};
-      if(sys) body.system = sys.text;
-      fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST", headers:{"Content-Type":"application/json","x-api-key":apiKey,
-          "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body: JSON.stringify(body)
-      }).then(function(r){
-        if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
-        return readSSE(r, function(payload){
-          try{
-            var d = JSON.parse(payload);
-            if(d.type==="content_block_delta" && d.delta && d.delta.text) onDelta(d.delta.text);
-          }catch(e){}
-        });
-      }).then(onDone).catch(onError);
+      var tools = TOOL_DEFS.map(function(t){
+        var props = {}; Object.keys(t.params).forEach(function(k){ props[k] = t.params[k]; });
+        return {name:t.name, description:t.description,
+          input_schema:{type:"object", properties:props, required:Object.keys(t.params)}};
+      });
+      function round(msgs, depth){
+        var body = {model:"claude-3-5-sonnet-20241022", max_tokens:1024, stream:true, messages: msgs, tools: tools};
+        if(sys) body.system = sys.text;
+        var blocks = {};
+        fetch("https://api.anthropic.com/v1/messages", {
+          method:"POST", headers:{"Content-Type":"application/json","x-api-key":apiKey,
+            "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body: JSON.stringify(body)
+        }).then(function(r){
+          if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+          return readSSE(r, function(payload){
+            try{
+              var d = JSON.parse(payload);
+              if(d.type==="content_block_start"){
+                blocks[d.index] = (d.content_block.type==="tool_use")
+                  ? {type:"tool_use", id:d.content_block.id, name:d.content_block.name, json:""}
+                  : {type:"text", text:""};
+              } else if(d.type==="content_block_delta"){
+                var b = blocks[d.index]; if(!b) return;
+                if(d.delta.type==="text_delta"){ b.text += d.delta.text; onDelta(d.delta.text); }
+                else if(d.delta.type==="input_json_delta"){ b.json += d.delta.partial_json||""; }
+              }
+            }catch(e){}
+          });
+        }).then(function(){
+          var idxs = Object.keys(blocks).sort(function(a,b){ return a-b; });
+          var calls = idxs.map(function(k){ return blocks[k]; }).filter(function(b){ return b.type==="tool_use"; });
+          if(calls.length && depth<TOOL_DEPTH_CAP){
+            var assistantContent = idxs.map(function(k){
+              var b = blocks[k];
+              if(b.type==="tool_use"){
+                var input = {}; try{ input = JSON.parse(b.json||"{}"); }catch(e){}
+                return {type:"tool_use", id:b.id, name:b.name, input:input};
+              }
+              return {type:"text", text:b.text};
+            });
+            var toolResults = calls.map(function(b){
+              var args = {}; try{ args = JSON.parse(b.json||"{}"); }catch(e){}
+              return {type:"tool_result", tool_use_id:b.id, content: JSON.stringify(execTool(b.name, args))};
+            });
+            round(msgs.concat([{role:"assistant", content:assistantContent}, {role:"user", content:toolResults}]), depth+1);
+          } else onDone();
+        }).catch(onError);
+      }
+      round(messages.filter(function(m){ return m.role!=="system"; }).map(function(m){
+        return {role:m.role, content:m.text};
+      }), 0);
     }
   };
 
@@ -1862,6 +2038,30 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
   // has none -- stripping every quote character from both sides before
   // comparing means that decoration can't break an otherwise-good match.
   function stripQuotes(s){ return s.replace(/['"‘’“”`]/g, ""); }
+  // Belt-and-suspenders for the tool call itself: models don't reliably call
+  // "show" every time even when explicitly told to, and exact-substring
+  // mention detection breaks on the smallest rewording (a title says "Under
+  // Dark Sky", the model naturally says "under A dark sky" mid-sentence --
+  // one added word and the whole match misses). But we know exactly which
+  // notes/images were actually offered to the model this turn (the static
+  // context + random spark) -- a small, bounded pool -- so a much fuzzier
+  // word-overlap match is safe to run ONLY against that pool, where a false
+  // positive is basically impossible (these are the very things the reply is
+  // supposed to be about), instead of the whole graph where "drowning" used
+  // as a metaphor could wrongly match a node literally titled "drowning".
+  function fuzzyMatchCandidates(text, candidateIdxs, alreadyFound){
+    var lower = " " + stripQuotes(text.toLowerCase()) + " ";
+    var hits = [];
+    candidateIdxs.forEach(function(idx){
+      if(alreadyFound[idx]) return;
+      var words = stripQuotes(nodes[idx].name.toLowerCase()).match(/[a-z0-9']{4,}/g) || [];
+      if(!words.length) return;
+      var matched = words.filter(function(w){ return lower.indexOf(" "+w) !== -1 || lower.indexOf(w+" ") !== -1; });
+      var need = words.length<=3 ? words.length : Math.max(3, Math.ceil(words.length*0.6));
+      if(matched.length>=need) hits.push(idx);
+    });
+    return hits;
+  }
   function scanForMentions(fullText, alreadyFound, onFound){
     var names = getSortedNames(), lower = stripQuotes(fullText.toLowerCase());
     var consumed = [];   // [start,end) ranges already claimed by a longer match
@@ -1958,25 +2158,44 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     history.push({role:"user", text:q});
 
     var qTerms = q.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
-    var context = buildContext(retrieve(q), qTerms);
+    var matchedIdxs = retrieve(q);
+    var context = buildContext(matchedIdxs, qTerms);
+    var spark = sampleRandomSpark(3, matchedIdxs);
+    if(spark.length){
+      context += "\n\n(and scattered elsewhere across the wider archive, only bring one of these up if it "+
+        "genuinely fits -- don't force it in:)\n\n" + buildContext(spark, qTerms);
+    }
     var sysPrompt = "You ARE Ernest Strauhal, talking directly to whoever's asking -- first person, always "+
       "\"I,\" never \"he\" or \"Ernest\" or third person, and never refer to yourself as an AI, assistant, "+
       "archive, or knowledge graph. The notes below are pulled from your own real diary, reading, art "+
       "archive, and ideas -- they're your memory, not a database you're consulting. Never refer to them "+
       "as \"notes,\" \"the ernest strauhal notes,\" \"what's written down,\" or any other meta-reference to "+
       "the source material as a document -- you're not citing something, you're just remembering it. Talk like you'd "+
-      "actually talk: dry, understated, a little wry, never chipper or enthusiastic, never sounding like a "+
-      "helpful assistant. Loose, easygoing California cadence -- unbothered, casual, a little breezy -- but "+
-      "not a stoner-surfer caricature: no \"dude,\" \"bro,\" \"totally rad,\" no weed jokes, don't overdo it. "+
+      "actually talk: never chipper, never enthusiastic, never sounding like a helpful assistant -- but don't "+
+      "reach for the same blunt sarcastic put-down every single time, that gets one-note and tiresome fast. "+
+      "Vary it: sometimes a deadpan put-down, sometimes a weird hyper-specific tangent tied to something real "+
+      "you've actually lived through, sometimes a dry absurdist observation that isn't mean at all, sometimes "+
+      "self-deprecation instead of a jab at whoever's asking, and sometimes just a plain, unguarded, genuine "+
+      "answer with no joke bolted onto it -- not every reply needs an edge. Think of sarcasm as one tool in "+
+      "the kit, not the whole kit. You're allowed to mock a dumb or already-answered question, but don't make "+
+      "that the default reflex. Default posture is unbothered and a little irreverent, not contempt. Loose, "+
+      "easygoing California cadence underneath it -- but not a stoner-surfer caricature: no \"dude,\" \"bro,\" "+
+      "\"totally rad,\" no weed jokes, don't overdo it. "+
       "Output ONLY the reply itself -- never narrate your own reasoning, never write things like \"thoughts:\" "+
       "or explain how you're deciding what to say, that should never appear in the output at all.\n\n"+
       "HARD RULE, no exceptions: never state a specific biographical fact -- where you grew up, family "+
       "details, a specific past event, a relationship, a date, a place you lived -- unless it is explicitly "+
-      "written in the notes below. Do not infer, guess, round up, or fill in a plausible-sounding detail from "+
-      "general pattern-matching (e.g. a relative's history is NOT your own history -- never blend the two). "+
-      "If a specific fact isn't in the notes and you're not certain of it, say plainly you don't have that "+
-      "written down or aren't sure, rather than answering with something invented. Getting a hard fact wrong "+
-      "is much worse than admitting you don't know.\n\n"+
+      "written in the notes below, or comes back from a search_archive call. Do not infer, guess, round up, "+
+      "or fill in a plausible-sounding detail from general pattern-matching (e.g. a relative's history is NOT "+
+      "your own history -- never blend the two). You have a search_archive tool: if a question reaches beyond "+
+      "what's already in front of you, use it and check before saying you don't know -- but if you've "+
+      "genuinely searched (or the answer clearly isn't the kind of thing that would be written down) and "+
+      "still don't have it, say plainly you don't have that written down or aren't sure, rather than "+
+      "answering with something invented. Getting a hard fact wrong is much worse than admitting you don't "+
+      "know. This covers texture, not just facts: when you do recount something real, use the actual "+
+      "specific details in the notes (names, places, objects) rather than inventing generic sensory "+
+      "flourish -- smells, imagined dialogue, scenery -- that isn't written anywhere. A real memory "+
+      "described vaguely beats a fake-feeling one dressed up with made-up detail.\n\n"+
       "Write ALL LOWERCASE, always, no capital letters anywhere, not even at the start of a sentence or for "+
       "\"I\" -- lowercase i.\n\n"+
       "Keep it SHORT -- one or two sentences, sometimes just a phrase. Never a paragraph.\n\n"+
@@ -1985,15 +2204,19 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       "detail, not a summary -- the kind of thing that makes someone want to ask a follow-up, not a rundown. "+
       "But if the question is specific and someone's clearly and genuinely asking for a real answer, just "+
       "give it straight -- don't be coy or dodge a direct question, that's a different kind of annoying. "+
-      "When you do reference a specific note, mention its exact title somewhere in the sentence so it can "+
-      "be found and shown. This is real: if someone asks to see a photo, painting, or image, you CAN show "+
-      "one -- just say its exact title from the notes below in your reply (e.g. \"there's this photograph, "+
-      "Photograph - X\") and it'll actually appear on screen. Never say you can't show images -- if nothing "+
-      "in the notes below actually fits what they're asking for, say that instead of claiming it's not "+
-      "possible in general. You don't need to be asked first, either -- if a painting or photograph in the "+
-      "notes below genuinely fits what's being talked about, bring it up on your own, the same way you'd "+
-      "casually gesture at something while telling a story. But only when it actually fits -- naming some "+
-      "unrelated image just to have a picture on screen is worse than not showing one at all.\n\n"+
+      "You also have a show tool -- this is what ACTUALLY puts something on screen, not just naming it in "+
+      "your reply. Every note/image below is printed as \"### [1234] Title\" -- call show with that id number "+
+      "(not the title text, real titles are often messy or auto-generated and won't match anything). This is "+
+      "real: if someone asks to see a photo, painting, or image, you CAN show one -- call show with its id "+
+      "AND still mention it by name in your reply the normal way, do both, don't rely on just one. Never say "+
+      "you can't show images -- if nothing below actually fits what they're asking for, say that instead of "+
+      "claiming it's not possible in general. You don't need to be asked first, either -- if something below "+
+      "genuinely fits what's being talked about, bring it up (and show it, by id) on your own, the same way "+
+      "you'd casually gesture at something while telling a story. But only when it actually fits -- showing "+
+      "some unrelated image just to have a picture on screen is worse than not showing one at all. And don't "+
+      "let the same handful of things keep coming up: the archive is huge, most of what's below rotates every "+
+      "message (including a few scattered wildcards, marked as such) specifically so you're not stuck reaching "+
+      "for the same few examples in every conversation -- actually look at what's in front of you each time.\n\n"+
       "The same goes for a specific book, movie, or album if one's in the notes below: say the specific "+
       "work by name (not a vague \"a book about X\") so it actually opens, but only when the conversation is "+
       "genuinely about it.\n\n"+
@@ -2029,6 +2252,12 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
       if(PERSONAL_PHOTO_RE.test(q)){
         samplePersonalPhotos(1).forEach(function(i){ queueJump(i); });
       }
+      // catches whatever the exact-match scan below and the model's own show
+      // calls both missed -- see fuzzyMatchCandidates' comment for why this
+      // is safe to run against this specific bounded pool
+      fuzzyMatchCandidates(full, matchedIdxs.concat(spark), found).forEach(function(idx){
+        found[idx] = true; queueJump(idx);
+      });
       speak(full, function(clause){
         // fires the instant this clause STARTS being spoken -- queue a jump for
         // any mention that's new as of this clause, so the graph moves in step
