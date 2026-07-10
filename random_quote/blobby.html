@@ -58,17 +58,56 @@
             cursor: pointer; 
         }
 
-        .quote-container { 
-            position: fixed; 
-            z-index: 2; 
+        .quote-container {
+            position: fixed;
+            z-index: 2;
             /*margin-left: -20vw;*/
             margin-top: 20vh;
-            pointer-events: none; 
+            pointer-events: none;
         }
 
+        /* --- LONG TEXT LOGIC (matches random_quote.html): small quotes stay
+           overlaid on the art like above, longer ones move to sit beside it
+           instead of covering it. Same >250-char threshold, same desktop-only
+           breakpoint. Blob physics/canvas rendering is untouched by this. --- */
+        @media (min-width: 901px) {
+            .main-container.long-text-mode {
+                flex-direction: row;
+                justify-content: center;
+                gap: 2rem;
+                padding: 40px;
+                box-sizing: border-box;
+            }
 
+            .main-container.long-text-mode .art-wrapper {
+                margin-top: 0;
+                flex-shrink: 0;
+            }
 
-        #fallback-image { 
+            .main-container.long-text-mode .quote-container {
+                /* flex:1 (not a fixed vw width) so this only ever claims
+                   whatever space is left over from .art-wrapper's untouched,
+                   physics-determined size -- never overflows the viewport,
+                   and never asks the canvas to be a different size */
+                position: static;
+                margin-top: 0;
+                flex: 1 1 auto;
+                min-width: 0;
+                max-width: 40vw;
+                pointer-events: auto;
+            }
+
+            .main-container.long-text-mode #quote-display {
+                position: static;
+                width: 100%;
+                max-width: 100%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-sizing: border-box;
+            }
+        }
+
+        #fallback-image {
             position: absolute; 
             top: 0;
             left: 0;
@@ -157,8 +196,8 @@
         <div class="art-wrapper">
             <canvas id="interactive-canvas"></canvas>
             <img id="fallback-image" src="" alt="Random art">
-            <div class="quote-container"><p id="quote-display"></p></div>
         </div>
+        <div class="quote-container"><p id="quote-display"></p></div>
     </div>
 
     <script>
@@ -198,9 +237,10 @@
                 ];
 
                 const randomQuoteObject = quotes[Math.floor(Math.random() * quotes.length)];
-                
+
                 fallbackImage.src = imageUrls[Math.floor(Math.random() * imageUrls.length)];
                 document.getElementById('quote-display').textContent = randomQuoteObject.quote;
+                document.querySelector('.main-container').classList.toggle('long-text-mode', randomQuoteObject.quote.length > 250);
             });
         } else {
             const ctx = canvas.getContext('2d');
@@ -1704,7 +1744,7 @@
                 gridCols=Math.ceil(canvasWidth/GRID_CELL_SIZE);gridRows=Math.ceil(canvasHeight/GRID_CELL_SIZE);grid=new Array(gridCols*gridRows).fill(null).map(()=>[]);
                 const rI=getRandomItem(imageUrls),i=new Image();i.crossOrigin="Anonymous";i.src=rI;
                 i.onload=()=>createParticlesFromImage(i);i.onerror=()=>{console.error("Failed to load image:",rI);initialize();};
-                const rQ=getRandomItem(quotes);if(quoteElement&&rQ){quoteElement.textContent=rQ.quote}
+                const rQ=getRandomItem(quotes);if(quoteElement&&rQ){quoteElement.textContent=rQ.quote;document.querySelector('.main-container').classList.toggle('long-text-mode', rQ.quote.length > 250)}
             }
             function createParticlesFromImage(i){particles=[];const iAR=i.width/i.height,cAR=canvasWidth/canvasHeight;let dW,dH,oX,oY;if(iAR>cAR){dW=canvasWidth;dH=canvasWidth/iAR}else{dH=canvasHeight;dW=canvasHeight*iAR}oX=(canvasWidth-dW)/2;oY=(canvasHeight-dH)/2;const tC=document.createElement('canvas'),tX=tC.getContext('2d');tC.width=canvasWidth;tC.height=canvasHeight;tX.drawImage(i,oX,oY,dW,dH);const iD=tX.getImageData(0,0,canvasWidth,canvasHeight).data;for(let y=0;y<canvasHeight;y+=TILE_SIZE){for(let x=0;x<canvasWidth;x+=TILE_SIZE){const idx=(y*canvasWidth+x)*4;if(iD[idx+3]>128){const c=`rgb(${iD[idx]},${iD[idx+1]},${iD[idx+2]})`;particles.push(new Particle(x,y,c))}}}}
 
