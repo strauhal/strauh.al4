@@ -85,20 +85,32 @@
             }
 
             .main-container.long-text-mode .quote-container {
-                /* flex:1 (not a fixed vw width) so this only ever claims
-                   whatever space is left over from .art-wrapper's untouched,
-                   physics-determined size -- never overflows the viewport,
-                   and never asks the canvas to be a different size */
+                /* Explicit calc(), not flex-grow/shrink resolution -- relying
+                   on flex-shrink against a flex-shrink:0 sibling was still
+                   overflowing the viewport in practice (art-wrapper's own
+                   width is untouched/physics-determined, so this just does
+                   the subtraction directly: 100vw minus that 66vw, minus the
+                   row gap and left/right padding, with a floor so it never
+                   goes negative on an in-between width). */
                 position: static;
                 margin-top: 0;
-                flex: 1 1 auto;
-                min-width: 0;
-                max-width: 40vw;
+                flex: 0 0 auto;
+                width: calc(100vw - 66vw - 2rem - 80px);
+                max-width: calc(100vw - 66vw - 2rem - 80px);
+                min-width: 220px;
                 pointer-events: auto;
             }
 
             .main-container.long-text-mode #quote-display {
+                /* style.css has a site-wide "p { margin-left:15vw; margin-right:25vw }"
+                   rule for ordinary prose paragraphs elsewhere on the site --
+                   #quote-display inherits it too since nothing here reset it,
+                   which was quietly shoving the whole text block ~15vw further
+                   right than .quote-container's own left edge (and shrinking
+                   its usable width by the 25vw right-margin on top of that).
+                   That's the actual overflow: explicitly zero both out. */
                 position: static;
+                margin: 0;
                 width: 100%;
                 max-width: 100%;
                 max-height: 80vh;
