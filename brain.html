@@ -33,6 +33,10 @@
      no offset) — its appearance (font/colour/size) is left to strauh.al's CSS. */
   #stage{position:fixed;inset:0;z-index:1;}
   canvas{display:block;width:100%;height:100%;cursor:grab;background:transparent;}
+  /* translucent 3D-face overlay: sits above the graph but below the UI, and
+     never eats pointer events (the graph underneath stays fully interactive) */
+  #face{position:fixed;inset:0;z-index:3;pointer-events:none;display:none;cursor:default;}
+  #face.on{display:block;}
   /* lift the title just above the canvas (below the UI), and let clicks pass through
      its full-width block so the buttons/canvas underneath stay usable */
   h1{position:relative;z-index:2;pointer-events:none;}
@@ -155,6 +159,7 @@
 
   /* Chat (bottom-right) */
   #btnChat{top:calc(var(--edge) + 120px)}
+  #btnFace{top:calc(var(--edge) + 160px)}
   #chatwrap{position:fixed;bottom:var(--edge);right:var(--edge);z-index:9;width:360px;
     max-width:calc(100vw - 2*var(--edge));
     max-height:min(55vh,560px);background:var(--panel);border:1px solid var(--line);
@@ -196,11 +201,13 @@
 <h1><a href="https://strauh.al">strauh.al</a>/brain</h1>
 
 <div id="stage"><canvas id="cv"></canvas></div>
+<canvas id="face"></canvas>
 
 <div class="iconbtn" id="btnSettings" title="Settings">settings</div>
 <div class="iconbtn" id="btnReset" title="Reset view (R)">reset</div>
 <div class="iconbtn" id="btnSearch" title="Search (/)">search</div>
 <div class="iconbtn" id="btnChat" title="Chat with the archive">chat</div>
+<div class="iconbtn" id="btnFace" title="Toggle talking 3D face">face</div>
 
 <div id="chatwrap">
   <div class="chd"><span class="ttl">chat with strauh.al/brain</span><span class="x" id="chatClose" title="Close">×</span></div>
@@ -1435,7 +1442,38 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
   updateMuteBtn();
   showChatUI();
 
-  $("btnChat").addEventListener("click", function(){ chatWrap.classList.toggle("open"); });
+  // ---- the archive greets first ----
+  // once a key exists the brain opens the conversation itself rather than
+  // sitting mute: it drops a short in-character hello, speaks it aloud
+  // immediately, and drifts the graph over to the bio node so it visibly
+  // "wakes up." Fires exactly once per session -- either the moment an
+  // OpenAI/Anthropic key is connected, or when the chat is opened and a key
+  // is already saved from before.
+  var greeted = false;
+  var GREETINGS = [
+    "oh, someone's actually in here. go ahead — ask me anything that's in my head.",
+    "hey. you're basically talking to the inside of my skull right now. ask away.",
+    "you found the brain. everything i've written down is wired together in here — poke at it.",
+    "so you showed up. ask me about the work, the diary, whatever you want. i'll dig it up.",
+    "look who wandered in. this is more or less my whole head, laid out. what do you want to know?"
+  ];
+  function greet(){
+    if(greeted || !apiKey) return;
+    greeted = true;
+    var text = GREETINGS[Math.floor(Math.random()*GREETINGS.length)];
+    var div = addMessage("ai", text);
+    div.innerHTML = linkifyMentions(text);
+    history.push({role:"assistant", text:text});
+    var target = bioNoteIdxs.length ? bioNoteIdxs[0] : (sampleRandomSpark(1, [])[0]);
+    if(target!=null) queueJump(target);
+    speak(text);
+  }
+
+  $("btnChat").addEventListener("click", function(){
+    chatWrap.classList.toggle("open");
+    // already-inserted key -> the brain speaks the moment the panel opens
+    if(chatWrap.classList.contains("open") && apiKey) greet();
+  });
   $("chatClose").addEventListener("click", function(){ chatWrap.classList.remove("open"); });
 
   keySave.addEventListener("click", function(){
@@ -1446,6 +1484,8 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
     localStorage.setItem(LS_PROVIDER, provider);
     keyInput.value = "";
     showChatUI();
+    // brain messages first as soon as an OpenAI/Anthropic key is connected
+    if(provider==="openai" || provider==="anthropic") greet();
   });
   keyInput.addEventListener("keydown", function(e){ if(e.key==="Enter") keySave.click(); });
 
@@ -1979,9 +2019,14 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
   function speak(text, onClauseStart, onAllDone){
     if(currentAudio){ currentAudio.pause(); currentAudio = null; }
     var clauses = (text.match(/[^,.!?;]+[,.!?;]*/g) || [text]).map(function(s){ return s.trim(); }).filter(Boolean);
-    if(!clauses.length || muted){ if(onAllDone) onAllDone(); return; }
-    if(gradiumKey) speakGradium(clauses, onClauseStart, onAllDone);
-    else speakBrowser(clauses, onClauseStart, onAllDone);
+    // drive the 3D face's mouth for the whole utterance: open when speech
+    // actually begins, ease shut once every clause is done (or right away if
+    // there's nothing to say / we're muted)
+    function done(){ if(typeof FACE!=="undefined" && FACE) FACE.setSpeaking(false); if(onAllDone) onAllDone(); }
+    if(!clauses.length || muted){ done(); return; }
+    if(typeof FACE!=="undefined" && FACE) FACE.setSpeaking(true);
+    if(gradiumKey) speakGradium(clauses, onClauseStart, done);
+    else speakBrowser(clauses, onClauseStart, done);
   }
 
   // ---- mention detection: as the answer streams in, check for note names
@@ -2357,6 +2402,192 @@ hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.len
   }
   chatSend.addEventListener("click", sendMessage);
   chatText.addEventListener("keydown", function(e){ if(e.key==="Enter") sendMessage(); });
+})();
+
+// ---------- hyperdetailed talking face (the "face" button) ----------
+// NOT a polygon model -- the real photo (the ernest/ folder) mapped onto a
+// subtly depth-displaced mesh and rendered TRANSLUCENT over the graph, so it's
+// an actual detailed likeness you can see the brain move through. The mesh
+// gives gentle 3D parallax as the head sways; the lower face drops to open the
+// mouth while speaking (speak() calls FACE.setSpeaking); the hair shear-wobbles.
+var FACE = (function(){
+  var cv = document.getElementById("face");
+  if(!cv) return {toggle:function(){},open:function(){},close:function(){},setSpeaking:function(){}};
+  var ctx = cv.getContext("2d");
+  var off = document.createElement("canvas"), octx = off.getContext("2d");
+  var W=0,H=0,DPR=1, on=false, raf=null, t=0, last=0;
+  var talk=0, talkTarget=0, mouth=0, yaw=0, pitch=0, bobY=0, hairX=0, hairV=0;
+
+  // the photo + where the head sits inside it (fractions of the image)
+  // a background-removed cutout (Vision person-segmentation) so the texture
+  // carries its own alpha silhouette -- no matte needed, and the edge follows
+  // the real hair on any turn instead of a fixed oval clipping it
+  var TEX_URL = new URLSearchParams(location.search).get("facetex")
+    || "https://raw.githubusercontent.com/strauhal/strauh.al3.1/main/ernest/face_cutout.png";
+  var U0=0.19,U1=0.76,V0=0.24,V1=0.75;                  // head bounding box (centred on the face)
+  var img=new Image(), texReady=false, tex=null, TW=0, TH=0;
+  img.crossOrigin="anonymous";
+  img.onload=function(){
+    // cache a downscaled copy so each per-triangle drawImage is cheap
+    var iw=img.naturalWidth, ih=img.naturalHeight, cw=640, ch=Math.round(cw*ih/iw);
+    tex=document.createElement("canvas"); tex.width=cw; tex.height=ch;
+    tex.getContext("2d").drawImage(img,0,0,cw,ch);
+    TW=cw; TH=ch; texReady=true;
+  };
+  // A push to strauh.al3.1 can take a minute or two to actually land on
+  // raw.githubusercontent's edge cache -- worse, the FIRST 404 during that
+  // window gets negatively cached by the browser too, so a plain <img> that
+  // fails once just stays broken even after the file is genuinely live.
+  // Retry with backoff (each attempt cache-busted) rather than giving up.
+  var texAttempt=0, TEX_RETRY_MS=[1500,3000,6000,12000,20000];
+  img.onerror=function(){
+    if(texAttempt>=TEX_RETRY_MS.length) return;
+    var wait=TEX_RETRY_MS[texAttempt++];
+    setTimeout(function(){ img.src = TEX_URL + (TEX_URL.indexOf("?")>=0?"&":"?") + "_r=" + Date.now(); }, wait);
+  };
+  img.src=TEX_URL;
+
+  function resize(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=window.innerWidth; H=window.innerHeight;
+    cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+    off.width=cv.width; off.height=cv.height;
+    ctx.setTransform(DPR,0,0,DPR,0,0); octx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener("resize", resize); resize();
+
+  // mesh over the head UV box: each vertex carries its source pixel (su,sv), a
+  // normalized position (nx,ny in [-1,1]) and an approximate face depth so the
+  // head reads as dimensional rather than a flat card.
+  var GX=20, GY=26, HALFH=1.0, HALFW=0.7, mesh=[];
+  // Anatomical relief -> an actual 3D head, not a flat card. The dome term
+  // gives real front-to-back form (forward at the centre, receding at the
+  // edges so the head is round); the rest sculpts the face on top: brow ridge,
+  // recessed eye sockets, a protruding nose, cheeks, lips and chin. Turning
+  // this then gives genuine parallax (the nose crosses the face) instead of a
+  // photo skidding sideways. (nx,ny landmarks traced off the photo.)
+  function depth(nx,ny){
+    var q = 1 - (nx*nx)/(1.06*1.06) - (ny*ny)/(1.15*1.15);
+    var z = (q>0?Math.sqrt(q):0)*0.82;                              // rounded head
+    z += 0.05*Math.exp(-Math.pow(ny+0.04,2)/0.02 - (nx*nx)/0.4);     // brow ridge
+    z -= 0.05*(Math.exp(-Math.pow(nx-0.25,2)/0.02 - Math.pow(ny-0.14,2)/0.02)
+             + Math.exp(-Math.pow(nx+0.25,2)/0.02 - Math.pow(ny-0.14,2)/0.02));  // eye sockets
+    z += 0.18*Math.exp(-(nx*nx)/0.012)*Math.exp(-Math.pow(ny-0.30,2)/0.06);      // nose ridge+tip
+    z += 0.04*(Math.exp(-Math.pow(nx-0.5,2)/0.05 - Math.pow(ny-0.30,2)/0.10)
+             + Math.exp(-Math.pow(nx+0.5,2)/0.05 - Math.pow(ny-0.30,2)/0.10));   // cheeks
+    z += 0.03*Math.exp(-(nx*nx)/0.05 - Math.pow(ny-0.63,2)/0.02);    // lips
+    z += 0.04*Math.exp(-(nx*nx)/0.06 - Math.pow(ny-0.90,2)/0.03);    // chin
+    return z - 0.42;
+  }
+  function buildMesh(){
+    HALFW = HALFH*((U1-U0)*TW)/((V1-V0)*TH);
+    mesh=[];
+    for(var gy=0;gy<=GY;gy++){ var row=[];
+      for(var gx=0;gx<=GX;gx++){
+        var fu=gx/GX, fv=gy/GY, nx=fu*2-1, ny=fv*2-1;
+        row.push({su:(U0+(U1-U0)*fu)*TW, sv:(V0+(V1-V0)*fv)*TH,
+                  nx:nx, ny:ny, x:nx*HALFW, y:-ny*HALFH, z:depth(nx,ny)});
+      }
+      mesh.push(row);
+    }
+  }
+
+  var SCALE,CX,CY,FOCAL=2.9;
+  function project(vx,vy,vz){
+    var cp=Math.cos(pitch),sp=Math.sin(pitch);
+    var y1=vy*cp-vz*sp, z1=vy*sp+vz*cp;
+    var cyw=Math.cos(yaw),syw=Math.sin(yaw);
+    var x2=vx*cyw+z1*syw, z2=-vx*syw+z1*cyw;
+    var persp=FOCAL/(FOCAL-z2);
+    return [CX+x2*SCALE*persp, CY-(y1+bobY)*SCALE*persp];
+  }
+  function vpos(v){                                   // deform (mouth/hair) then project
+    var x=v.x, y=v.y;
+    if(v.ny>0.42){ var m=(v.ny-0.42)/0.58; y -= mouth*0.13*m*m; }   // lower face drops -> mouth opens
+    if(v.ny<-0.1){ var h=(-0.1-v.ny)/0.9; x += hairX*0.5*h*h; }     // hair shears with the sway
+    return project(x,y,v.z);
+  }
+
+  function texTri(s0,s1,s2, d0,d1,d2){               // affine-map a texture triangle
+    var x0=d0[0],y0=d0[1],x1=d1[0],y1=d1[1],x2=d2[0],y2=d2[1];
+    var u0=s0[0],v0=s0[1],u1=s1[0],v1=s1[1],u2=s2[0],v2=s2[1];
+    var denom=u0*(v2-v1)-u1*v2+u2*v1+(u1-u2)*v0; if(Math.abs(denom)<1e-6) return;
+    var a=(x0*(v2-v1)-x1*v2+x2*v1+(x1-x2)*v0)/denom;
+    var b=(y0*(v2-v1)-y1*v2+y2*v1+(y1-y2)*v0)/denom;
+    var c=(u0*(x2-x1)-u1*x2+u2*x1+(u1-u2)*x0)/denom;
+    var d=(u0*(y2-y1)-u1*y2+u2*y1+(u1-u2)*y0)/denom;
+    var e=(u0*(v2*x1-v1*x2)+v0*(u1*x2-u2*x1)+(u2*v1-u1*v2)*x0)/denom;
+    var f=(u0*(v2*y1-v1*y2)+v0*(u1*y2-u2*y1)+(u2*v1-u1*v2)*y0)/denom;
+    octx.save();
+    var mx=(x0+x1+x2)/3, my=(y0+y1+y2)/3, G=1.01;     // inflate slightly to hide seams
+    octx.beginPath();
+    octx.moveTo(mx+(x0-mx)*G,my+(y0-my)*G);
+    octx.lineTo(mx+(x1-mx)*G,my+(y1-my)*G);
+    octx.lineTo(mx+(x2-mx)*G,my+(y2-my)*G);
+    octx.closePath(); octx.clip();
+    octx.transform(a,b,c,d,e,f);
+    octx.drawImage(tex,0,0);
+    octx.restore();
+  }
+
+  function frame(now){
+    if(!on) return;
+    var dt=Math.min(0.05,(now-last)/1000)||0.016; last=now; t+=dt;
+    talk += (talkTarget-talk)*Math.min(1,dt*6);
+    // a slow turn so the 3D relief reads (the nose parallaxes across the face);
+    // kept moderate so the front-only texture doesn't smear badly as the far
+    // side of the head wraps away from camera
+    yaw   = 0.24*Math.sin(t*0.34)+0.05*Math.sin(t*0.85)+talk*0.03*Math.sin(t*4.5);
+    pitch = 0.10*Math.sin(t*0.47)-0.03+talk*0.03*Math.sin(t*6.0);
+    bobY  = 0.015*Math.sin(t*0.9)+talk*0.012*Math.sin(t*7.2);
+    var mt = talk>0.02 ? Math.max(0,0.35+0.7*Math.sin(t*12)+0.3*Math.sin(t*22)) : 0;
+    mouth += (mt*talk - mouth)*Math.min(1,dt*18);
+    var htarget=-yaw*0.45; hairV += (htarget-hairX)*70*dt; hairV*=0.90; hairX += hairV*dt;
+
+    SCALE=Math.min(W,H)*0.34; CX=W*0.5; CY=H*0.42;
+    ctx.clearRect(0,0,W,H);
+    if(!texReady){ raf=requestAnimationFrame(frame); return; }
+    if(!mesh.length) buildMesh();
+
+    octx.clearRect(0,0,W,H);
+    var P=[]; for(var gy=0;gy<=GY;gy++){ var pr=[]; for(var gx=0;gx<=GX;gx++) pr.push(vpos(mesh[gy][gx])); P.push(pr); }
+    for(var gy=0;gy<GY;gy++){ for(var gx=0;gx<GX;gx++){
+      var A=mesh[gy][gx],B=mesh[gy][gx+1],C=mesh[gy+1][gx+1],D=mesh[gy+1][gx];
+      var pa=P[gy][gx],pb=P[gy][gx+1],pc=P[gy+1][gx+1],pd=P[gy+1][gx];
+      texTri([A.su,A.sv],[B.su,B.sv],[C.su,C.sv], pa,pb,pc);
+      texTri([A.su,A.sv],[C.su,C.sv],[D.su,D.sv], pa,pc,pd);
+    }}
+    // dark open-mouth interior, drawn into the same translucent layer
+    if(mouth>0.05){
+      var mc=project(0,-0.62*HALFH,depth(0,0.62));
+      octx.globalAlpha=0.8; octx.fillStyle="#2a1216"; octx.beginPath();
+      octx.ellipse(mc[0],mc[1]+mouth*0.05*SCALE,0.12*SCALE,mouth*0.085*SCALE,0,0,7); octx.fill();
+      octx.globalAlpha=1;
+    }
+    // the cutout's own alpha defines the silhouette (no matte). the one hard
+    // edge is the neck/shoulder where the head box ends -- fade that bottom
+    // strip to transparent so it reads as a soft bust, not a sliced edge.
+    octx.save(); octx.setTransform(DPR,0,0,DPR,0,0);
+    octx.globalCompositeOperation="destination-in";
+    var by0=CY+HALFH*SCALE*0.72, by1=CY+HALFH*SCALE*1.12;
+    var gb=octx.createLinearGradient(0,0,0,by1);
+    gb.addColorStop(0,"rgba(0,0,0,1)"); gb.addColorStop(by0/by1,"rgba(0,0,0,1)"); gb.addColorStop(1,"rgba(0,0,0,0)");
+    octx.fillStyle=gb; octx.fillRect(0,0,W,H); octx.restore();       // keep the head, fade only the neck/shoulder base
+
+    // composite the whole detailed face, translucent, so the graph reads through
+    ctx.globalAlpha=0.80; ctx.drawImage(off,0,0,W,H); ctx.globalAlpha=1;
+    raf=requestAnimationFrame(frame);
+  }
+
+  function open(){ if(on) return; on=true; cv.classList.add("on"); last=performance.now();
+    hairV+=2.2; raf=requestAnimationFrame(frame); }
+  function close(){ on=false; cv.classList.remove("on"); if(raf) cancelAnimationFrame(raf); ctx.clearRect(0,0,W,H); }
+  function toggle(){ on?close():open(); }
+  var btn=document.getElementById("btnFace");
+  if(btn) btn.addEventListener("click", toggle);
+  var api={toggle:toggle, open:open, close:close, setSpeaking:function(b){ talkTarget=b?1:0; }};
+  window.__brainFace=api;
+  return api;
 })();
 
 // ---------- boot ----------
