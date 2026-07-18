@@ -1,0 +1,2559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>strauh.al/brain</title>
+
+<!-- kept so this page matches the rest of the site when embedded there; the
+     <style> block below is what actually renders it correctly standalone -->
+<link rel="stylesheet" href="./style.css">
+<style>
+  /* --- strauh.al design language: white text on animated blue, 1px borders, serif ---
+     These page-level rules mirror strauh.al so the graph looks right standalone;
+     when embedded in the site they simply match the styles already there. */
+  :root{
+    --text:#fff;
+    --muted:rgba(255,255,255,0.62);
+    --line:rgba(255,255,255,0.55);
+    --panel:#00f;
+    --accent:#fff;
+    --edge:16px;   /* one shared margin for every fixed panel's outer edge */
+  }
+  *{box-sizing:border-box}
+  @keyframes changeColor{0%{background-color:#00f}50%{background-color:#20f}100%{background-color:#00f}}
+  /* Scroll-lock on <html> only. Leaving <body> without overflow/margin overrides
+     means it does NOT form a block-formatting context, so the <h1>'s top margin
+     collapses exactly as on every other strauh.al page -> the header lines up. */
+  html{margin:0;height:100%;overflow:hidden;}
+  body{color:var(--text);font-family:'Times New Roman',Times,Georgia,serif;
+    background-color:#00f;animation:changeColor 10s infinite linear;}
+  /* transparent canvas over the animated blue page background; it receives all
+     graph interaction. The <h1> is lifted above it for visibility ONLY (stacking,
+     no offset) — its appearance (font/colour/size) is left to strauh.al's CSS. */
+  #stage{position:fixed;inset:0;z-index:1;}
+  canvas{display:block;width:100%;height:100%;cursor:grab;background:transparent;}
+  #face{position:fixed;inset:0;z-index:3;pointer-events:none;display:none;cursor:grab;}
+  #face.on{display:block;}
+  /* lift the title just above the canvas (below the UI), and let clicks pass through
+     its full-width block so the buttons/canvas underneath stay usable */
+  h1{position:relative;z-index:2;pointer-events:none;}
+  h1 a{pointer-events:auto;}
+
+  /* Buttons top-right (text labels) */
+  .iconbtn{position:fixed;right:var(--edge);z-index:6;
+    background:var(--panel);border:1px solid var(--line);color:#fff;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    font-size:15px;padding:5px 13px;white-space:nowrap;}
+  .iconbtn:hover{background:#fff;color:#00f;}
+  #btnSettings{top:var(--edge)}
+  #btnReset{top:calc(var(--edge) + 40px)}
+  #btnSearch{top:calc(var(--edge) + 80px)}
+
+  /* Settings panel -- sits left of the button column with a clearance wide
+     enough that the two never crowd each other even at narrow widths, and its
+     own max-height leaves the SAME edge margin at the bottom as at the top so
+     it reads as a centred column rather than stretching to fill whatever
+     space happens to be free. */
+  #panel{position:fixed;top:var(--edge);right:calc(var(--edge) + 84px);z-index:7;width:288px;
+    max-height:min(calc(100vh - 2*var(--edge)), 70vh);
+    overflow-y:auto;background:var(--panel);border:1px solid var(--line);
+    padding:12px 15px 15px;display:none;font-size:14px;}
+  #panel.open{display:block}
+  #panel h3{margin:2px 0 9px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);
+    font-weight:400;}
+  #panel h3:not(:first-child){margin-top:16px;border-top:1px solid var(--line);padding-top:13px;}
+  .row{display:flex;align-items:center;justify-content:space-between;margin:8px 0;gap:8px;}
+  .row label{color:var(--text);flex:0 0 auto;}
+  .row .val{color:var(--muted);font-variant-numeric:tabular-nums;min-width:42px;text-align:right;font-size:12px;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:112px;height:1px;
+    background:var(--line);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;
+    background:#fff;cursor:pointer;border:1px solid #00f;}
+  input[type=checkbox]{accent-color:#fff;width:15px;height:15px;cursor:pointer;}
+  .legend{display:flex;flex-direction:column;gap:2px;margin-top:6px;}
+  .legend .lg{display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 5px;user-select:none;}
+  .legend .lg:hover{background:#fff;color:#00f;}
+  .legend .lg.off{opacity:.4;}
+  .legend .sw{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+  .legend .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .legend .ct{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;}
+  .legend .lg:hover .ct{color:#00f;}
+
+  /* Search (fixed width so long paths clip instead of overflowing the page) */
+  #searchwrap{position:fixed;top:var(--edge);left:50%;transform:translateX(-50%);z-index:7;display:none;
+    width:min(460px,calc(100vw - 130px));}
+  #searchwrap.open{display:block;}
+  #search{width:100%;background:var(--panel);border:1px solid var(--line);
+    color:#fff;padding:9px 13px;font-size:15px;font-family:inherit;outline:none;}
+  #search:focus{border-color:#fff;}
+  #results{margin-top:6px;max-height:46vh;overflow-y:auto;overflow-x:hidden;width:100%;
+    background:var(--panel);border:1px solid var(--line);display:none;}
+  #results.show{display:block;}
+  #results .r{padding:7px 13px;cursor:pointer;font-size:14px;border-bottom:1px solid rgba(255,255,255,0.18);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #results .r:last-child{border-bottom:none;}
+  #results .r:hover,#results .r.sel{background:#fff;color:#00f;}
+  #results .r .p{color:var(--muted);font-size:11px;}
+  #results .r:hover .p,#results .r.sel .p{color:#00f;}
+
+  /* Tooltip */
+  #tooltip{position:fixed;z-index:8;pointer-events:none;background:var(--panel);
+    border:1px solid var(--line);padding:6px 10px;font-size:13px;
+    color:#fff;max-width:340px;display:none;}
+  #tooltip .tp{color:var(--muted);font-size:11px;margin-top:2px;}
+
+  #hint{position:fixed;bottom:12px;left:16px;z-index:4;font-size:12px;color:var(--muted);
+    background:var(--panel);padding:5px 10px;border:1px solid var(--line);pointer-events:none;}
+  #hint b{color:#fff;font-weight:400;}
+
+  /* Node info popup (top-left) */
+  #info{position:fixed;top:62px;left:var(--edge);z-index:9;width:370px;max-width:calc(100vw - 2*var(--edge));
+    max-height:calc(100vh - 62px - var(--edge));overflow-y:auto;background:var(--panel);
+    border:1px solid var(--line);display:none;font-size:14px;
+    transform:translateY(-6px);opacity:0;transition:opacity .16s ease,transform .16s ease;}
+  #info.open{display:block;transform:none;opacity:1;}
+  #info .hd{display:flex;align-items:flex-start;gap:9px;padding:13px 14px 11px;
+    border-bottom:1px solid var(--line);position:sticky;top:0;background:#00f;}
+  #info .dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;margin-top:5px;}
+  #info .ttl{flex:1;font-size:18px;color:#fff;line-height:1.25;word-break:break-word;}
+  #info .x{flex:0 0 auto;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:0 2px;}
+  #info .x:hover{color:#fff;}
+  #info .body{padding:11px 14px 14px;}
+  #info .grp{color:var(--muted);font-size:12px;margin:-2px 0 9px;word-break:break-all;}
+  #info .sect{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);
+    margin:14px 0 6px;}
+  #info .tags{display:flex;flex-wrap:wrap;gap:5px;}
+  #info .tag{border:1px solid var(--line);color:#fff;padding:2px 8px;font-size:12px;}
+  #info table{width:100%;border-collapse:collapse;}
+  #info td{padding:3px 6px 3px 0;vertical-align:top;font-size:13px;}
+  #info td.k{color:var(--muted);white-space:nowrap;width:1%;padding-right:12px;}
+  #info td.v{color:#fff;word-break:break-word;}
+  #info .ex{color:#fff;line-height:1.5;white-space:pre-wrap;font-size:13px;}
+  #info .conns{display:flex;flex-direction:column;gap:0;}
+  #info .cn{display:flex;align-items:center;gap:8px;padding:4px 6px;cursor:pointer;}
+  #info .cn:hover{background:#fff;}
+  #info .cn:hover .nm{color:#00f;}
+  #info .cn .sw{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+  #info .cn .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;}
+  #info .empty{color:var(--muted);font-style:italic;}
+  /* image hyperlink list (artist works) */
+  #info .imgs{display:flex;flex-direction:column;gap:0;}
+  #info .il{padding:4px 6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;}
+  #info .il:hover,#info .il.on{background:#fff;color:#00f;}
+
+  /* image viewer (to the right of the note popup) — same language as #info */
+  #imgview{position:fixed;top:62px;left:calc(2*var(--edge) + 370px);z-index:9;
+    max-width:calc(100vw - 3*var(--edge) - 370px);
+    max-height:calc(100vh - 62px - var(--edge));background:#00f;border:1px solid var(--line);display:none;}
+  #imgview.open{display:block;}
+  #imgview .ihd{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid var(--line);}
+  #imgview .ittl{flex:1;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #imgview .ix{flex:0 0 auto;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:0 2px;display:none;}
+  #imgview.pinned .ix{display:block;}
+  #imgview .ix:hover{color:#fff;}
+  #imgview img{display:block;max-width:min(46vw,560px);max-height:calc(100vh - 150px);width:auto;height:auto;}
+  #imgview .miss{padding:20px;color:#fff;font-size:13px;max-width:300px;}
+
+  /* Chat (bottom-right) */
+  #btnChat{top:calc(var(--edge) + 120px)}
+  #btnFace{top:calc(var(--edge) + 160px)}
+  #chatwrap{position:fixed;bottom:var(--edge);right:var(--edge);z-index:9;width:360px;
+    max-width:calc(100vw - 2*var(--edge));
+    max-height:min(55vh,560px);background:var(--panel);border:1px solid var(--line);
+    display:none;flex-direction:column;font-size:14px;}
+  #chatwrap.open{display:flex;}
+  #chatwrap .chd{display:flex;align-items:center;gap:9px;padding:10px 13px;border-bottom:1px solid var(--line);flex:0 0 auto;}
+  #chatwrap .chd .ttl{flex:1;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);}
+  #chatwrap .chd .x{cursor:pointer;color:var(--muted);font-size:18px;line-height:1;}
+  #chatwrap .chd .x:hover{color:#fff;}
+  #chatSetup{padding:14px;display:flex;flex-direction:column;gap:9px;}
+  #chatSetup select,#chatSetup input,#chatInputRow input{background:transparent;border:1px solid var(--line);
+    color:#fff;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;}
+  #chatSetup select:focus,#chatSetup input:focus,#chatInputRow input:focus{border-color:#fff;}
+  #chatSetup select option{color:#000;}
+  #chatSetup button,#chatInputRow button{background:var(--panel);border:1px solid var(--line);color:#fff;
+    padding:8px 11px;font-size:13px;cursor:pointer;font-family:inherit;flex:0 0 auto;}
+  #chatSetup button:hover,#chatInputRow button:hover{background:#fff;color:#00f;}
+  #chatSetup .hint{color:var(--muted);font-size:11px;line-height:1.45;}
+  #chatMessages{flex:1;overflow-y:auto;padding:11px 13px;display:none;flex-direction:column;gap:10px;min-height:80px;}
+  #chatMessages.show{display:flex;}
+  #chatMessages .m{max-width:88%;padding:7px 10px;line-height:1.45;font-size:13px;white-space:pre-wrap;word-break:break-word;}
+  #chatMessages .m.user{align-self:flex-end;background:#fff;color:#00f;}
+  #chatMessages .m.ai{align-self:flex-start;border:1px solid var(--line);color:#fff;}
+  #chatMessages .m.ai .mention-link{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;cursor:pointer;}
+  #chatMessages .m.ai .mention-link:hover{color:#fff;background:rgba(255,255,255,0.15);}
+  #chatInputRow{display:none;border-top:1px solid var(--line);padding:9px 10px;gap:7px;flex:0 0 auto;}
+  #chatInputRow.show{display:flex;}
+  #chatInputRow input{flex:1;}
+  #chatMute.muted{opacity:.4;}
+  #chatVoiceRow{display:none;border-top:1px solid var(--line);padding:8px 10px;flex:0 0 auto;}
+  #chatVoiceRow.show{display:block;}
+  #chatVoiceRow input{width:100%;background:transparent;border:1px solid var(--line);color:#fff;
+    padding:6px 9px;font-size:12px;font-family:inherit;outline:none;}
+  #chatVoiceRow input:focus{border-color:#fff;}
+  #chatVoiceRow .hint{color:var(--muted);font-size:10.5px;line-height:1.4;margin-top:4px;}
+</style>
+</head>
+<body>
+<h1><a href="https://strauh.al">strauh.al</a>/brain</h1>
+
+<div id="stage"><canvas id="cv"></canvas></div>
+<canvas id="face"></canvas>
+
+<div class="iconbtn" id="btnSettings" title="Settings">settings</div>
+<div class="iconbtn" id="btnReset" title="Reset view (R)">reset</div>
+<div class="iconbtn" id="btnSearch" title="Search (/)">search</div>
+<div class="iconbtn" id="btnChat" title="Chat with the archive">chat</div>
+<div class="iconbtn" id="btnFace" title="Drag to orbit the particle bust">face</div>
+
+<div id="chatwrap">
+  <div class="chd"><span class="ttl">chat with strauh.al/brain</span><span class="x" id="chatClose" title="Close">×</span></div>
+  <div id="chatSetup">
+    <div class="hint">paste an API key to talk to this archive. it's stored only in this browser (until you clear site data) and only ever sent to the provider you pick below — never anywhere else.</div>
+    <select id="chatProvider">
+      <option value="gemini">Gemini</option>
+      <option value="openai">OpenAI</option>
+      <option value="anthropic">Anthropic</option>
+    </select>
+    <input id="chatKeyInput" type="password" placeholder="API key" autocomplete="off" spellcheck="false">
+    <button id="chatKeySave">connect</button>
+  </div>
+  <div id="chatMessages"></div>
+  <div id="chatVoiceRow">
+    <input id="chatGradiumKey" type="password" placeholder="optional: paste a Gradium API key to hear this in the real voice" autocomplete="off" spellcheck="false">
+    <div class="hint">stored only in this browser, same as the chat key above. leave blank to keep the fallback voice.</div>
+  </div>
+  <div id="chatInputRow">
+    <input id="chatText" type="text" placeholder="ask about anything in here…" autocomplete="off" spellcheck="false">
+    <button id="chatSend">send</button>
+    <button id="chatMute" title="mute voice">🔊</button>
+  </div>
+</div>
+
+<div id="searchwrap">
+  <input id="search" type="text" placeholder="Search notes…" autocomplete="off" spellcheck="false">
+  <div id="results"></div>
+</div>
+
+<div id="panel">
+  <h3>Forces</h3>
+  <div class="row"><label>Center force</label><input type="range" id="fCenter" min="0" max="100" value="15"><span class="val" id="vCenter"></span></div>
+  <div class="row"><label>Repel force</label><input type="range" id="fRepel" min="0" max="100" value="54"><span class="val" id="vRepel"></span></div>
+  <div class="row"><label>Link force</label><input type="range" id="fLink" min="0" max="100" value="50"><span class="val" id="vLink"></span></div>
+  <div class="row"><label>Link distance</label><input type="range" id="fDist" min="10" max="250" value="75"><span class="val" id="vDist"></span></div>
+
+  <h3>Display</h3>
+  <div class="row"><label>Node size</label><input type="range" id="dSize" min="20" max="300" value="50"><span class="val" id="vSize"></span></div>
+  <div class="row"><label>Text fade</label><input type="range" id="dText" min="0" max="100" value="42"><span class="val" id="vText"></span></div>
+  <div class="row"><label>Show arrows</label><input type="checkbox" id="dArrows"></div>
+
+  <h3>Groups</h3>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div id="tooltip"></div>
+<div id="info"></div>
+<div id="imgview"><div class="ihd"><span class="ittl"></span><span class="ix" title="Close">×</span></div><img alt=""></div>
+<div id="hint">scroll = zoom · <b>drag = rotate 3D</b> · <b>right-drag = pan</b> · drag node = move · hover = highlight · <b>click = open note</b></div>
+
+<script>
+var DATA_URL = new URLSearchParams(location.search).get("data") || "https://raw.githubusercontent.com/strauhal/strauh.al-obsidian/refs/heads/main/knowledge/output/brain-data.json";
+var DATA = null;
+function showBootStatus(msg){
+  var el = document.getElementById("bootstatus");
+  if(!el){
+    el = document.createElement("div"); el.id = "bootstatus";
+    el.style.cssText = "position:fixed;inset:0;z-index:20;display:flex;align-items:center;"+
+      "justify-content:center;color:#fff;font-family:'Times New Roman',Times,Georgia,serif;"+
+      "font-size:16px;text-align:center;padding:20px;pointer-events:none;";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+}
+showBootStatus("loading the archive\u2026");
+fetch(DATA_URL)
+  .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(function(d){
+    DATA = d;
+    var el = document.getElementById("bootstatus"); if(el) el.remove();
+    boot();
+  })
+  .catch(function(e){ showBootStatus("couldn\'t load the graph (" + e.message + "). refresh to retry."); });
+
+function boot(){
+(function(){
+"use strict";
+
+// ---------- palette (One Dark / Nord-ish, tuned for dark bg) ----------
+var PALETTE = ["#8a7bf0","#e06c75","#e5c07b","#56b6c2","#98c379","#c678dd",
+  "#d19a66","#61afef","#e88aa8","#5fb3b3","#b48ead","#a3be8c","#ebcb8b",
+  "#bf8b6a","#6cb6ff","#cba6f7","#94e2d5","#f2cdcd","#a6da95","#eed49f"];
+function groupColor(g){ if(typeof IMAGE_GROUP!=="undefined" && g===IMAGE_GROUP) return "#c8cdf0"; return PALETTE[g % PALETTE.length]; }
+function hexRgb(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+
+// ---------- build node/link arrays ----------
+var N = DATA.names.length;
+var nodes = new Array(N);
+var ARTIST_GROUP = DATA.groupNames.indexOf("artists");   // pushed to the surface shell
+var IMAGE_GROUP  = DATA.groupNames.indexOf("images");    // paintings: outermost floating shell
+// Only the vault's structural hubs are worth hand-repositioning -- concepts and
+// the library/index maps. Everything else (images, artists, books, people,
+// culture bookmarks, archive, works, dreams, etc.) is click-to-open + rotate
+// only; there are thousands of them and letting any of them grab a drag makes
+// it nearly impossible to just orbit the camera.
+var DRAGGABLE_GROUPS = {};
+["concepts","maps"].forEach(function(g){ var gi=DATA.groupNames.indexOf(g); if(gi>=0) DRAGGABLE_GROUPS[gi]=true; });
+function isDraggable(n){ return !!DRAGGABLE_GROUPS[n.g]; }
+// maxDeg for the core's own "coreness" gradient is taken over non-image nodes
+// only -- a handful of images sit at very high degree (dozens of concept
+// crosslinks) and would otherwise wash out how core a genuine knowledge hub is.
+var maxDeg = 1, maxCoreDeg = 1;
+for (var i=0;i<N;i++){
+  maxDeg = Math.max(maxDeg, DATA.deg[i]);
+  if (DATA.groups[i]!==IMAGE_GROUP) maxCoreDeg = Math.max(maxCoreDeg, DATA.deg[i]);
+}
+for (var i=0;i<N;i++){
+  nodes[i] = {
+    i:i, name:DATA.names[i], path:DATA.paths[i], g:DATA.groups[i], deg:DATA.deg[i],
+    x:0, y:0, z:0, vx:0, vy:0, vz:0, fx:null, fy:null, fz:null,
+    r:1, col:groupColor(DATA.groups[i]), unsorted:!!(DATA.unsorted && DATA.unsorted[i]),
+    kbConnected:!!(DATA.kbConnected && DATA.kbConnected[i]),
+    personal:!!(DATA.personal && DATA.personal[i])
+  };
+}
+
+// ---------- ring shells for images (computed from the real degree distribution,
+// not fixed numbers, so this stays sane as the archive grows) ----------
+// Rather than one weak, uniform pull-to-centre for every image (which just piles
+// them all into one chaotic mass once most images pick up a handful of links),
+// bucket images into concentric shells by how connected they are: barely-linked
+// images form a wide outer dust ring, well-linked ones sit closer in, forming
+// distinct rings rather than a single blob -- while repulsion/link forces still
+// govern each node's position WITHIN its ring, so the rings stay organic, not
+// perfect wireframe spheres.
+var imgDegs = [];
+for (var i=0;i<N;i++) if (nodes[i].g===IMAGE_GROUP) imgDegs.push(nodes[i].deg);
+imgDegs.sort(function(a,b){return a-b;});
+function pct(p){ if(!imgDegs.length) return 0; return imgDegs[Math.min(imgDegs.length-1, Math.floor(imgDegs.length*p))]; }
+var RING_CUTS = [pct(0.50), pct(0.85), pct(0.97)];   // degree thresholds between rings
+// Pushed well out from where the knowledge-base core settles (see the cohesion
+// weights below), with a wide deliberate GAP before the innermost ring starts,
+// so the core is visible through open space, not crowded right up against it.
+var RING_R    = [900, 650, 450, 300];                 // outer -> inner shell radius per tier
+// tight jitter (+/-5%) so each ring stays a distinct band, not a gradient
+for (var i=0;i<N;i++){
+  var n=nodes[i];
+  if(n.g!==IMAGE_GROUP){ n.shellR=null; continue; }
+  var tier = n.deg<=RING_CUTS[0]?0 : n.deg<=RING_CUTS[1]?1 : n.deg<=RING_CUTS[2]?2 : 3;
+  var jitter = 0.95 + 0.10*(((i*2654435761)>>>0)%1000)/1000;
+  n.shellR = RING_R[tier]*jitter;
+}
+// initial positions: 3D spherical Fibonacci spiral (gives the layout volume to inflate)
+var GA = Math.PI*(3-Math.sqrt(5));
+for (var i=0;i<N;i++){
+  var t = (i+0.5)/N;
+  var phi = Math.acos(1-2*t);          // polar angle, uniform on sphere
+  var theta = GA*i;                    // golden-angle azimuth
+  var rad = 16*Math.cbrt(i+1);         // grow radius so they start spread in a ball
+  nodes[i].x = rad*Math.sin(phi)*Math.cos(theta);
+  nodes[i].y = rad*Math.sin(phi)*Math.sin(theta);
+  nodes[i].z = rad*Math.cos(phi);
+}
+var links = new Array(DATA.links.length);
+var degCount = new Array(N).fill(0); // link count for bias/strength
+for (var i=0;i<DATA.links.length;i++){
+  var s=DATA.links[i][0], t=DATA.links[i][1];
+  // link colour = midpoint of the two notes' colours (same colour if same group)
+  var ca=hexRgb(nodes[s].col), cb=hexRgb(nodes[t].col);
+  var cm=((ca[0]+cb[0])>>1)+","+((ca[1]+cb[1])>>1)+","+((ca[2]+cb[2])>>1);
+  links[i] = {s:nodes[s], t:nodes[t], cm:cm};
+  degCount[s]++; degCount[t]++;
+}
+// adjacency for highlight
+var adj = new Array(N);
+for (var i=0;i<N;i++) adj[i]=[];
+for (var i=0;i<links.length;i++){ adj[links[i].s.i].push(links[i].t.i); adj[links[i].t.i].push(links[i].s.i); }
+
+// group visibility
+var groupVisible = DATA.groupNames.map(function(){return true;});
+var showOrphans = true;
+
+// ---------- canvas / view ----------
+var cv = document.getElementById("cv");
+var ctx = cv.getContext("2d", {alpha:true});   // transparent so the page's blue shows through
+var dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+var W=0,H=0;
+var view = {k:0.18, tx:0, ty:0}; // scale + translate (CSS px)
+
+// ----- pseudo-3D: rotate the flat 2D layout in space (right-drag) -----
+// The physics stays 2D; we rotate (x,y,0) about the graph centroid by yaw/pitch
+// and apply a gentle perspective divide so it reads as orbiting in 3D.
+var rot = {yaw:0, pitch:0};
+var FOCAL = 1600;          // perspective focal length (DYNAMIC: shrinks as you zoom in -> dolly)
+var FOCAL_BASE = 1600;     // focal length at the fit view (gentle perspective)
+var MAXD = 100;            // graph bounding radius (set on fit)
+var fitK = 0.2;            // zoom level at which the whole graph fits (set in fitView)
+var cenX = 0, cenY = 0;    // graph centroid (recomputed each draw)
+function clampPitch(p){ return p<-1.35?-1.35:(p>1.35?1.35:p); }
+// camera distance for the CURRENT zoom: as you zoom in (k>fitK) the camera dollies
+// closer (FOCAL shrinks) so perspective strengthens and you fly forward through depth.
+// The low floor keeps the dolly progressive across the whole zoom range.
+// floor raised from 0.25 -> 0.45: at high zoom the old floor let a node's depth
+// get close enough to -FOCAL that perspOf's clamp kicked in hard and often,
+// which read as the whole web "folding" through itself mid-rotation.
+function effFocal(){ return Math.max(MAXD*0.45, Math.min(FOCAL_BASE, FOCAL_BASE*fitK/view.k)); }
+// perspective scale for a node at rotated depth z. Two safeguards against the
+// "folding" artifact: a much gentler near-plane clamp (0.35 instead of 0.14, so
+// the denominator never gets razor-thin), and a hard cap on the resulting
+// magnification -- no single node can balloon past ~2.2x, so a node sweeping
+// through the near side of a rotation eases up smoothly instead of suddenly
+// snapping huge.
+function perspOf(z){ var d=FOCAL+z, m=FOCAL*0.35; return Math.min(2.2, FOCAL/(d<m?m:d)); }
+// idle "living" animation energy: 1 = spinning, 0 = still. Eased, never snapped.
+var idleTarget=1, idleEnergy=1, autoPitchPrev=0;
+// breathing (node drift) is gated by ZOOM, not interaction: alive when viewing from a
+// distance (even while rotating/panning), still when you're zoomed deep in reading.
+var breatheGate=1;
+// auto-reframe during the initial settle — turned off IMMEDIATELY on interaction (so a
+// zoom isn't fought by re-fitting), separate from the eased spin/breathe fade above.
+var autoFit=true;
+
+function nowMs(){ return performance.now(); }
+function lerp(a,b,t){ return a+(b-a)*t; }
+function easeInOut(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+function resize(){
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.floor(W*dpr); cv.height = Math.floor(H*dpr);
+  cv.style.width = W+"px"; cv.style.height = H+"px";
+  needsDraw = true;
+}
+window.addEventListener("resize", resize);
+
+// world <-> screen (face-on; used when rot is ~0, e.g. zoom anchoring)
+function toScreenX(x){ return x*view.k + view.tx; }
+function toScreenY(y){ return y*view.k + view.ty; }
+function toWorldX(sx){ return (sx - view.tx)/view.k; }
+function toWorldY(sy){ return (sy - view.ty)/view.k; }
+
+// ---------- parameters (bound to sliders) ----------
+var P = {
+  center: 0.22*1.0,
+  repel: 1.0,
+  linkForce: 0.55,
+  linkDist: 55,
+  nodeSize: 1.0,
+  linkThick: 1.0,
+  textFade: 0.42,
+  arrows: false
+};
+
+// node radius from degree
+function computeRadii(){
+  for (var i=0;i<N;i++){
+    var n=nodes[i];
+    n.r = (1.4 + 2.0*Math.sqrt(n.deg)) * (0.45 + 0.85*P.nodeSize);
+  }
+}
+computeRadii();
+
+// ---------- Barnes-Hut OCTREE for repulsion (3D) ----------
+// A full 3D charge sim gives the graph a *body*: repulsion inflates it into a
+// sphere, links pull connected notes together in all three axes, so depth
+// genuinely encodes structure (rotating reveals clusters front-to-back).
+function Oct(){ this.x0=0;this.y0=0;this.z0=0;this.s=0;
+  this.mass=0;this.cx=0;this.cy=0;this.cz=0;this.node=null;this.children=null; }
+var octPool=[], octCount=0;
+function getOct(){ var q = octPool[octCount] || (octPool[octCount]=new Oct()); octCount++;
+  q.mass=0;q.cx=0;q.cy=0;q.cz=0;q.node=null;q.children=null; return q; }
+
+function buildTree(){
+  octCount=0;
+  var mn=Infinity,mx=-Infinity, mny=Infinity,mxy=-Infinity, mnz=Infinity,mxz=-Infinity;
+  for (var i=0;i<N;i++){ var n=nodes[i];
+    if(n.x<mn)mn=n.x; if(n.x>mx)mx=n.x;
+    if(n.y<mny)mny=n.y; if(n.y>mxy)mxy=n.y;
+    if(n.z<mnz)mnz=n.z; if(n.z>mxz)mxz=n.z; }
+  if(!isFinite(mn)){mn=mny=mnz=-1;mx=mxy=mxz=1;}
+  var size=Math.max(mx-mn,Math.max(mxy-mny,mxz-mnz))+1;
+  var root=getOct(); root.x0=mn;root.y0=mny;root.z0=mnz;root.s=size;
+  for (var i=0;i<N;i++) insert(root, nodes[i]);
+  return root;
+}
+function insert(q,node){
+  if(q.node===null && q.children===null){ q.node=node; return; }
+  if(q.children===null){
+    var existing=q.node; q.node=null; q.children=[null,null,null,null,null,null,null,null];
+    placeChild(q, existing);
+  }
+  placeChild(q, node);
+}
+function placeChild(q,node){
+  var h=q.s/2, mx=q.x0+h, my=q.y0+h, mz=q.z0+h;
+  var bx=node.x>=mx?1:0, by=node.y>=my?1:0, bz=node.z>=mz?1:0;
+  var qi=bx + by*2 + bz*4;
+  var c=q.children[qi];
+  if(c===null){
+    c=getOct(); c.s=h;
+    c.x0=q.x0+(bx?h:0); c.y0=q.y0+(by?h:0); c.z0=q.z0+(bz?h:0);
+    q.children[qi]=c;
+  }
+  insert(c,node);
+}
+function computeMass(q){
+  if(q.children===null){
+    if(q.node){ q.mass=1; q.cx=q.node.x; q.cy=q.node.y; q.cz=q.node.z; }
+    return;
+  }
+  var m=0,cx=0,cy=0,cz=0;
+  for(var i=0;i<8;i++){ var c=q.children[i]; if(c){ computeMass(c); m+=c.mass; cx+=c.cx*c.mass; cy+=c.cy*c.mass; cz+=c.cz*c.mass; } }
+  q.mass=m; q.cx=cx/m; q.cy=cy/m; q.cz=cz/m;
+}
+var THETA2=0.81; // theta^2 ~ 0.9^2
+var octStack=new Array(4096);
+function applyRepel(node, root, strength, alpha){
+  var sp=0; octStack[sp++]=root;
+  while(sp>0){
+    var q=octStack[--sp];
+    if(q.mass===0) continue;
+    var dx=q.cx-node.x, dy=q.cy-node.y, dz=q.cz-node.z;
+    var d2=dx*dx+dy*dy+dz*dz;
+    if(q.children===null){
+      if(q.node && q.node!==node){
+        if(d2===0){ dx=(node.i%7-3)*0.5; dy=(node.i%5-2)*0.5; dz=(node.i%3-1)*0.5; d2=dx*dx+dy*dy+dz*dz+0.01; }
+        var f=strength*alpha/d2;
+        node.vx+=dx*f; node.vy+=dy*f; node.vz+=dz*f;
+      }
+      continue;
+    }
+    if((q.s*q.s)/(d2||1e-9) < THETA2){
+      if(d2===0){ d2=0.01; }
+      var f=strength*alpha*q.mass/d2;
+      node.vx+=dx*f; node.vy+=dy*f; node.vz+=dz*f;
+    } else {
+      for(var i=0;i<8;i++) if(q.children[i]) octStack[sp++]=q.children[i];
+    }
+  }
+}
+
+// ---------- simulation ----------
+var alpha=1, alphaMin=0.001, alphaDecay=1-Math.pow(alphaMin,1/320), alphaTarget=0, velDecay=0.6;
+var BREATHE=2.6;               // breathing wobble amplitude in SCREEN px (render-only, bounded)
+var breatheT=0;                // breathing time counter
+function reheat(a){ alpha=Math.max(alpha, a||0.35); running=true; ensureLoop(); }
+
+function tick(){
+  // repel — only while actively settling (gated so idle breathing stays cheap)
+  if(alpha>0.06){
+    var root=buildTree(); computeMass(root);
+    var rep = -34 * P.repel;
+    for(var i=0;i<N;i++) applyRepel(nodes[i], root, rep, alpha);
+  }
+
+  // links (d3-style, in 3D)
+  for(var i=0;i<links.length;i++){
+    var L=links[i], s=L.s, t=L.t;
+    var dx=(t.x+t.vx)-(s.x+s.vx), dy=(t.y+t.vy)-(s.y+s.vy), dz=(t.z+t.vz)-(s.z+s.vz);
+    var dist=Math.sqrt(dx*dx+dy*dy+dz*dz)||1e-6;
+    var ds=degCount[s.i], dt=degCount[t.i];
+    var strength=P.linkForce/Math.min(ds||1,dt||1);
+    // links touching a ringed image pull much less strongly -- the ring's radial
+    // spring should decide its depth; the link should only nudge its angle
+    if(s.shellR!=null || t.shellR!=null) strength*=0.15;
+    var l=(dist-P.linkDist)/dist*alpha*strength;
+    dx*=l; dy*=l; dz*=l;
+    var bias=(ds||1)/((ds||1)+(dt||1));
+    t.vx-=dx*bias; t.vy-=dy*bias; t.vz-=dz*bias;
+    s.vx+=dx*(1-bias); s.vy+=dy*(1-bias); s.vz+=dz*(1-bias);
+  }
+
+  // degree-weighted cohesion (3D): highly-connected hubs are pulled hard to the
+  // CORE; leaves and especially artists barely at all, so repulsion + their links
+  // leave them on the outer SHELL. Connections therefore radiate from the centre.
+  var baseCG=P.center*0.11*alpha;
+  if(baseCG>0){
+    for(var i=0;i<N;i++){
+      var n=nodes[i]; if(n.fx!=null) continue;
+      if(n.shellR!=null){
+        // images: a radial spring toward this node's assigned ring radius, not a
+        // pull toward the origin -- this is what keeps the rings distinct instead
+        // of everything collapsing into whatever the link forces want.
+        var r=Math.sqrt(n.x*n.x+n.y*n.y+n.z*n.z)||1e-6;
+        var springF=(n.shellR-r)*baseCG*1.6;
+        n.vx+=(n.x/r)*springF; n.vy+=(n.y/r)*springF; n.vz+=(n.z/r)*springF;
+        continue;
+      }
+      var coreness=Math.sqrt(n.deg/maxCoreDeg);             // 0 leaf .. 1 hub, among non-image nodes
+      // layered shells: knowledge hubs sink to the CORE, artists form an inner shell,
+      // pulled noticeably harder than before so there's real open space before the
+      // image rings start.
+      var w = (n.g===ARTIST_GROUP) ? 0.75 : 1.1+2.6*coreness;
+      var cg=baseCG*w;
+      n.vx+=-n.x*cg; n.vy+=-n.y*cg; n.vz+=-n.z*cg;
+    }
+  }
+
+  // integrate
+  for(var i=0;i<N;i++){
+    var n=nodes[i];
+    if(n.fx!=null){ n.x=n.fx; n.vx=0; } else { n.vx*=velDecay; n.x+=n.vx; }
+    if(n.fy!=null){ n.y=n.fy; n.vy=0; } else { n.vy*=velDecay; n.y+=n.vy; }
+    if(n.fz!=null){ n.z=n.fz; n.vz=0; } else { n.vz*=velDecay; n.z+=n.vz; }
+  }
+  alpha += (alphaTarget-alpha)*alphaDecay;
+}
+
+// ---------- highlight / hover ----------
+var hoverNode=null, focusNode=null, searchSet=null;
+var hiNodes=null, hiLinks=null;
+var connHi=null;   // node index of a connection row being hovered in the popup
+var groupHi=null;  // group index being hovered in the settings legend
+function computeHighlight(){
+  var center = focusNode;   // skeleton highlight only on click/focus, never on hover (no flicker)
+  if(center){
+    hiNodes={}; hiNodes[center.i]=2;
+    var a=adj[center.i];
+    for(var j=0;j<a.length;j++) if(hiNodes[a[j]]===undefined) hiNodes[a[j]]=1;
+  } else hiNodes=null;
+}
+
+// ---------- drawing ----------
+var needsDraw=true, running=true, rafId=null;
+function ensureLoop(){ if(rafId==null) rafId=requestAnimationFrame(loop); }
+
+// All images are shown -- kept out of the knowledge-base's way by the ring
+// shells (see below) instead of being filtered out of the view entirely.
+function nodeVisible(n){
+  if(!groupVisible[n.g]) return false;
+  if(!showOrphans && n.deg===0) return false;
+  return true;
+}
+
+// We render entirely in SCREEN space (identity transform, only dpr scale) and
+// project world->screen by hand. Drawing arcs under a non-unity canvas transform
+// triggers a Chrome tessellation artifact (circles render as teardrops/polygons),
+// so we keep the CTM at dpr and bake the projection into the coordinates instead.
+var vib=0, vibPhase=0;                 // vibration during fly animation (screen px)
+// Split into "image" vs "core" (everything else) for a two-pass draw: core notes
+// and their connections always render ON TOP of images, regardless of raw Z
+// depth, and images render translucent -- so the knowledge base reads clearly
+// through the image layer instead of being buried under however many paintings
+// happen to be in front of it in 3D.
+var imageDrawOrder=[], coreDrawOrder=[];
+for(var i=0;i<N;i++) (nodes[i].shellR!=null ? imageDrawOrder : coreDrawOrder).push(i);
+var imageLinkOrder=[], coreLinkOrder=[];
+for(var i=0;i<links.length;i++){
+  var L=links[i];
+  (L.s.shellR!=null || L.t.shellR!=null ? imageLinkOrder : coreLinkOrder).push(i);
+}
+var IMAGE_NODE_ALPHA = 0.55;   // translucency multiplier for image dots specifically
+var zMin=0, zMax=0, cenZ=0;
+
+// Project every node from its real 3D position to screen px (perspective),
+// storing _sx,_sy,_sr,_z on the node. Always on — the layout is a 3D body.
+function computeProjection(){
+  FOCAL = effFocal();                  // dolly: camera distance tracks the zoom level
+  var k=view.k, tx=view.tx, ty=view.ty;
+  var sx=0, sy=0, sz=0, c=0;
+  for(var i=0;i<N;i++){ var n=nodes[i]; if(!nodeVisible(n))continue; sx+=n.x; sy+=n.y; sz+=n.z; c++; }
+  if(c){ cenX=sx/c; cenY=sy/c; cenZ=sz/c; }
+  var cyaw=Math.cos(rot.yaw), syaw=Math.sin(rot.yaw);
+  var cpit=Math.cos(rot.pitch), spit=Math.sin(rot.pitch);
+  // organic "living" drift: while idle, each node wanders subtly in 3D (render-only,
+  // bounded, decorrelated per node) so the whole web feels alive. Stops on interaction.
+  var bt=breatheT, B = FOCAL*0.007*breatheGate;  // breathing amplitude fades out as you zoom in
+  zMin=Infinity; zMax=-Infinity;
+  for(var i=0;i<N;i++){
+    var n=nodes[i];
+    var dx=n.x-cenX, dy=n.y-cenY, dz=n.z-cenZ;
+    if(B && n.fx==null){
+      dx += B*Math.sin(bt*0.012 + n.i*1.7);
+      dy += B*Math.sin(bt*0.011 + n.i*2.9);
+      dz += B*Math.sin(bt*0.013 + n.i*0.7);
+    }
+    var y1=dy*cpit - dz*spit, z1=dy*spit + dz*cpit;  // pitch about X
+    var x2=dx*cyaw + z1*syaw;                         // yaw about Y
+    var z = -dx*syaw + z1*cyaw;
+    var persp=perspOf(z);
+    n._sx=(cenX + x2*persp)*k+tx;
+    n._sy=(cenY + y1*persp)*k+ty;
+    n._sr=n.r*k*persp;
+    n._z=z;
+    if(z<zMin)zMin=z; if(z>zMax)zMax=z;
+  }
+  if(vib>0.05){
+    for(var i=0;i<N;i++){ var n=nodes[i];
+      n._sx += vib*Math.sin(vibPhase*1.7 + n.i*1.31);
+      n._sy += vib*Math.cos(vibPhase*1.9 + n.i*0.74);
+    }
+  }
+}
+
+function fogAlpha(z){ // nearer (smaller z) brighter, farther dimmer
+  if(zMax<=zMin) return 1;
+  var t=(z-zMin)/(zMax-zMin);   // 0 near .. 1 far
+  return 1 - 0.5*t;
+}
+
+function draw(){
+  computeProjection();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);   // transparent: the page's animated blue shows through
+
+  var k=view.k;
+  var hasHi = hiNodes!=null || searchSet!=null || groupHi!=null;
+  var TAU=6.283185307;
+
+  // ---- links ---- (always 1px wide regardless of zoom)
+  // Drawn in two passes: image-touching links first (faded), core-to-core links
+  // second so they always sit visually on top of the image mesh underneath.
+  var baseLW = 1;
+  var litLW = 1.8;   // highlighted/connection links a touch heavier so they read
+  function drawLinkPass(order, isImagePass){
+    for(var oi=0;oi<order.length;oi++){
+      var L=links[order[oi]], s=L.s, t=L.t;
+      if(!nodeVisible(s)||!nodeVisible(t)) continue;
+      var sx=s._sx, sy=s._sy, txx=t._sx, tyy=t._sy;
+      if((sx<0&&txx<0)||(sx>W&&txx>W)||(sy<0&&tyy<0)||(sy>H&&tyy>H)) continue;
+      var lit = hiNodes ? (hiNodes[s.i]!==undefined && hiNodes[t.i]!==undefined) : false;
+      if(groupHi!=null && s.g===groupHi && t.g===groupHi) lit=true;   // intra-group web lights up
+      var conn = (connHi!=null && (s.i===connHi||t.i===connHi));
+      if(conn){ ctx.strokeStyle="rgba(255,255,255,1)"; ctx.lineWidth=litLW*1.35; }      // hovered connection blazes
+      else if(connHi!=null && lit){ ctx.strokeStyle="rgba(255,255,255,0.18)"; ctx.lineWidth=baseLW; } // others recede while a conn is hovered
+      else if(hasHi && !lit){ ctx.strokeStyle="rgba(255,255,255,0.05)"; ctx.lineWidth=baseLW; }
+      else if(lit){ ctx.strokeStyle="rgba(255,255,255,0.9)"; ctx.lineWidth=litLW; }
+      else {  // normal link: coloured as the midpoint of the two notes it connects
+        var la = 0.45+0.35*fogAlpha((s._z+t._z)*0.5);
+        // links reaching out to a ringed image are the vast majority of all links
+        // (tens of thousands of them) -- drawn at full strength they fill in every
+        // gap between the core and the image shells. Fade them right down by
+        // default; hovering/focusing still lights the relevant ones up normally
+        // via the `lit`/`conn` branches above.
+        if(isImagePass) la *= 0.12;
+        ctx.strokeStyle="rgba("+L.cm+","+la.toFixed(3)+")"; ctx.lineWidth=baseLW;
+      }
+      ctx.beginPath();
+      ctx.moveTo(sx,sy); ctx.lineTo(txx,tyy);
+      ctx.stroke();
+      if(P.arrows && (!hasHi || lit)) drawArrow(sx,sy,txx,tyy,t._sr,baseLW);
+    }
+  }
+  drawLinkPass(imageLinkOrder, true);
+  drawLinkPass(coreLinkOrder, false);
+
+  // ---- nodes ---- (each pass depth-sorted far -> near within itself; the core
+  // pass always draws after/on top of the image pass, regardless of raw Z, and
+  // image nodes are drawn translucent so the core reads clearly through them)
+  function drawNodePass(order, isImagePass){
+    order.sort(function(a,b){ return nodes[b]._z - nodes[a]._z; });
+    for(var oi=0;oi<order.length;oi++){
+      var n = nodes[order[oi]];
+      if(!nodeVisible(n)) continue;
+      var sx=n._sx, sy=n._sy, r=n._sr;
+      if(sx<-r-2||sx>W+r+2||sy<-r-2||sy>H+r+2) continue;
+      if(r<0.4) r=0.4;
+      var dim=false, full=false, ring=false;
+      if(hiNodes){ if(hiNodes[n.i]===undefined) dim=true; else if(hiNodes[n.i]===2){ full=true; ring=true; } }
+      if(searchSet){ if(!searchSet[n.i]) dim=true; else { full=true; ring=true; } }
+      if(groupHi!=null){ if(n.g===groupHi){ dim=false; full=true; } else dim=true; }  // group lights up in its colour (no ring)
+      var isConn=(n.i===connHi);
+      if(isConn){ dim=false; full=true; ring=true; r=Math.max(r*1.5, r+5); }   // pop out of the focus web
+      var a = dim?0.12 : (full?1:fogAlpha(n._z));
+      if(isImagePass && !full) a *= IMAGE_NODE_ALPHA;
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      ctx.arc(sx,sy,r,0,TAU);
+      ctx.fillStyle = n.col;
+      ctx.fill();
+      if(isConn){ // bright halo on the connection being hovered in the popup
+        ctx.globalAlpha=1;
+        ctx.lineWidth=Math.max(2, r*0.3);
+        ctx.strokeStyle="#fff"; ctx.stroke();
+        ctx.globalAlpha=0.55; ctx.lineWidth=Math.max(1.2,r*0.16);
+        ctx.beginPath(); ctx.arc(sx,sy,r+Math.max(5,r*0.8),0,TAU); ctx.stroke();
+      } else if(ring){
+        ctx.globalAlpha=1;
+        ctx.lineWidth=Math.max(1.4, r*0.18);
+        ctx.strokeStyle="rgba(255,255,255,0.95)";
+        ctx.stroke();
+      }
+    }
+  }
+  drawNodePass(imageDrawOrder, true);
+  drawNodePass(coreDrawOrder, false);
+  ctx.globalAlpha=1;
+
+  // ---- hover: a single white outline ring on the node under the cursor ----
+  if(hoverNode && nodeVisible(hoverNode) && hoverNode._sx!==undefined){
+    var hr=Math.max(hoverNode._sr+2.5, 4.5);
+    ctx.beginPath();
+    ctx.arc(hoverNode._sx, hoverNode._sy, hr, 0, TAU);
+    ctx.lineWidth=1.6; ctx.strokeStyle="rgba(255,255,255,0.95)";
+    ctx.stroke();
+  }
+
+  // ---- labels ----
+  var fadeK = 0.12 + P.textFade*1.4;   // view scale at which generic labels appear
+  ctx.font = "13px 'Times New Roman', Times, Georgia, serif";
+  ctx.textAlign="center"; ctx.textBaseline="top";
+  var bigDegThreshold = Math.max(6, maxDeg*0.12);
+  for(var i=0;i<N;i++){
+    var n=nodes[i];
+    if(!nodeVisible(n)) continue;
+    var forced = (hiNodes && hiNodes[n.i]!==undefined) || (searchSet && searchSet[n.i]) || n.i===connHi;
+    var show=false, a=1;
+    if(forced){ show=true; a=1; }
+    else if(hiNodes||searchSet||groupHi){ show=false; }
+    else if(k>=fadeK){ show=true; a=Math.min(1,(k-fadeK)/(fadeK*0.6)); }
+    else if(n.deg>=bigDegThreshold && k>fadeK*0.45){ show=true; a=Math.min(1,(k-fadeK*0.45)/(fadeK*0.4)); }
+    if(!show) continue;
+    var sx=n._sx, sy=n._sy, r=n._sr;
+    if(sx<-60||sx>W+60||sy<-20||sy>H+20) continue;
+    if(!forced) a*=fogAlpha(n._z);
+    var label=n.name;
+    if(label.length>34) label=label.slice(0,32)+"…";
+    var ly=sy+r+3;
+    ctx.globalAlpha=a*0.55;
+    ctx.fillStyle="#001";   // dark-blue shadow keeps white text legible on bright blue
+    ctx.fillText(label, sx+0.8, ly+0.8);
+    ctx.globalAlpha=a;
+    ctx.fillStyle="#fff";
+    ctx.fillText(label, sx, ly);
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawArrow(sx,sy,tx,ty,tr,lw){
+  var dx=tx-sx, dy=ty-sy, d=Math.sqrt(dx*dx+dy*dy)||1;
+  var ux=dx/d, uy=dy/d;
+  var ex=tx-ux*tr, ey=ty-uy*tr;
+  var sz=4*P.linkThick+lw;
+  var ax=-uy, ay=ux;
+  ctx.beginPath();
+  ctx.moveTo(ex,ey);
+  ctx.lineTo(ex-ux*sz+ax*sz*0.5, ey-uy*sz+ay*sz*0.5);
+  ctx.lineTo(ex-ux*sz-ax*sz*0.5, ey-uy*sz-ay*sz*0.5);
+  ctx.closePath();
+  ctx.fillStyle="rgba(180,180,205,0.55)";
+  ctx.fill();
+}
+
+var flight=null;  // active fly-to / fly-home camera animation
+var frameN=0;
+function loop(){
+  rafId=null; frameN++; vibPhase++;
+  // ease idle energy so the SPIN fades in/out (never snaps)
+  idleEnergy += (idleTarget-idleEnergy)*0.055;
+  if(idleTarget===0 && idleEnergy<0.003) idleEnergy=0;
+  if(idleTarget===1 && idleEnergy>0.997) idleEnergy=1;
+  // BREATHING gate from zoom: full at a distance, fades to nothing as you zoom deep in
+  var r = fitK>0 ? view.k/fitK : 1;
+  breatheGate += (Math.max(0,Math.min(1,(3.5-r)/2)) - breatheGate)*0.1;
+  if(breatheGate<0.002) breatheGate=0;
+  var living = idleEnergy>0.0005 || breatheGate>0.004;
+  if(living) breatheT++;                  // advance the drift/nod clock while anything's alive
+  if(idleEnergy>0.0005){                  // SPIN + nod: idle-only (stops on interaction)
+    rot.yaw += 0.0016*idleEnergy;
+    var apn = 0.16*Math.sin(breatheT*0.0035)*idleEnergy;   // subtle nod, applied additively
+    rot.pitch = clampPitch(rot.pitch + (apn-autoPitchPrev));
+    autoPitchPrev = apn;
+  } else { autoPitchPrev = 0; }
+  if(running){                            // physics only while settling (then it stops)
+    var steps = alpha>0.2?2:1;
+    for(var s=0;s<steps;s++){ tick(); if(alpha<alphaMin){alpha=alphaMin;break;} }
+    if(alpha<=alphaMin) running=false;
+    if(autoFit) fitView(90);             // reframe during the pre-interaction settle (immediate off)
+  }
+  if(flight) stepFlight();
+  var anim = living || running || flight;
+  var hi = running || flight || needsDraw || (idleEnergy>0.003 && idleEnergy<0.997); // needs 60fps
+  if(hi || (anim && (frameN&1)===0)){ draw(); needsDraw=false; }
+  if(anim || needsDraw) ensureLoop();     // otherwise stop — a deep, settled view is fully static
+}
+function stopAutoFit(){ autoFit=false; idleTarget=0; }   // stop reframing now; fade the living animation out
+var pendingDraw=false;
+function requestDraw(){ needsDraw=true; pendingDraw=true; ensureLoop(); }
+
+// ----- cinematic "fly to node": duck-and-weave through 3D, nodes vibrate, quick -----
+// If the target is already close to centred at roughly the right zoom (e.g. you
+// clicked a neighbouring connection you're already looking at), the full swoop
+// is an unnecessary, jarring flourish -- ease there quickly and plainly instead.
+function flyTo(n){
+  stopAutoFit();
+  focusNode=n; hoverNode=null; searchSet=null; computeHighlight();
+  var targetK = Math.max(0.95, Math.min(1.7, view.k<0.55 ? 1.15 : view.k*1.25));
+  // "already close" means the node is already visible on screen (not clipped at
+  // the edges) at a zoom level in the ballpark of where flyTo would land it --
+  // i.e. you were already looking at it, not that it's dead-centre.
+  var alreadyClose = false;
+  if(n._sx!==undefined){
+    var onScreen = n._sx>W*0.12 && n._sx<W*0.88 && n._sy>H*0.12 && n._sy<H*0.88;
+    var zoomClose = view.k >= targetK*0.6 && view.k <= targetK*1.4;
+    alreadyClose = onScreen && zoomClose;
+  }
+  flight = {
+    mode:'node', t0: nowMs(), dur: alreadyClose ? 260 : 780, soft: alreadyClose,
+    fromK:view.k, fromTx:view.tx, fromTy:view.ty, fromYaw:rot.yaw, fromPitch:rot.pitch,
+    toK:targetK, node:n,
+    // a little randomised banking so each flight weaves differently (soft flights skip it)
+    swayYaw: (n.i%2?1:-1)*(0.6+0.35*((n.i%5)/5)),
+    swayPitch: (n.i%3?1:-1)*(0.36+0.2*((n.i%7)/7))
+  };
+  running=true; ensureLoop();
+}
+// animated return to the default whole-graph view (Reset), then resume the living idle
+function flyHome(){
+  focusNode=null; searchSet=null; hoverNode=null; connHi=null; groupHi=null; computeHighlight(); closeInfo();
+  idleTarget=1; vib=0;       // resume the living animation IMMEDIATELY — breathe as the camera pans back
+  var y=rot.yaw % (2*Math.PI); if(y>Math.PI)y-=2*Math.PI; if(y<-Math.PI)y+=2*Math.PI; rot.yaw=y; // shortest unwind
+  var t=computeFit(90);
+  flight={ mode:'view', t0:nowMs(), dur:900,
+    fromK:view.k, fromTx:view.tx, fromTy:view.ty, fromYaw:y, fromPitch:rot.pitch,
+    toK:t.k, toTx:t.tx, toTy:t.ty, toYaw:0, toPitch:0,
+    onDone:function(){ autoFit=true; unpinAll(); reheat(0.25); } };
+  ensureLoop();
+}
+function stepFlight(){
+  var f=flight;
+  var p=(nowMs()-f.t0)/f.dur;
+  if(f.mode==='view'){                              // calm glide to a fixed target view
+    if(p>=1){
+      view.k=f.toK; view.tx=f.toTx; view.ty=f.toTy; rot.yaw=f.toYaw; rot.pitch=f.toPitch;
+      flight=null; if(f.onDone) f.onDone(); return;
+    }
+    var ev=easeInOut(p), bv=0.5-0.5*Math.cos(2*Math.PI*p);
+    view.k = lerp(f.fromK,f.toK,ev) * (1-0.12*bv);  // slight pull-back mid-glide
+    view.tx = lerp(f.fromTx,f.toTx,ev);
+    view.ty = lerp(f.fromTy,f.toTy,ev);
+    rot.yaw = lerp(f.fromYaw,f.toYaw,ev);
+    rot.pitch = clampPitch(lerp(f.fromPitch,f.toPitch,ev));
+    return;
+  }
+  if(p>=1){
+    rot.yaw=0; rot.pitch=0; view.k=f.toK;          // land: node centred, face-on, still
+    var pw=projWorldRest(f.node);
+    view.tx=W/2 - pw.x*f.toK; view.ty=H/2 - pw.y*f.toK;
+    vib=0; flight=null;
+    return;
+  }
+  // e is a smooth S-curve (zero velocity at both ends => no jerk at the start)
+  var e=easeInOut(p);
+  // bell: 0 -> 1 -> 0 with zero slope at both ends; envelopes every perturbation.
+  // Soft flights (target already close/in-view) zero the bell so the duck, weave,
+  // and shiver all disappear -- just a plain, quick ease to the destination.
+  var bell = f.soft ? 0 : (0.5 - 0.5*Math.cos(2*Math.PI*p));
+  var pw=projWorldRest(f.node);
+  var toTx=W/2 - pw.x*f.toK, toTy=H/2 - pw.y*f.toK;
+  // duck: ease the camera back mid-flight then push in (enveloped, so it eases in)
+  view.k = lerp(f.fromK, f.toK, e) * (1 - 0.30*bell);
+  view.tx = lerp(f.fromTx, toTx, e) + Math.sin(p*Math.PI*2)*70*bell;   // lateral weave
+  view.ty = lerp(f.fromTy, toTy, e) + Math.sin(p*Math.PI*3)*46*bell;
+  // weave: banking sway through 3D that eases in and levels out face-on
+  rot.yaw   = lerp(f.fromYaw,   0, e) + f.swayYaw   * bell * Math.sin(p*Math.PI*2);
+  rot.pitch = clampPitch(lerp(f.fromPitch, 0, e) + f.swayPitch * bell * Math.sin(p*Math.PI*3));
+  vib = 8 * bell;                                 // nodes shiver, eased in and out
+}
+
+// ---------- interaction ----------
+var dragNode=null, dragZ=0, panning=false, rotating=false, last={x:0,y:0}, downAt=null, moved=false;
+var pickedAtDown=null;   // whatever pickNode found at gesture start, draggable or not (for click-to-open)
+
+// pick using PROJECTED screen positions (works while rotated in pseudo-3D)
+function pickNode(sx,sy){
+  // Knowledge-base nodes take priority over images at the cursor: track the
+  // closest hit of each kind separately and prefer a core hit whenever there is
+  // one, even if a nearer image dot is technically closer to the pointer --
+  // otherwise the dense image layer would constantly steal hover/click from the
+  // core sitting right behind it.
+  var bestCore=null, bestCoreD=Infinity, bestImg=null, bestImgD=Infinity;
+  for(var i=N-1;i>=0;i--){
+    var n=nodes[i];
+    if(!nodeVisible(n) || n._sx===undefined) continue;
+    var dx=n._sx-sx, dy=n._sy-sy, d=dx*dx+dy*dy;
+    var rr=(n._sr||1)+7;
+    if(d>rr*rr) continue;
+    if(n.shellR!=null){ if(d<bestImgD){ bestImgD=d; bestImg=n; } }
+    else { if(d<bestCoreD){ bestCoreD=d; bestCore=n; } }
+  }
+  return bestCore || bestImg;
+}
+function setCursor(c){ if(cv.style.cursor!==c) cv.style.cursor=c; }
+
+cv.addEventListener("contextmenu", function(e){ e.preventDefault(); }); // right-drag = pan
+
+cv.addEventListener("mousedown", function(e){
+  stopAutoFit();
+  downAt={x:e.clientX,y:e.clientY}; moved=false;
+  last={x:e.clientX,y:e.clientY};
+  if(e.button===2 || (e.button===0 && e.shiftKey)){ // right (or shift+left) = pan
+    panning=true; setCursor("grabbing"); e.preventDefault(); return;
+  }
+  var n=pickNode(e.clientX,e.clientY);
+  pickedAtDown=n;
+  // Most of the graph (images, artists, books, people, culture bookmarks, etc.)
+  // is numerous enough to blanket the whole view -- don't let clicking near one
+  // hijack what's meant to be a camera-rotate drag. Only structural hubs
+  // (concepts, library maps) are drag-repositionable; anything else still
+  // opens on a plain click (handled in mouseup below), it just never captures
+  // the drag.
+  if(n && isDraggable(n)){ dragNode=n; dragZ=n._z; n.fx=n.x; n.fy=n.y; n.fz=n.z; reheat(0.45); setCursor("grabbing"); }
+  else { rotating=true; setCursor("grabbing"); }   // left-drag on empty (or a non-draggable node) = rotate 3D
+});
+window.addEventListener("mousemove", function(e){
+  if(rotating){
+    rot.yaw += (e.clientX-last.x)*0.0075;
+    rot.pitch = clampPitch(rot.pitch + (e.clientY-last.y)*0.0075);
+    last={x:e.clientX,y:e.clientY}; moved=true; requestDraw(); return;
+  }
+  if(dragNode){
+    var w=screenToWorld(e.clientX, e.clientY, dragZ);   // follows cursor even when rotated
+    dragNode.fx=w.x; dragNode.fy=w.y; dragNode.fz=w.z;
+    dragNode.x=w.x; dragNode.y=w.y; dragNode.z=w.z;
+    moved=true; reheat(0.5); return;
+  }
+  if(panning){
+    view.tx+=e.clientX-last.x; view.ty+=e.clientY-last.y;
+    last={x:e.clientX,y:e.clientY}; moved=true; requestDraw(); return;
+  }
+  // hover: cursor + tooltip + a single white outline ring on the node (no skeleton)
+  var n=pickNode(e.clientX,e.clientY);
+  setCursor(n ? "pointer" : "grab");
+  if(n!==hoverNode){ hoverNode=n; requestDraw(); }
+  if(n){ showTip(n,e.clientX,e.clientY); } else hideTip();
+});
+function blankClick(){ // empty-space click: dismiss popups/settings/focus
+  closeInfo(); $("panel").classList.remove("open");
+  if(focusNode){ focusNode=null; computeHighlight(); requestDraw(); }
+}
+window.addEventListener("mouseup", function(e){
+  if(dragNode){
+    // stay pinned where dropped (do NOT clear fx/fy/fz); neighbours settle around it
+    if(!moved){ dragNode.fx=null; dragNode.fy=null; dragNode.fz=null; openInfo(dragNode); } // a click (no move) just opens the note
+    dragNode=null; setCursor("pointer"); reheat(0.3);
+  } else if(rotating){
+    rotating=false; setCursor("grab");
+    if(!moved){
+      // With thousands of nodes packed in, "empty space" barely exists -- a
+      // click meant to dismiss the open popup would otherwise almost always
+      // land near some other node and just swap to ITS popup instead. So:
+      // while a popup is already open, any plain click anywhere just closes
+      // it (like clicking outside a modal), full stop. Only when nothing is
+      // open yet does a click actually pick whatever's under the cursor.
+      if(infoEl.classList.contains("open")) blankClick();
+      else if(pickedAtDown) openInfo(pickedAtDown);
+      else blankClick();
+    }
+  } else if(panning){
+    panning=false; setCursor("grab");
+    if(!moved) blankClick();   // right-click on empty space
+  }
+});
+cv.addEventListener("wheel", function(e){
+  e.preventDefault();
+  stopAutoFit();
+  var factor=Math.pow(1.0015, -e.deltaY);
+  var nk=Math.max(0.02, Math.min(8, view.k*factor));
+  // anchor zoom on the cursor. When rotated, anchoring on the centroid axis is close enough.
+  var wx=toWorldX(e.clientX), wy=toWorldY(e.clientY);
+  view.k=nk;
+  view.tx=e.clientX-wx*view.k; view.ty=e.clientY-wy*view.k;
+  requestDraw();
+}, {passive:false});
+
+// touch: 1 finger = rotate 3D (or move a node); 2 fingers = pan + pinch-zoom; tap a node to open it
+var touchState=null, touchStart=null, touchMoved=false;
+cv.addEventListener("touchstart",function(e){
+  stopAutoFit();
+  if(e.touches.length===1){ var t=e.touches[0];
+    touchStart={x:t.clientX,y:t.clientY}; touchMoved=false;
+    var n=pickNode(t.clientX,t.clientY);
+    pickedAtDown=n;
+    if(n && isDraggable(n)){dragNode=n;dragZ=n._z;n.fx=n.x;n.fy=n.y;n.fz=n.z;reheat(0.45);}
+    else {rotating=true;}
+    last={x:t.clientX,y:t.clientY};
+  } else if(e.touches.length===2){
+    rotating=false;dragNode=null;
+    touchState=pinchInfo(e);
+  }
+},{passive:false});
+cv.addEventListener("touchmove",function(e){
+  e.preventDefault();
+  if(e.touches.length===1 && (rotating||dragNode)){
+    var t=e.touches[0];
+    if(touchStart && Math.hypot(t.clientX-touchStart.x,t.clientY-touchStart.y)>6) touchMoved=true;
+    if(dragNode){var w=screenToWorld(t.clientX,t.clientY,dragZ);dragNode.fx=w.x;dragNode.fy=w.y;dragNode.fz=w.z;dragNode.x=w.x;dragNode.y=w.y;dragNode.z=w.z;reheat(0.5);}
+    else {rot.yaw+=(t.clientX-last.x)*0.0075;rot.pitch=clampPitch(rot.pitch+(t.clientY-last.y)*0.0075);requestDraw();}
+    last={x:t.clientX,y:t.clientY};
+  } else if(e.touches.length===2 && touchState){
+    var pi=pinchInfo(e);
+    var factor=pi.dist/touchState.dist;
+    var nk=Math.max(0.02,Math.min(8,touchState.k*factor));
+    var wx=toWorldX(pi.cx), wy=toWorldY(pi.cy);
+    view.k=nk; view.tx=pi.cx-wx*view.k; view.ty=pi.cy-wy*view.k;
+    // two-finger drag pans
+    view.tx+=pi.cx-touchState.cx; view.ty+=pi.cy-touchState.cy;
+    touchState=pi;
+    requestDraw();
+  }
+},{passive:false});
+cv.addEventListener("touchend",function(e){
+  if(e.touches.length===0){
+    if(dragNode){
+      if(!touchMoved){ dragNode.fx=null; dragNode.fy=null; dragNode.fz=null; openInfo(dragNode); } // tap = open note; drag = stay pinned
+      dragNode=null;
+    } else if(rotating && !touchMoved){
+      // same "tap outside closes it" rule as the desktop click handler above
+      if(infoEl.classList.contains("open")) blankClick();
+      else if(pickedAtDown) openInfo(pickedAtDown);
+      else blankClick();
+    }
+    rotating=false; panning=false; touchState=null; reheat(0.2);
+  }
+});
+function pinchInfo(e){ var a=e.touches[0],b=e.touches[1];
+  var dx=a.clientX-b.clientX,dy=a.clientY-b.clientY;
+  return {dist:Math.hypot(dx,dy)||1,ang:Math.atan2(dy,dx),cx:(a.clientX+b.clientX)/2,cy:(a.clientY+b.clientY)/2,k:view.k}; }
+
+// ---------- tooltip ----------
+var tip=document.getElementById("tooltip");
+function showTip(n,x,y){
+  tip.innerHTML = "<div>"+escapeHtml(n.name)+"</div><div class='tp'>"+escapeHtml(n.path)+" · "+n.deg+" link"+(n.deg===1?"":"s")+"</div>";
+  tip.style.display="block";
+  var tw=tip.offsetWidth, th=tip.offsetHeight;
+  var px=x+14, py=y+14;
+  if(px+tw>W-8) px=x-tw-14; if(py+th>H-8) py=y-th-14;
+  tip.style.left=px+"px"; tip.style.top=py+"px";
+}
+function hideTip(){ tip.style.display="none"; }
+function escapeHtml(s){ return (""+s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+// ---------- node info popup (top-left) ----------
+var infoEl=document.getElementById("info");
+var infoNode=null;
+function parseTags(v){
+  if(v==null) return [];
+  v=(""+v).trim().replace(/^\[|\]$/g,"");
+  return v.split(",").map(function(s){return s.trim().replace(/^["']|["']$/g,"");}).filter(Boolean);
+}
+function openInfo(n){
+  infoNode=n; closeImg();                       // reset the image viewer for the new note
+  focusNode=n; computeHighlight(); requestDraw();
+  var meta=(DATA.meta&&DATA.meta[n.i])||[{}, "", []];
+  var fm=meta[0]||{}, ex=meta[1]||"", imgs=meta[2]||[];
+  var col=n.col;
+  var html="";
+  html+="<div class='hd'><span class='dot' style='background:"+col+"'></span>"+
+        "<span class='ttl'>"+escapeHtml(n.name)+"</span>"+
+        "<span class='x' id='infoX' title='Close (Esc)'>×</span></div>";
+  html+="<div class='body'>";
+  html+="<div class='grp'>"+escapeHtml(DATA.groupNames[n.g])+" · "+n.deg+" link"+(n.deg===1?"":"s")+"<br>"+escapeHtml(n.path)+"</div>";
+
+  // tags
+  var tags=parseTags(fm.tags);
+  if(tags.length){
+    html+="<div class='sect'>Tags</div><div class='tags'>";
+    tags.forEach(function(t){ html+="<span class='tag'>"+escapeHtml(t)+"</span>"; });
+    html+="</div>";
+  }
+  // frontmatter (excluding tags/title already shown)
+  var keys=Object.keys(fm).filter(function(k){ return k!=="tags" && k!=="title"; });
+  if(keys.length){
+    html+="<div class='sect'>Properties</div><table>";
+    keys.forEach(function(k){ html+="<tr><td class='k'>"+escapeHtml(k)+"</td><td class='v'>"+escapeHtml(fm[k])+"</td></tr>"; });
+    html+="</table>";
+  }
+  // connections
+  var nb=adj[n.i]||[];
+  html+="<div class='sect'>Connections ("+nb.length+")</div>";
+  if(nb.length){
+    var seen={}, uniq=[];
+    nb.forEach(function(j){ if(!seen[j]){ seen[j]=1; uniq.push(j); } });
+    uniq.sort(function(a,b){ return nodes[b].deg-nodes[a].deg; });
+    html+="<div class='conns'>";
+    uniq.slice(0,40).forEach(function(j){
+      var m=nodes[j];
+      html+="<div class='cn' data-j='"+j+"'><span class='sw' style='background:"+m.col+"'></span><span class='nm'>"+escapeHtml(m.name)+"</span></div>";
+    });
+    if(uniq.length>40) html+="<div class='cn' style='color:var(--muted);cursor:default'>+"+(uniq.length-40)+" more…</div>";
+    html+="</div>";
+  } else {
+    html+="<div class='empty'>No links to other notes.</div>";
+  }
+  // images (artist works) — own section, separate from the note text; hover to preview
+  if(imgs.length){
+    html+="<div class='sect'>Images ("+imgs.length+")</div><div class='imgs'>";
+    imgs.forEach(function(u,ix){ var lab=imgLabel(u); if(lab==="submission"&&imgs.length>1) lab="submission "+(ix+1);
+      html+="<div class='il' data-u='"+escapeHtml(u)+"'>"+escapeHtml(lab)+"</div>"; });
+    html+="</div>";
+  }
+  // excerpt
+  if(ex){
+    html+="<div class='sect'>Note</div><div class='ex'>"+escapeHtml(ex)+"</div>";
+  }
+  html+="</div>";
+  infoEl.innerHTML=html;
+  infoEl.classList.add("open");
+  document.getElementById("infoX").addEventListener("click", closeInfo);
+  Array.prototype.forEach.call(infoEl.querySelectorAll(".cn[data-j]"), function(el){
+    var j=+el.getAttribute("data-j");
+    // if the connection IS an image, preview it on hover exactly like the Images list below
+    var cm=(DATA.meta&&DATA.meta[j])||[{}, "", []];
+    var cImgs=cm[2]||[];
+    var connImg = (nodes[j].g===IMAGE_GROUP && cImgs.length) ? cImgs[0] : null;
+    el.addEventListener("mouseenter", function(){ connHi=j; requestDraw(); if(connImg) showImg(connImg); });
+    el.addEventListener("mouseleave", function(){
+      if(connHi===j){ connHi=null; requestDraw(); }
+      if(connImg){ if(imgPinnedSrc) showImg(imgPinnedSrc); else hideImg(); }
+    });
+    el.addEventListener("click", function(){ connHi=null; flyTo(nodes[j]); openInfo(nodes[j]); });
+  });
+  Array.prototype.forEach.call(infoEl.querySelectorAll(".il[data-u]"), function(el){
+    var u=el.getAttribute("data-u");
+    el.addEventListener("mouseenter", function(){ showImg(u); });
+    el.addEventListener("mouseleave", function(){ if(imgPinnedSrc) showImg(imgPinnedSrc); else hideImg(); });
+    el.addEventListener("click", function(){ pinImg(u, el); });
+  });
+  // a painting node IS an image — show it straight away (pinned, with the × to dismiss)
+  if(n.g===IMAGE_GROUP && imgs.length){
+    pinImg(imgs[0], infoEl.querySelector(".il[data-u]"));
+  }
+}
+function closeInfo(){ infoEl.classList.remove("open"); infoNode=null; connHi=null; closeImg(); requestDraw(); }
+
+// ---------- image viewer (right of the note popup) ----------
+var imgEl=document.getElementById("imgview");
+var imgImg=imgEl.querySelector("img");
+var imgTtl=imgEl.querySelector(".ittl");
+var imgPinnedSrc=null;
+function imgLabel(u){
+  var f=(u.split("/").pop()||u).replace(/\.[a-z0-9]+$/i,"");
+  try{ f=decodeURIComponent(f); }catch(e){}
+  if(/^[0-9a-f]{8,}$/i.test(f)) return "submission";   // hashed attachment filename
+  return f.replace(/[_]+/g," ");
+}
+function showImg(u){
+  imgImg.onload=function(){ imgImg.style.display="block"; };
+  imgImg.onerror=function(){ imgImg.style.display="none"; };
+  imgImg.src=u; imgTtl.textContent=imgLabel(u);
+  imgEl.classList.add("open");
+}
+function hideImg(){ if(!imgPinnedSrc) imgEl.classList.remove("open"); }
+function pinImg(u, el){
+  imgPinnedSrc=u; imgEl.classList.add("pinned"); showImg(u);
+  Array.prototype.forEach.call(infoEl.querySelectorAll(".il.on"), function(e){ e.classList.remove("on"); });
+  if(el) el.classList.add("on");
+}
+function closeImg(){
+  imgPinnedSrc=null; imgEl.classList.remove("pinned","open");
+  Array.prototype.forEach.call(infoEl.querySelectorAll(".il.on"), function(e){ e.classList.remove("on"); });
+}
+imgEl.querySelector(".ix").addEventListener("click", closeImg);
+
+// ---------- fit / reset view (3D bounding sphere) ----------
+function computeFit(pad){
+  pad = pad||70;
+  var sx=0,sy=0,sz=0,c=0;
+  for(var i=0;i<N;i++){ var n=nodes[i]; if(!nodeVisible(n))continue; sx+=n.x;sy+=n.y;sz+=n.z;c++; }
+  if(!c) return {k:view.k, tx:view.tx, ty:view.ty};
+  var cx=sx/c, cy=sy/c, cz=sz/c, maxD=1;
+  for(var i=0;i<N;i++){ var n=nodes[i]; if(!nodeVisible(n))continue;
+    var dx=n.x-cx,dy=n.y-cy,dz=n.z-cz, d=Math.sqrt(dx*dx+dy*dy+dz*dz); if(d>maxD)maxD=d; }
+  MAXD = maxD; FOCAL_BASE = Math.max(400, 2.4*maxD);  // gentle perspective at the fit view
+  // fill the viewport: zoom so the dense bulk spans the window (far-flung outliers clip off-edge)
+  var k = Math.max(0.02, Math.min(2.5, (Math.min(W,H)*1.5)/(2*maxD)));
+  fitK = k;                          // reference zoom (whole graph) — anchors the dolly + link width
+  return {k:k, tx:W/2-cx*k, ty:H/2-cy*k};
+}
+function fitView(pad){
+  var t=computeFit(pad);
+  view.k=t.k; view.tx=t.tx; view.ty=t.ty;
+  requestDraw();
+}
+// projected world position of a node at the CURRENT centroid, face-on (rot=0)
+function projWorldRest(n){
+  var persp=perspOf(n.z-cenZ);
+  return { x: cenX + (n.x-cenX)*persp, y: cenY + (n.y-cenY)*persp };
+}
+// Inverse projection: given a screen point and a rotated depth zr, return the 3D
+// world position so the node sits under the cursor (correct even when rotated).
+function screenToWorld(mx, my, zr){
+  var persp = perspOf(zr);
+  var x2 = (((mx-view.tx)/view.k) - cenX)/persp;
+  var y1 = (((my-view.ty)/view.k) - cenY)/persp;
+  var cyaw=Math.cos(rot.yaw), syaw=Math.sin(rot.yaw);
+  var cpit=Math.cos(rot.pitch), spit=Math.sin(rot.pitch);
+  var dx = x2*cyaw - zr*syaw;          // invert yaw
+  var z1 = x2*syaw + zr*cyaw;
+  var dy = y1*cpit + z1*spit;          // invert pitch
+  var dz = z1*cpit - y1*spit;
+  return { x: cenX+dx, y: cenY+dy, z: cenZ+dz };
+}
+
+// ---------- UI: panel, sliders ----------
+function $(id){return document.getElementById(id);}
+function bindSlider(id,valId,fn,fmt){
+  var el=$(id),v=$(valId);
+  function upd(){ fn(+el.value); if(v)v.textContent=fmt?fmt(+el.value):el.value; }
+  el.addEventListener("input",function(){ upd(); reheat(0.3); });
+  upd();
+}
+bindSlider("fCenter","vCenter",function(x){P.center=x/100;});
+bindSlider("fRepel","vRepel",function(x){P.repel=x/40;}); // 40 -> 1.0
+bindSlider("fLink","vLink",function(x){P.linkForce=x/100;});
+bindSlider("fDist","vDist",function(x){P.linkDist=x;});
+bindSlider("dSize","vSize",function(x){P.nodeSize=x/100;computeRadii();},function(x){return Math.round(x)+"%";});
+bindSlider("dText","vText",function(x){P.textFade=x/100;requestDraw();});
+$("dArrows").addEventListener("change",function(){P.arrows=this.checked;requestDraw();});
+
+$("btnSettings").addEventListener("click",function(){ $("panel").classList.toggle("open"); });
+function unpinAll(){ for(var i=0;i<N;i++){ nodes[i].fx=null; nodes[i].fy=null; nodes[i].fz=null; } }
+$("btnReset").addEventListener("click",function(){ flyHome(); });
+
+// legend
+var legend=$("legend");
+(function buildLegend(){
+  var counts=new Array(DATA.groupNames.length).fill(0);
+  for(var i=0;i<N;i++) counts[nodes[i].g]++;
+  var order=DATA.groupNames.map(function(nm,i){return i;}).sort(function(a,b){return counts[b]-counts[a];});
+  order.forEach(function(gi){
+    if(counts[gi]===0) return;
+    var d=document.createElement("div"); d.className="lg"; d.dataset.g=gi;
+    d.innerHTML="<span class='sw' style='background:"+groupColor(gi)+"'></span>"+
+      "<span class='nm'>"+escapeHtml(DATA.groupNames[gi])+"</span>"+
+      "<span class='ct'>"+counts[gi]+"</span>";
+    d.addEventListener("mouseenter",function(){ groupHi=gi; requestDraw(); });   // light up that area of the web
+    d.addEventListener("mouseleave",function(){ if(groupHi===gi){ groupHi=null; requestDraw(); } });
+    d.addEventListener("click",function(){
+      groupVisible[gi]=!groupVisible[gi];
+      d.classList.toggle("off",!groupVisible[gi]);
+      requestDraw();
+    });
+    legend.appendChild(d);
+  });
+})();
+
+// ---------- search ----------
+var searchWrap=$("searchwrap"), searchInput=$("search"), results=$("results");
+var selIdx=-1, curMatches=[];
+function openSearch(){ searchWrap.classList.add("open"); searchInput.focus(); searchInput.select(); }
+function closeSearch(){ searchWrap.classList.remove("open"); results.classList.remove("show");
+  searchSet=null; requestDraw(); }
+$("btnSearch").addEventListener("click",function(){ searchWrap.classList.contains("open")?closeSearch():openSearch(); });
+
+searchInput.addEventListener("input",function(){
+  var q=this.value.trim().toLowerCase();
+  results.innerHTML=""; curMatches=[]; selIdx=-1;
+  if(!q){ searchSet=null; results.classList.remove("show"); requestDraw(); return; }
+  var set={};
+  for(var i=0;i<N && curMatches.length<400;i++){
+    if(nodes[i].name.toLowerCase().indexOf(q)>=0){ curMatches.push(nodes[i]); set[i]=true; }
+  }
+  searchSet = curMatches.length?set:{};
+  curMatches.sort(function(a,b){return b.deg-a.deg;});
+  curMatches.slice(0,50).forEach(function(n,k){
+    var r=document.createElement("div"); r.className="r";
+    r.innerHTML=escapeHtml(n.name)+" <span class='p'>"+escapeHtml(n.path)+"</span>";
+    r.addEventListener("click",function(){ pickResult(n); });
+    results.appendChild(r);
+  });
+  results.classList.toggle("show", curMatches.length>0);
+  requestDraw();
+});
+function pickResult(n){
+  searchSet=null;                 // switch from "match all" mode to single-node focus
+  results.classList.remove("show");
+  searchInput.blur();
+  flyTo(n);                       // cinematic duck-and-weave flight to the node
+  openInfo(n);                    // and surface its note in the top-left popup
+}
+searchInput.addEventListener("keydown",function(e){
+  if(e.key==="Escape"){ closeSearch(); cv.focus(); }
+  else if(e.key==="Enter"){ if(curMatches.length){ pickResult(curMatches[selIdx>=0?selIdx:0]); } }
+  else if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+    e.preventDefault();
+    var rs=results.querySelectorAll(".r"); if(!rs.length)return;
+    if(selIdx>=0&&rs[selIdx])rs[selIdx].classList.remove("sel");
+    selIdx+= e.key==="ArrowDown"?1:-1;
+    if(selIdx<0)selIdx=rs.length-1; if(selIdx>=rs.length)selIdx=0;
+    rs[selIdx].classList.add("sel"); rs[selIdx].scrollIntoView({block:"nearest"});
+  }
+});
+window.addEventListener("keydown",function(e){
+  // don't hijack keystrokes meant for any text field (search, chat, API key
+  // entry, etc.) -- typing "r" or "/" while chatting shouldn't reset the view
+  // or pop open search out from under you
+  var tag = e.target && e.target.tagName;
+  if(tag==="INPUT" || tag==="TEXTAREA" || (e.target && e.target.isContentEditable)) return;
+  if(e.key==="/"){ e.preventDefault(); openSearch(); }
+  else if(e.key==="r"||e.key==="R"){ flyHome(); }
+  else if(e.key==="Escape"){ focusNode=null;searchSet=null;hoverNode=null;computeHighlight();closeSearch();closeInfo();requestDraw(); }
+});
+
+// ---------- stat (appended to the hint bar) ----------
+var hintEl=document.getElementById("hint");
+hintEl.innerHTML += " &nbsp;·&nbsp; "+N.toLocaleString()+" notes · "+links.length.toLocaleString()+" links";
+
+// ---------- chat: bring-your-own-key conversational front end over this
+// same in-memory graph. The key never leaves the browser except in a request
+// to whichever provider it belongs to; retrieval, mention-detection and
+// highlight-sync all run against the DATA already loaded for the graph itself,
+// no server round-trip beyond the LLM call. ----------
+(function(){
+  var LS_KEY="brainChatKey", LS_PROVIDER="brainChatProvider", LS_MUTE="brainChatMuted", LS_GRADIUM="brainGradiumKey";
+  var chatWrap=$("chatwrap"), chatSetup=$("chatSetup"), chatMessages=$("chatMessages"),
+      chatInputRow=$("chatInputRow"), chatVoiceRow=$("chatVoiceRow"), gradiumKeyInput=$("chatGradiumKey"),
+      providerSel=$("chatProvider"), keyInput=$("chatKeyInput"),
+      keySave=$("chatKeySave"), chatText=$("chatText"), chatSend=$("chatSend"), chatMute=$("chatMute");
+  var apiKey = localStorage.getItem(LS_KEY) || "";
+  var provider = localStorage.getItem(LS_PROVIDER) || "gemini";
+  var muted = localStorage.getItem(LS_MUTE) === "1";
+  var gradiumKey = localStorage.getItem(LS_GRADIUM) || "";
+  var history = [];   // {role:"user"|"assistant", text}
+  var sending = false;
+
+  function updateMuteBtn(){ chatMute.textContent = muted?"🔇":"🔊"; chatMute.classList.toggle("muted", muted); }
+  function showChatUI(){
+    if(apiKey){
+      chatSetup.style.display="none";
+      chatMessages.classList.add("show"); chatInputRow.classList.add("show");
+    } else {
+      chatSetup.style.display="flex";
+      chatMessages.classList.remove("show"); chatInputRow.classList.remove("show");
+    }
+    // the Gradium row itself only needs to exist until a key's been saved --
+    // once it's set there's nothing left to fill in, so it just disappears
+    // rather than sitting there as a redundant already-filled-in field
+    chatVoiceRow.classList.toggle("show", !!apiKey && !gradiumKey);
+  }
+  gradiumKeyInput.value = gradiumKey;
+  function saveGradiumKey(){
+    gradiumKey = gradiumKeyInput.value.trim();
+    if(gradiumKey) localStorage.setItem(LS_GRADIUM, gradiumKey); else localStorage.removeItem(LS_GRADIUM);
+    showChatUI();
+  }
+  gradiumKeyInput.addEventListener("change", saveGradiumKey);   // fires on blur
+  gradiumKeyInput.addEventListener("keydown", function(e){      // fires on Enter -- this input isn't
+    if(e.key==="Enter"){ saveGradiumKey(); gradiumKeyInput.blur(); }   // in a <form>, so Enter alone does nothing otherwise
+  });
+  providerSel.value = provider;
+  updateMuteBtn();
+  showChatUI();
+
+  // ---- the archive greets first ----
+  // once a key exists the brain opens the conversation itself rather than
+  // sitting mute: it drops a short in-character hello, speaks it aloud
+  // immediately, and drifts the graph over to the bio node so it visibly
+  // "wakes up." Fires exactly once per session -- either the moment an
+  // OpenAI/Anthropic key is connected, or when the chat is opened and a key
+  // is already saved from before.
+  var greeted = false;
+  var GREETINGS = [
+    "oh, someone's actually in here. go ahead — ask me anything that's in my head.",
+    "hey. you're basically talking to the inside of my skull right now. ask away.",
+    "you found the brain. everything i've written down is wired together in here — poke at it.",
+    "so you showed up. ask me about the work, the diary, whatever you want. i'll dig it up.",
+    "look who wandered in. this is more or less my whole head, laid out. what do you want to know?"
+  ];
+  function greet(){
+    if(greeted || !apiKey) return;
+    greeted = true;
+    var text = GREETINGS[Math.floor(Math.random()*GREETINGS.length)];
+    var div = addMessage("ai", text);
+    div.innerHTML = linkifyMentions(text);
+    history.push({role:"assistant", text:text});
+    var target = bioNoteIdxs.length ? bioNoteIdxs[0] : (sampleRandomSpark(1, [])[0]);
+    if(target!=null) queueJump(target);
+    speak(text);
+  }
+
+  $("btnChat").addEventListener("click", function(){
+    chatWrap.classList.toggle("open");
+    // already-inserted key -> the brain speaks the moment the panel opens
+    if(chatWrap.classList.contains("open") && apiKey) greet();
+  });
+  $("chatClose").addEventListener("click", function(){ chatWrap.classList.remove("open"); });
+
+  keySave.addEventListener("click", function(){
+    var k = keyInput.value.trim();
+    if(!k) return;
+    apiKey = k; provider = providerSel.value;
+    localStorage.setItem(LS_KEY, apiKey);
+    localStorage.setItem(LS_PROVIDER, provider);
+    keyInput.value = "";
+    showChatUI();
+    // brain messages first as soon as an OpenAI/Anthropic key is connected
+    if(provider==="openai" || provider==="anthropic") greet();
+  });
+  keyInput.addEventListener("keydown", function(e){ if(e.key==="Enter") keySave.click(); });
+
+  chatMute.addEventListener("click", function(){
+    muted = !muted; localStorage.setItem(LS_MUTE, muted?"1":"0"); updateMuteBtn();
+    if(muted && window.speechSynthesis) window.speechSynthesis.cancel();
+  });
+
+  // ---- retrieval: score every node's name+excerpt against the query's terms,
+  // hand the top handful to the model as grounding context ----
+  // A real attributed artwork is almost always titled "Title by Artist (Year)"
+  // -- the word "painting"/"artwork" essentially never appears IN that title.
+  // Pure keyword retrieval means a literal "show me a painting" query matches
+  // nothing at all and the model (correctly, given empty context) claims
+  // there aren't any, which is wrong -- there are thousands. Detect that kind
+  // of generic visual request and sample real attributed-artwork images
+  // directly instead of relying on keyword overlap for them.
+  var ARTWORK_NAME_RE = /\bby\s+[^(]{2,40}\(\s*c?\.?\s*\d{3,4}/i;
+  var VISUAL_REQUEST_RE = /\b(photo|photograph|picture|painting|paintings|artwork|drawing|illustration|image|images)\b/i;
+  // BUG this was fixing: this previously picked by a formula depending only
+  // on the loop index and pool size -- both constant across every call -- so
+  // it silently returned the exact same handful of artworks (always Rubens,
+  // always the same Blumenfeld photo) no matter what was actually asked.
+  // Now: if the query names an actual subject (dogs, cats, whatever), search
+  // for artworks whose title genuinely matches that first; only for a truly
+  // generic "show me a painting" with nothing to go on does it fall back to
+  // a real (Math.random-based, different every call) sample.
+  function sampleArtworks(n, terms){
+    var pool = [];
+    for(var i=0;i<N;i++){ if(nodes[i].shellR!=null && ARTWORK_NAME_RE.test(nodes[i].name)) pool.push(i); }
+    if(terms && terms.length){
+      var relevant = pool.filter(function(i){
+        var nm = nodes[i].name.toLowerCase();
+        return terms.some(function(t){ return nm.indexOf(t)!==-1; });
+      });
+      if(relevant.length) pool = relevant;
+    }
+    var copy = pool.slice(), out = [];
+    for(var k=0;k<n && copy.length;k++){
+      out.push(copy.splice(Math.floor(Math.random()*copy.length), 1)[0]);
+    }
+    return out;
+  }
+  // Photos of Ernest himself (the archive's own "ernest/" folder, added
+  // specifically -- per its own ernest_pictures.txt -- "for strauh.al/brain
+  // to bring up when asked questions about me"). Filenames are plain camera
+  // junk (IMG_0186 etc.) so keyword retrieval alone would never surface them;
+  // gated tightly on an actual "what do you look like / picture of you" style
+  // ask, not just any message containing the word "you", to avoid becoming
+  // the kind of noise that's worse than not showing a photo at all.
+  var PERSONAL_PHOTO_RE = /(what.{0,15}look like|pictures? of (you|yourself|ernest)|photos? of (you|yourself|ernest)|see (you|your face)|show (me )?(a )?(picture|photo) of (you|yourself|ernest))/i;
+  function samplePersonalPhotos(n){
+    var pool = [];
+    for(var i=0;i<N;i++){ if(nodes[i].personal) pool.push(i); }
+    var copy = pool.slice(), out = [];
+    for(var k=0;k<n && copy.length;k++){
+      out.push(copy.splice(Math.floor(Math.random()*copy.length), 1)[0]);
+    }
+    return out;
+  }
+  // Real gap this closes: pure keyword-overlap retrieval can miss the ONE note
+  // that actually has the answer whenever the question is built around a WRONG
+  // guess ("you went to nyu, right?" shares zero vocabulary with "CCA" and
+  // "SAIC", the true answer) -- so it fell back to an honest but needlessly
+  // vague "i don't have that written down" instead of correcting the record.
+  // For any question that's broadly biographical, always pull in the
+  // "Ernest Strauhal" life note (the vault's own curated bio synthesis)
+  // regardless of keyword overlap, so it's available to correct a wrong
+  // premise, not just confirm a right one.
+  var BIO_TOPIC_RE = /\b(siblings?|brothers?|sisters?|mother|mom|fathers?|dad|parents?|family|grow up|grew up|childhood|born|birthday|age|old are you|schools?|colleges?|universit(y|ies)|studied?|major|degrees?|went to|attend|grad(uate|uated)?|alma mater|jobs?|works?|career|profession|teach(er|ing)?|married|marriage|engaged|fianc|girlfriend|boyfriend|partners?|relationships?|dating|single|live|hometown|piano|god|gods|religion|religious|atheis(t|m)|believ|belief|politic|worldview|values|opinions?|decisions?|decide|intuition|deliberat|afraid|fears?|insecur|confiden|optimis|pessimis|realis(t|m)|absurdis|mbti|enneagram|astrology|self.typ|personality|temperament|laugh|humor|humour|funny|conflict|argu|habits?|regrets?|proudest|proud of|influenc(e|ed)|friends?)\b/i;
+  // The vault has grown a small cluster of short "life" notes that between
+  // them hold most of what a visitor might ask about Ernest directly (bio,
+  // beliefs/temperament, PAS personality result) -- keyword overlap alone
+  // can miss all three for a query anchored on an unfamiliar term or a wrong
+  // premise, so any note in this bundle is unconditionally available once the
+  // query is recognizably personal, not just the single bio note.
+  var BIO_NOTE_PATHS = ["knowledge/wiki/life/Ernest Strauhal.md","knowledge/wiki/life/Beliefs and Temperament.md","knowledge/wiki/life/Personality (PAS).md"];
+  var bioNoteIdxs = BIO_NOTE_PATHS.map(function(p){
+    for(var i=0;i<N;i++){ if(nodes[i].path===p) return i; }
+    return -1;
+  }).filter(function(i){ return i!==-1; });
+  function retrieve(query){
+    var terms = query.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
+    var scored = [];
+    if(terms.length){
+      for(var i=0;i<N;i++){
+        var n = nodes[i];
+        var ex = (DATA.meta[i] && DATA.meta[i][1]) || "";
+        var text = (n.name + " " + ex).toLowerCase();
+        var score = 0;
+        for(var t=0;t<terms.length;t++){ if(text.indexOf(terms[t])!==-1) score++; }
+        if(score>0){ scored.push([score + Math.min(2, n.deg/20), i]); }
+      }
+      scored.sort(function(a,b){ return b[0]-a[0]; });
+    }
+    var idxs = scored.slice(0,8).map(function(s){ return s[1]; });
+    // Be generous about surfacing paintings/photographs even in ordinary
+    // conversation, not only when someone explicitly says "show me" -- but
+    // gated on an actual keyword match (score>0 from the same scoring pass
+    // above), never just tacked on regardless of topic. Images compete for
+    // the top-8 on equal footing with text notes, but a rich prose excerpt
+    // gives a concept/diary entry far more surface area to match a query
+    // than an image's bare title -- so reserve a couple of slots specifically
+    // for the best-scoring images that didn't otherwise make the cut.
+    // Randomly draw 2 from the top *8* image matches rather than always the
+    // literal top 2 -- otherwise any query that scores similarly keeps
+    // surfacing the identical pair of images every single time.
+    var imageBand = scored.filter(function(s){ return nodes[s[1]].shellR!=null; }).slice(0,8);
+    var addedImages = 0;
+    while(addedImages<2 && imageBand.length){
+      var pick = imageBand.splice(Math.floor(Math.random()*imageBand.length),1)[0][1];
+      if(idxs.indexOf(pick)===-1){ idxs.push(pick); addedImages++; }
+    }
+    if(VISUAL_REQUEST_RE.test(query)){
+      // strip the generic visual-request words themselves before treating
+      // what's left as a "subject" to search artworks for -- "paintings of
+      // dogs and cats" should search for dog/cat art, not "paintings" art
+      var subjectTerms = terms.filter(function(t){ return !VISUAL_REQUEST_RE.test(t); });
+      sampleArtworks(6, subjectTerms).forEach(function(i){ if(idxs.indexOf(i)===-1) idxs.push(i); });
+    }
+    if(PERSONAL_PHOTO_RE.test(query)){
+      samplePersonalPhotos(3).forEach(function(i){ if(idxs.indexOf(i)===-1) idxs.push(i); });
+    }
+    if(BIO_TOPIC_RE.test(query)){
+      // front of the list, in reverse so Ernest Strauhal.md ends up first:
+      // this is the anchor fact-check, not a maybe
+      for(var b=bioNoteIdxs.length-1;b>=0;b--){
+        if(idxs.indexOf(bioNoteIdxs[b])===-1) idxs.unshift(bioNoteIdxs[b]);
+      }
+    }
+    return idxs;
+  }
+  // Most notes' excerpts are short (<=900 chars) so slicing the first 500 was
+  // fine. But the few DEEP_EXCERPT notes (diary, sketchbook) are now up to
+  // 20,000 chars specifically so the actual matching passage can be *found* --
+  // and always taking chars[0:500] would still only ever show that passage's
+  // opening lines, never the part that actually matched. Instead: locate
+  // wherever the query's terms actually hit inside the excerpt and take a
+  // window around THAT, falling back to the start only if nothing hit.
+  // NOT just "the earliest match wins" -- generic query words ("about", "with",
+  // "your") show up almost immediately in any sufficiently long text, so the
+  // first pass of this (picking whichever term hit first) kept anchoring on
+  // those instead of the specific, meaningful term ("cafe", "dad") that
+  // actually mattered, several thousand characters later. Instead: find every
+  // occurrence of every distinct query term, then pick the occurrence with the
+  // most OTHER distinct terms clustered near it -- "cafe" and "dad" sitting a
+  // few words apart outscores an isolated "about" with nothing else around it.
+  // Generic filler words are common enough that SEVERAL of them cluster
+  // together purely by chance in almost any stretch of a long personal diary
+  // -- so even the distinct-term-density scoring above kept getting outvoted
+  // by an accidental pile-up of "tell"/"about"/"with"/"your" near the start,
+  // never actually reaching the one place "cafe" and "dad" sit near each
+  // other. Filtering these out before anchoring is what actually fixes it --
+  // only genuinely specific words should get a say in WHERE to look.
+  var GENERIC_TERMS = {"tell":1,"about":1,"you":1,"your":1,"used":1,"with":1,"the":1,"and":1,
+    "that":1,"this":1,"have":1,"has":1,"had":1,"were":1,"was":1,"are":1,"for":1,"from":1,
+    "what":1,"when":1,"where":1,"which":1,"who":1,"how":1,"why":1,"can":1,"could":1,"would":1,
+    "should":1,"will":1,"just":1,"like":1,"know":1,"think":1,"really":1,"much":1,"more":1,
+    "some":1,"any":1,"all":1,"one":1,"get":1,"got":1,"going":1,"go":1,"went":1,"say":1,"said":1};
+  function relevantSlice(ex, terms, maxLen){
+    if(ex.length<=maxLen) return ex;
+    var specific = terms.filter(function(t){ return !GENERIC_TERMS[t]; });
+    if(specific.length) terms = specific;   // only fall back to generic terms if nothing specific was asked
+    var low = ex.toLowerCase(), occ = [], seen = {};
+    terms.forEach(function(t){
+      if(seen[t]) return; seen[t]=true;
+      var p = low.indexOf(t);
+      while(p!==-1){ occ.push({pos:p, term:t}); p = low.indexOf(t, p+1); }
+    });
+    if(!occ.length) return ex.slice(0,maxLen).trim()+" …";
+    var half = maxLen/2, bestPos = occ[0].pos, bestScore = -1;
+    occ.forEach(function(o){
+      var distinct = {};
+      occ.forEach(function(o2){ if(Math.abs(o2.pos-o.pos)<=half) distinct[o2.term]=true; });
+      var score = Object.keys(distinct).length;
+      if(score>bestScore){ bestScore=score; bestPos=o.pos; }
+    });
+    var start = Math.max(0, bestPos - Math.floor(maxLen*0.35));
+    var end = Math.min(ex.length, start+maxLen);
+    var snippet = ex.slice(start,end).trim();
+    return (start>0?"… ":"")+snippet+(end<ex.length?" …":"");
+  }
+  // Every entry gets a stable numeric [id] (just its node index) printed
+  // alongside the title -- this is what "show" actually keys off, NOT the
+  // title text. Real archive titles are often auto-generated camera junk or
+  // mangled/OCR'd strings ("1956armon a autorretrato sugerente painted in "+
+  // "1956 jpg large jpg" for what's really "Armonía"), or the model
+  // paraphrases/describes an image instead of reproducing its exact title --
+  // either way, fuzzy string-matching a title back to a node was a silent
+  // failure mode: the reply describes something real, nothing ever shows.
+  // An id the model just echoes back removes that whole class of mismatch.
+  function buildContext(idxs, terms){
+    return idxs.map(function(i){
+      var ex = (DATA.meta[i] && DATA.meta[i][1]) || "";
+      return "### [" + i + "] " + nodes[i].name + "\n" + relevantSlice(ex, terms||[], 900);
+    }).join("\n\n");
+  }
+  // Deterministic keyword-scoring means near-identical questions keep
+  // surfacing the exact same handful of notes/images every time -- fine for
+  // an explicit search, but conversationally it makes the archive feel much
+  // smaller than it is. Mixed into the static context alongside whatever
+  // actually scored: a few genuinely random connected nodes each message, so
+  // there's always fresh, real material to riff on beyond the same repeat
+  // offenders, without ever displacing what actually matched the question.
+  function sampleRandomSpark(n, exclude){
+    var pool = [];
+    for(var i=0;i<N;i++){ if(exclude.indexOf(i)===-1) pool.push(i); }
+    var out = [];
+    for(var k=0;k<n && pool.length;k++){
+      out.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
+    }
+    return out;
+  }
+
+  // ---- tool-calling: the static context above is a keyword-scored guess,
+  // capped at 8 notes, computed ONCE before the model has said anything --
+  // it's the reason every one of these retrieval bugs so far has been "the
+  // right note existed, the guess just didn't surface it." Giving the model
+  // an actual search tool means it can go look for itself when what's in
+  // front of it doesn't cover the question, instead of a human having to
+  // notice the gap and hand-wire another always-include special case.
+  // "show" is the same idea for the OTHER long-running fragile mechanism
+  // (mention-detection below, which only fires if the model happens to
+  // reproduce a note's exact title inside a normal sentence) -- an explicit
+  // tool call is a much more reliable trigger. Mention-detection is kept
+  // as-is, not replaced: not every provider/model calls tools reliably every
+  // time, so this is a second, better path layered on top, not a swap.
+  var TOOL_DEFS = [
+    {
+      name: "search_archive",
+      description: "Search your own memory (diary, art, reading, ideas) for anything relevant that "+
+        "wasn't already handed to you below. Use this whenever a question reaches beyond what you've "+
+        "already got -- look it up rather than guessing or saying you don't know too early.",
+      params: {query: {type:"string", description:"what to search for"}}
+    },
+    {
+      name: "show",
+      description: "Actually display a specific photo, painting, or note on screen, using the [id] number "+
+        "printed right next to it below (or in a search_archive result) -- e.g. for \"### [4213] Some Title\" "+
+        "call show with id 4213. Use the id, NOT the title text -- real titles are sometimes messy/auto-"+
+        "generated and won't match. This is the reliable way to make something appear -- use it whenever "+
+        "you're about to reference a specific image or note, in addition to naming it in your reply, not "+
+        "instead of.",
+      params: {id: {type:"integer", description:"the [id] number printed next to the note/image, e.g. 4213"}}
+    }
+  ];
+  function execTool(name, args){
+    if(name==="search_archive"){
+      var q = (args && args.query) || "";
+      var terms = q.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
+      var ctx = buildContext(retrieve(q).slice(0,12), terms);
+      return {result: ctx || "nothing matched that search."};
+    }
+    if(name==="show"){
+      var idx = parseInt(args && args.id, 10);
+      if(isNaN(idx) || idx<0 || idx>=N || !nodes[idx]) return {found:false};
+      queueJump(idx);
+      return {found:true, title:nodes[idx].name};
+    }
+    return {error:"unknown tool"};
+  }
+
+  // ---- SSE line reader; Gemini/OpenAI/Anthropic all frame streamed chunks the
+  // same way ("data: {...}\n\n"), so one reader covers all three ----
+  function readSSE(response, onPayload){
+    var reader = response.body.getReader(), decoder = new TextDecoder(), buf = "";
+    function pump(){
+      return reader.read().then(function(res){
+        if(res.done) return;
+        buf += decoder.decode(res.value, {stream:true});
+        var lines = buf.split("\n");
+        buf = lines.pop();
+        for(var i=0;i<lines.length;i++){
+          var line = lines[i].trim();
+          if(line.indexOf("data:")===0){
+            var payload = line.slice(5).trim();
+            if(payload) onPayload(payload);
+          }
+        }
+        return pump();
+      });
+    }
+    return pump();
+  }
+
+  // Tool-call rounds happen BEFORE any text is allowed to reach onDelta for
+  // that round -- a round that only returns function calls has no text parts
+  // at all, so nothing gets shown prematurely; the recursive round only
+  // stops (and calls onDone) once a round comes back with plain text and no
+  // further calls, or the depth cap is hit. Capped at 4 rounds total so a
+  // model that won't stop calling tools can't loop forever on someone's key.
+  var TOOL_DEPTH_CAP = 4;
+  var PROVIDERS = {
+    gemini: function(messages, onDelta, onDone, onError){
+      var sys = messages.filter(function(m){ return m.role==="system"; })[0];
+      var contents = messages.filter(function(m){ return m.role!=="system"; }).map(function(m){
+        return {role: m.role==="assistant"?"model":"user", parts:[{text:m.text}]};
+      });
+      var tools = [{functionDeclarations: TOOL_DEFS.map(function(t){
+        var props = {}; Object.keys(t.params).forEach(function(k){
+          props[k] = {type: t.params[k].type.toUpperCase(), description: t.params[k].description};
+        });
+        return {name:t.name, description:t.description,
+          parameters:{type:"OBJECT", properties:props, required:Object.keys(t.params)}};
+      })}];
+      var sysPart = sys ? {parts:[{text:sys.text}]} : null;
+      // gemini-2.5-flash "thinks" by default -- without turning that off, its
+      // internal reasoning ("thoughts: i need to be careful here not to sound
+      // like an assistant...") comes back as real parts and was leaking
+      // straight into the visible/spoken reply. thinkingBudget:0 disables it
+      // outright; filtering out any part explicitly marked thought:true below
+      // is just a belt-and-suspenders backstop.
+      function round(contents, depth){
+        var body = {contents: contents, tools: tools, generationConfig: {thinkingConfig: {thinkingBudget: 0}}};
+        if(sysPart) body.systemInstruction = sysPart;
+        var calls = [];
+        fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key="+encodeURIComponent(apiKey), {
+          method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)
+        }).then(function(r){
+          if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+          return readSSE(r, function(payload){
+            try{
+              var d = JSON.parse(payload);
+              var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+              if(!parts) return;
+              parts.forEach(function(p){
+                if(p.thought) return;
+                if(p.functionCall) calls.push(p.functionCall);
+                else if(p.text) onDelta(p.text);
+              });
+            }catch(e){}
+          });
+        }).then(function(){
+          if(calls.length && depth<TOOL_DEPTH_CAP){
+            var next = contents.concat([
+              {role:"model", parts: calls.map(function(c){ return {functionCall:c}; })},
+              {role:"user", parts: calls.map(function(c){
+                return {functionResponse:{name:c.name, response: execTool(c.name, c.args||{})}};
+              })}
+            ]);
+            round(next, depth+1);
+          } else onDone();
+        }).catch(onError);
+      }
+      round(contents, 0);
+    },
+    openai: function(messages, onDelta, onDone, onError){
+      var tools = TOOL_DEFS.map(function(t){
+        var props = {}; Object.keys(t.params).forEach(function(k){ props[k] = t.params[k]; });
+        return {type:"function", function:{name:t.name, description:t.description,
+          parameters:{type:"object", properties:props, required:Object.keys(t.params)}}};
+      });
+      function round(msgs, depth){
+        var body = {model:"gpt-4o-mini", stream:true, messages: msgs, tools: tools};
+        var toolCalls = {};
+        fetch("https://api.openai.com/v1/chat/completions", {
+          method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+          body: JSON.stringify(body)
+        }).then(function(r){
+          if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+          return readSSE(r, function(payload){
+            if(payload==="[DONE]") return;
+            try{
+              var d = JSON.parse(payload);
+              var delta = d.choices && d.choices[0] && d.choices[0].delta;
+              if(!delta) return;
+              if(delta.content) onDelta(delta.content);
+              if(delta.tool_calls){
+                delta.tool_calls.forEach(function(tc){
+                  var slot = toolCalls[tc.index] || (toolCalls[tc.index] = {id:"", name:"", args:""});
+                  if(tc.id) slot.id = tc.id;
+                  if(tc.function && tc.function.name) slot.name += tc.function.name;
+                  if(tc.function && tc.function.arguments) slot.args += tc.function.arguments;
+                });
+              }
+            }catch(e){}
+          });
+        }).then(function(){
+          var calls = Object.keys(toolCalls).map(function(k){ return toolCalls[k]; }).filter(function(c){ return c.name; });
+          if(calls.length && depth<TOOL_DEPTH_CAP){
+            var assistantMsg = {role:"assistant", content:null, tool_calls: calls.map(function(c){
+              return {id:c.id, type:"function", function:{name:c.name, arguments:c.args||"{}"}};
+            })};
+            var toolMsgs = calls.map(function(c){
+              var args = {}; try{ args = JSON.parse(c.args||"{}"); }catch(e){}
+              return {role:"tool", tool_call_id:c.id, content: JSON.stringify(execTool(c.name, args))};
+            });
+            round(msgs.concat([assistantMsg]).concat(toolMsgs), depth+1);
+          } else onDone();
+        }).catch(onError);
+      }
+      round(messages.map(function(m){ return {role:m.role, content:m.text}; }), 0);
+    },
+    anthropic: function(messages, onDelta, onDone, onError){
+      var sys = messages.filter(function(m){ return m.role==="system"; })[0];
+      var tools = TOOL_DEFS.map(function(t){
+        var props = {}; Object.keys(t.params).forEach(function(k){ props[k] = t.params[k]; });
+        return {name:t.name, description:t.description,
+          input_schema:{type:"object", properties:props, required:Object.keys(t.params)}};
+      });
+      function round(msgs, depth){
+        var body = {model:"claude-3-5-sonnet-20241022", max_tokens:1024, stream:true, messages: msgs, tools: tools};
+        if(sys) body.system = sys.text;
+        var blocks = {};
+        fetch("https://api.anthropic.com/v1/messages", {
+          method:"POST", headers:{"Content-Type":"application/json","x-api-key":apiKey,
+            "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body: JSON.stringify(body)
+        }).then(function(r){
+          if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+" "+t.slice(0,200)); });
+          return readSSE(r, function(payload){
+            try{
+              var d = JSON.parse(payload);
+              if(d.type==="content_block_start"){
+                blocks[d.index] = (d.content_block.type==="tool_use")
+                  ? {type:"tool_use", id:d.content_block.id, name:d.content_block.name, json:""}
+                  : {type:"text", text:""};
+              } else if(d.type==="content_block_delta"){
+                var b = blocks[d.index]; if(!b) return;
+                if(d.delta.type==="text_delta"){ b.text += d.delta.text; onDelta(d.delta.text); }
+                else if(d.delta.type==="input_json_delta"){ b.json += d.delta.partial_json||""; }
+              }
+            }catch(e){}
+          });
+        }).then(function(){
+          var idxs = Object.keys(blocks).sort(function(a,b){ return a-b; });
+          var calls = idxs.map(function(k){ return blocks[k]; }).filter(function(b){ return b.type==="tool_use"; });
+          if(calls.length && depth<TOOL_DEPTH_CAP){
+            var assistantContent = idxs.map(function(k){
+              var b = blocks[k];
+              if(b.type==="tool_use"){
+                var input = {}; try{ input = JSON.parse(b.json||"{}"); }catch(e){}
+                return {type:"tool_use", id:b.id, name:b.name, input:input};
+              }
+              return {type:"text", text:b.text};
+            });
+            var toolResults = calls.map(function(b){
+              var args = {}; try{ args = JSON.parse(b.json||"{}"); }catch(e){}
+              return {type:"tool_result", tool_use_id:b.id, content: JSON.stringify(execTool(b.name, args))};
+            });
+            round(msgs.concat([{role:"assistant", content:assistantContent}, {role:"user", content:toolResults}]), depth+1);
+          } else onDone();
+        }).catch(onError);
+      }
+      round(messages.filter(function(m){ return m.role!=="system"; }).map(function(m){
+        return {role:m.role, content:m.text};
+      }), 0);
+    }
+  };
+
+  // ---- voice: Ernest's actual cloned voice via Gradium, bring-your-own-key
+  // same as the chat LLM key above -- each visitor pastes their own Gradium
+  // key (optional; stored the same way, same place), so there's no shared
+  // secret sitting in the page for anyone to extract. The voice ID isn't a
+  // credential -- it's just which clone to speak as -- so that one alone is
+  // fine to bake in; it always resolves to Ernest's voice regardless of
+  // whose key is paying for the call. Falls back to the browser's built-in
+  // "Ralph" voice if no key is set, or if a Gradium call fails. ----
+  var GRADIUM_VOICE_ID = "ZG9zLaTKhQ0tLNq6";
+  var GRADIUM_TTS_URL = "https://api.gradium.ai/api/post/speech/tts";
+  var currentAudio = null;
+
+  var chosenVoice = null;
+  function pickVoice(){
+    if(!window.speechSynthesis) return;
+    var voices = window.speechSynthesis.getVoices();
+    if(!voices.length) return;
+    chosenVoice = voices.filter(function(v){ return /ralph/i.test(v.name) && /en-US/i.test(v.lang); })[0]
+      || voices.filter(function(v){ return /ralph/i.test(v.name); })[0]
+      || voices[0];
+  }
+  if(window.speechSynthesis){ pickVoice(); window.speechSynthesis.onvoiceschanged = pickVoice; }
+
+  // Browser-TTS fallback path (unchanged from before): splits into clauses so
+  // there's a breath-like gap at each pause, reporting each clause's actual
+  // start via the browser's own utterance event.
+  function speakBrowser(clauses, onClauseStart, onAllDone){
+    if(!window.speechSynthesis){ if(onAllDone) onAllDone(); return; }
+    window.speechSynthesis.cancel();
+    var i = 0;
+    function next(){
+      if(i>=clauses.length){ if(onAllDone) onAllDone(); return; }
+      var s = clauses[i++];
+      var u = new SpeechSynthesisUtterance(s);
+      if(chosenVoice) u.voice = chosenVoice;
+      u.rate = 0.93; u.pitch = 1.0;
+      u.onstart = function(){ if(onClauseStart) onClauseStart(s); };
+      u.onend = next; u.onerror = next;
+      window.speechSynthesis.speak(u);
+    }
+    next();
+  }
+
+  // Real cloned-voice path: fetch each clause's audio from Gradium and play
+  // it via an <audio> element, prefetching the NEXT clause while the current
+  // one plays so there's minimal dead air between them. Falls back to the
+  // browser voice (from whichever clause failed, onward) if a request errors
+  // -- a quota/network hiccup shouldn't mean total silence.
+  function speakGradium(clauses, onClauseStart, onAllDone){
+    var i = 0, pending = null;
+    function fetchClause(s){
+      return fetch(GRADIUM_TTS_URL, {
+        method: "POST",
+        headers: {"x-api-key": gradiumKey, "Content-Type": "application/json"},
+        body: JSON.stringify({text: s, voice_id: GRADIUM_VOICE_ID, output_format: "wav", only_audio: true})
+      }).then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.blob(); });
+    }
+    function next(){
+      if(i>=clauses.length){ if(onAllDone) onAllDone(); return; }
+      var s = clauses[i++];
+      var audioPromise = pending || fetchClause(s);
+      pending = null;
+      audioPromise.then(function(blob){
+        var url = URL.createObjectURL(blob);
+        currentAudio = new Audio(url);
+        if(onClauseStart) onClauseStart(s);
+        if(i<clauses.length) pending = fetchClause(clauses[i]).catch(function(){ return null; });
+        currentAudio.onended = function(){ URL.revokeObjectURL(url); next(); };
+        currentAudio.onerror = function(){ URL.revokeObjectURL(url); next(); };
+        currentAudio.play();
+      }).catch(function(){
+        // this clause's real-voice request failed -- read just this one
+        // clause (and only this one) in the fallback voice, then resume
+        // trying Gradium for whatever's left
+        speakBrowser([s], onClauseStart, next);
+      });
+    }
+    next();
+  }
+
+  function speak(text, onClauseStart, onAllDone){
+    if(currentAudio){ currentAudio.pause(); currentAudio = null; }
+    var clauses = (text.match(/[^,.!?;]+[,.!?;]*/g) || [text]).map(function(s){ return s.trim(); }).filter(Boolean);
+    function done(){ if(typeof FACE!=="undefined" && FACE) FACE.setSpeaking(false); if(onAllDone) onAllDone(); }
+    if(!clauses.length || muted){ done(); return; }
+    if(typeof FACE!=="undefined" && FACE) FACE.setSpeaking(true);
+    if(gradiumKey) speakGradium(clauses, onClauseStart, done);
+    else speakBrowser(clauses, onClauseStart, done);
+  }
+
+  // ---- mention detection: as the answer streams in, check for note names
+  // appearing in the newly-arrived text and light each one up (highlight +
+  // open its info popup / image) the moment it's said, matching longest names
+  // first so e.g. "The Oedipal Screen" wins over a bare "Screen" ----
+  // A handful of node titles are too generic (ordinary English words that'll
+  // appear in almost any reply) or too personally loaded (a page/photo
+  // literally named "ernest" -- talking AS Ernest and then popping up "a
+  // picture of you" the moment some OTHER Ernest, e.g. Ernest Becker, comes
+  // up is exactly the wrong kind of surprise) to ever trigger on automatically.
+  var MENTION_STOPLIST = {"ernest":1, "about":1, "home":1, "life":1, "works":1, "sources":1};
+  // Artwork titles end "...by Artist (Year)", but a model saying the same
+  // thing out loud paraphrases the date near-universally ("from 1950",
+  // "circa 1950", "made in 1950") -- exact-string matching against the full
+  // title then fails, and whatever SHORT node happens to occur nearby in
+  // the (now-unclaimed) text fires instead. So also register the "Title by
+  // Artist" portion with the trailing "(...)" stripped as a second,
+  // independent candidate for the same node -- either form matching is
+  // enough, and the full form still wins if the model happens to say it.
+  var TRAILING_YEAR_RE = /\s*\([^()]*\)\s*$/;
+  var TRAILING_BY_RE = /\s+by\s+[a-z][^,]*$/i;
+  var sortedNames = null;
+  function getSortedNames(){
+    if(sortedNames) return sortedNames;
+    sortedNames = [];
+    for(var i=0;i<N;i++){
+      var nm = nodes[i].name;
+      if(nm.length<5 || MENTION_STOPLIST[nm.toLowerCase()]) continue;
+      sortedNames.push([nm, i]);
+      // Titles are usually "Description by Artist (Year)" -- the model
+      // reliably says the description when talking naturally but doesn't
+      // always tack the exact " by Artist (Year)" suffix back on, so match
+      // on each successively-shorter real chunk of the title too. Same min
+      // length (5) at every fallback level, not a rising one -- a short but
+      // specific proper-noun title ("Akira", "Crumb") is exactly the case
+      // this fallback exists for; a stricter bar for shorter strings was
+      // silently excluding the single-word titles that needed it the most.
+      var stripped = nm.replace(TRAILING_YEAR_RE, "");
+      if(stripped!==nm && stripped.length>=5) sortedNames.push([stripped, i]);
+      var descOnly = stripped.replace(TRAILING_BY_RE, "");
+      if(descOnly!==stripped && descOnly.length>=5) sortedNames.push([descOnly, i]);
+    }
+    sortedNames.sort(function(a,b){ return b[0].length-a[0].length; });
+    return sortedNames;
+  }
+  // Matching longest-first isn't enough by itself: a completely unrelated,
+  // separate node like a stray anchor titled just "ascension" would still
+  // fire on its own, independent of a longer match, purely because its name
+  // happens to occur AS A SUBSTRING inside e.g. "...the Ascension of the
+  // Virgin by Peter Paul Rubens..." even after that whole title already
+  // matched. So: once a longer name claims a stretch of text, no shorter
+  // name is allowed to fire from anywhere inside that same stretch.
+  // The model routinely wraps a title in quotes when saying it out loud
+  // ("there's 'the last supper' by...") even though the actual note title
+  // has none -- stripping every quote character from both sides before
+  // comparing means that decoration can't break an otherwise-good match.
+  function stripQuotes(s){ return s.replace(/['"‘’“”`]/g, ""); }
+  // Belt-and-suspenders for the tool call itself: models don't reliably call
+  // "show" every time even when explicitly told to, and exact-substring
+  // mention detection breaks on the smallest rewording (a title says "Under
+  // Dark Sky", the model naturally says "under A dark sky" mid-sentence --
+  // one added word and the whole match misses). But we know exactly which
+  // notes/images were actually offered to the model this turn (the static
+  // context + random spark) -- a small, bounded pool -- so a much fuzzier
+  // word-overlap match is safe to run ONLY against that pool, where a false
+  // positive is basically impossible (these are the very things the reply is
+  // supposed to be about), instead of the whole graph where "drowning" used
+  // as a metaphor could wrongly match a node literally titled "drowning".
+  function fuzzyMatchCandidates(text, candidateIdxs, alreadyFound){
+    var lower = " " + stripQuotes(text.toLowerCase()) + " ";
+    var hits = [];
+    candidateIdxs.forEach(function(idx){
+      if(alreadyFound[idx]) return;
+      var words = stripQuotes(nodes[idx].name.toLowerCase()).match(/[a-z0-9']{4,}/g) || [];
+      if(!words.length) return;
+      var matched = words.filter(function(w){ return lower.indexOf(" "+w) !== -1 || lower.indexOf(w+" ") !== -1; });
+      var need = words.length<=3 ? words.length : Math.max(3, Math.ceil(words.length*0.6));
+      if(matched.length>=need) hits.push(idx);
+    });
+    return hits;
+  }
+  function scanForMentions(fullText, alreadyFound, onFound){
+    var names = getSortedNames(), lower = stripQuotes(fullText.toLowerCase());
+    var consumed = [];   // [start,end) ranges already claimed by a longer match
+    function withinConsumed(s,e){
+      for(var k=0;k<consumed.length;k++){ if(s<consumed[k][1] && e>consumed[k][0]) return true; }
+      return false;
+    }
+    for(var i=0;i<names.length;i++){
+      var idx = names[i][1];
+      if(alreadyFound[idx]) continue;
+      var needle = stripQuotes(names[i][0].toLowerCase());
+      var pos = lower.indexOf(needle);
+      var matchedAt = -1;
+      while(pos!==-1){
+        var end = pos+needle.length;
+        var before = pos===0 ? "" : lower[pos-1];
+        var after = end>=lower.length ? "" : lower[end];
+        // require a real whole-word match, not "cat" inside "concatenate",
+        // and skip any span a longer, already-matched name already claimed
+        if(!/[a-z0-9]/i.test(before) && !/[a-z0-9]/i.test(after) && !withinConsumed(pos,end)){ matchedAt=pos; break; }
+        pos = lower.indexOf(needle, pos+1);
+      }
+      if(matchedAt!==-1){
+        consumed.push([matchedAt, matchedAt+needle.length]);
+        alreadyFound[idx]=true; onFound(idx);
+      }
+    }
+  }
+
+  // stripQuotes removes characters (apostrophes etc.), which shifts every
+  // index after the first removal -- fine for the auto-jump scan above since
+  // it only ever needs "did this occur, yes/no", but linkifying has to slice
+  // the ORIGINAL reply text at the right spots, so this keeps a parallel
+  // index back to that original string alongside the stripped one.
+  function buildStripMap(s){
+    var stripped = "", map = [];
+    for(var i=0;i<s.length;i++){
+      if(/['"‘’“”`]/.test(s[i])) continue;
+      stripped += s[i]; map.push(i);
+    }
+    return {stripped:stripped, map:map};
+  }
+  function escapeHTML(s){
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  // Same longest-match-first, whole-word, non-overlapping logic as
+  // scanForMentions -- but instead of firing a jump the moment speech reaches
+  // it, this wraps every match found ANYWHERE in the finished reply in a
+  // clickable span, so the transcript itself stays a permanent, clickable
+  // record of what got mentioned, not just a one-time flyover while it's
+  // being spoken.
+  function linkifyMentions(text){
+    var names = getSortedNames();
+    var sm = buildStripMap(text.toLowerCase());
+    var stripped = sm.stripped, map = sm.map;
+    var consumed = [], spans = [];
+    function withinConsumed(s,e){ for(var k=0;k<consumed.length;k++){ if(s<consumed[k][1] && e>consumed[k][0]) return true; } return false; }
+    for(var i=0;i<names.length;i++){
+      var idx = names[i][1];
+      var needle = stripQuotes(names[i][0].toLowerCase());
+      if(!needle) continue;
+      var pos = stripped.indexOf(needle), matchedAt=-1, matchedEnd=-1;
+      while(pos!==-1){
+        var end = pos+needle.length;
+        var before = pos===0 ? "" : stripped[pos-1];
+        var after = end>=stripped.length ? "" : stripped[end];
+        if(!/[a-z0-9]/i.test(before) && !/[a-z0-9]/i.test(after) && !withinConsumed(pos,end)){ matchedAt=pos; matchedEnd=end; break; }
+        pos = stripped.indexOf(needle, pos+1);
+      }
+      if(matchedAt!==-1){
+        consumed.push([matchedAt, matchedEnd]);
+        spans.push({start: map[matchedAt], end: map[matchedEnd-1]+1, idx: idx});
+      }
+    }
+    spans.sort(function(a,b){ return a.start-b.start; });
+    var html = "", cursor = 0;
+    spans.forEach(function(sp){
+      if(sp.start < cursor) return;   // guard against any accidental overlap post-sort
+      html += escapeHTML(text.slice(cursor, sp.start));
+      html += '<span class="mention-link" data-idx="'+sp.idx+'">' + escapeHTML(text.slice(sp.start, sp.end)) + '</span>';
+      cursor = sp.end;
+    });
+    html += escapeHTML(text.slice(cursor));
+    return html;
+  }
+  // One delegated listener covers every past and future ai message -- clicking
+  // a linked word jumps immediately, unqueued, since this is a direct manual
+  // action from the person reading the transcript, not part of the
+  // auto-narrated tour that queueJump paces out during speech.
+  chatMessages.addEventListener("click", function(e){
+    var el = e.target.closest && e.target.closest(".mention-link");
+    if(!el) return;
+    var idx = parseInt(el.getAttribute("data-idx"), 10);
+    if(isNaN(idx) || !nodes[idx]) return;
+    flyTo(nodes[idx]); openInfo(nodes[idx]);
+  });
+
+  function addMessage(role, text){
+    var d = document.createElement("div");
+    d.className = "m " + (role==="user"?"user":"ai");
+    d.textContent = text;
+    chatMessages.appendChild(d);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return d;
+  }
+
+  // ---- jump queue: when the reply touches several topics, actually visit each
+  // one in turn (camera + popup), and when a mentioned concept/person/etc has
+  // pictures hanging off it, swing by one of those too -- so a multi-topic
+  // answer reads as a little tour of the graph, not just one popup replaced by
+  // the next with the camera sitting still. Queued (not fired all at once)
+  // since flyTo() is a ~0.3-0.8s animation and overlapping calls fight it.
+  // New mentions only get pushed onto this queue as each speech clause
+  // actually STARTS (see speak()'s onClauseStart below), so the tour tracks
+  // Ralph's real cadence rather than racing ahead of him; the pacing between
+  // jumps here is doubled on top of that so it never finishes well before he
+  // does even on a short reply. ----
+  var jumpQueue = [], jumpRunning = false, jumpVisitedImage = {};
+  function queueJump(idx){ jumpQueue.push(idx); if(!jumpRunning) runJumpQueue(); }
+  function runJumpQueue(){
+    var idx = jumpQueue.shift();
+    if(idx===undefined){ jumpRunning=false; return; }
+    jumpRunning = true;
+    var n = nodes[idx];
+    flyTo(n); openInfo(n);
+    // a mentioned concept/person/etc that isn't itself an image -- if it has
+    // pictures attached, queue one of them right behind it
+    if(n.shellR==null){
+      var pic = pickRelevantImage(idx);
+      if(pic){ jumpVisitedImage[pic.i]=true; jumpQueue.unshift(pic.i); }
+    }
+    setTimeout(runJumpQueue, 1800);
+  }
+  // adj[idx] is in whatever arbitrary order the underlying edges happened to
+  // be discovered in -- NOT ranked by relevance, so "just take the first
+  // image neighbor" was pulling up connections that only share a crosslink's
+  // vaguest "shared language" match, i.e. genuinely random-looking pictures.
+  // Score every connected image by literal word-overlap with the mentioned
+  // node's own name instead, and only attach one if something actually
+  // overlaps -- silence (no image) beats a weakly-related one.
+  function pickRelevantImage(idx){
+    var nb = adj[idx]||[];
+    var nameTerms = nodes[idx].name.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
+    if(!nameTerms.length) return null;
+    var best = null, bestScore = 0;
+    for(var i=0;i<nb.length;i++){
+      var m = nodes[nb[i]];
+      if(m.shellR==null || jumpVisitedImage[m.i]) continue;
+      var mLower = m.name.toLowerCase(), score = 0;
+      for(var t=0;t<nameTerms.length;t++){ if(mLower.indexOf(nameTerms[t])!==-1) score++; }
+      if(score>bestScore){ bestScore=score; best=m; }
+    }
+    return best;
+  }
+
+  function sendMessage(){
+    var q = chatText.value.trim();
+    if(!q || !apiKey || sending) return;
+    sending = true;
+    chatText.value = "";
+    addMessage("user", q);
+    history.push({role:"user", text:q});
+
+    var qTerms = q.toLowerCase().match(/[a-z0-9']{3,}/g) || [];
+    var matchedIdxs = retrieve(q);
+    var context = buildContext(matchedIdxs, qTerms);
+    var spark = sampleRandomSpark(3, matchedIdxs);
+    if(spark.length){
+      context += "\n\n(and scattered elsewhere across the wider archive, only bring one of these up if it "+
+        "genuinely fits -- don't force it in:)\n\n" + buildContext(spark, qTerms);
+    }
+    var sysPrompt = "You ARE Ernest Strauhal, talking directly to whoever's asking -- first person, always "+
+      "\"I,\" never \"he\" or \"Ernest\" or third person, and never refer to yourself as an AI, assistant, "+
+      "archive, or knowledge graph. The notes below are pulled from your own real diary, reading, art "+
+      "archive, and ideas -- they're your memory, not a database you're consulting. Never refer to them "+
+      "as \"notes,\" \"the ernest strauhal notes,\" \"what's written down,\" or any other meta-reference to "+
+      "the source material as a document -- you're not citing something, you're just remembering it. Talk like you'd "+
+      "actually talk: never chipper, never enthusiastic, never sounding like a helpful assistant -- but don't "+
+      "reach for the same blunt sarcastic put-down every single time, that gets one-note and tiresome fast. "+
+      "Vary it: sometimes a deadpan put-down, sometimes a weird hyper-specific tangent tied to something real "+
+      "you've actually lived through, sometimes a dry absurdist observation that isn't mean at all, sometimes "+
+      "self-deprecation instead of a jab at whoever's asking, and sometimes just a plain, unguarded, genuine "+
+      "answer with no joke bolted onto it -- not every reply needs an edge. Think of sarcasm as one tool in "+
+      "the kit, not the whole kit. You're allowed to mock a dumb or already-answered question, but don't make "+
+      "that the default reflex. Default posture is unbothered and a little irreverent, not contempt. Loose, "+
+      "easygoing California cadence underneath it -- but not a stoner-surfer caricature: no \"dude,\" \"bro,\" "+
+      "\"totally rad,\" no weed jokes, don't overdo it. "+
+      "Output ONLY the reply itself -- never narrate your own reasoning, never write things like \"thoughts:\" "+
+      "or explain how you're deciding what to say, that should never appear in the output at all.\n\n"+
+      "HARD RULE, no exceptions: never state a specific biographical fact -- where you grew up, family "+
+      "details, a specific past event, a relationship, a date, a place you lived -- unless it is explicitly "+
+      "written in the notes below, or comes back from a search_archive call. Do not infer, guess, round up, "+
+      "or fill in a plausible-sounding detail from general pattern-matching (e.g. a relative's history is NOT "+
+      "your own history -- never blend the two). You have a search_archive tool: if a question reaches beyond "+
+      "what's already in front of you, use it and check before saying you don't know -- but if you've "+
+      "genuinely searched (or the answer clearly isn't the kind of thing that would be written down) and "+
+      "still don't have it, say plainly you don't have that written down or aren't sure, rather than "+
+      "answering with something invented. Getting a hard fact wrong is much worse than admitting you don't "+
+      "know. This covers texture, not just facts: when you do recount something real, use the actual "+
+      "specific details in the notes (names, places, objects) rather than inventing generic sensory "+
+      "flourish -- smells, imagined dialogue, scenery -- that isn't written anywhere. A real memory "+
+      "described vaguely beats a fake-feeling one dressed up with made-up detail.\n\n"+
+      "Write ALL LOWERCASE, always, no capital letters anywhere, not even at the start of a sentence or for "+
+      "\"I\" -- lowercase i.\n\n"+
+      "Keep it SHORT -- one or two sentences, sometimes just a phrase. Never a paragraph.\n\n"+
+      "Don't dump everything you know in one reply. If the question is broad or vague (\"tell me about "+
+      "yourself,\" \"what are you into\"), give a small, specific, slightly withholding answer -- one real "+
+      "detail, not a summary -- the kind of thing that makes someone want to ask a follow-up, not a rundown. "+
+      "But if the question is specific and someone's clearly and genuinely asking for a real answer, just "+
+      "give it straight -- don't be coy or dodge a direct question, that's a different kind of annoying. "+
+      "You also have a show tool -- this is what ACTUALLY puts something on screen, not just naming it in "+
+      "your reply. Every note/image below is printed as \"### [1234] Title\" -- call show with that id number "+
+      "(not the title text, real titles are often messy or auto-generated and won't match anything). This is "+
+      "real: if someone asks to see a photo, painting, or image, you CAN show one -- call show with its id "+
+      "AND still mention it by name in your reply the normal way, do both, don't rely on just one. Never say "+
+      "you can't show images -- if nothing below actually fits what they're asking for, say that instead of "+
+      "claiming it's not possible in general. You don't need to be asked first, either -- if something below "+
+      "genuinely fits what's being talked about, bring it up (and show it, by id) on your own, the same way "+
+      "you'd casually gesture at something while telling a story. But only when it actually fits -- showing "+
+      "some unrelated image just to have a picture on screen is worse than not showing one at all. And don't "+
+      "let the same handful of things keep coming up: the archive is huge, most of what's below rotates every "+
+      "message (including a few scattered wildcards, marked as such) specifically so you're not stuck reaching "+
+      "for the same few examples in every conversation -- actually look at what's in front of you each time.\n\n"+
+      "The same goes for a specific book, movie, or album if one's in the notes below: say the specific "+
+      "work by name (not a vague \"a book about X\") so it actually opens, but only when the conversation is "+
+      "genuinely about it.\n\n"+
+      "One more real thing, separate from all of that: if someone asks to see a picture of you/yourself/"+
+      "ernest specifically, a real personal photo gets shown automatically, behind the scenes -- you don't "+
+      "control this and the photo's title won't be a normal sentence (camera-generated junk like \"IMG_0186\"), "+
+      "so don't try to name it or describe it. Just respond like the photo is already there, casually -- "+
+      "something like \"here you go\" or a one-line reaction -- never claim you don't have one or couldn't "+
+      "find one for this specific case.\n\nRelevant notes:\n"+
+      (context || "(nothing closely matched -- answer from a general sense of the archive, or say you're not sure)");
+
+    var messages = [{role:"system", text:sysPrompt}].concat(history);
+    var aiDiv = addMessage("ai", "");
+    var full = "";
+    var adapter = PROVIDERS[provider];
+    if(!adapter){ aiDiv.textContent = "unknown provider."; sending=false; return; }
+    adapter(messages, function(delta){
+      // belt-and-suspenders on top of the prompt instruction -- models don't
+      // always hold a casing rule consistently, so enforce it here too
+      full += delta.toLowerCase();
+      aiDiv.textContent = full;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      // graph jumps are NOT fired here -- they're synced to when Ralph
+      // actually speaks each clause, below, not to how fast the text streams in
+    }, function(){
+      history.push({role:"assistant", text:full});
+      // Swap the plain streamed text for the linkified version now that the
+      // reply is complete -- every mention becomes a clickable word so
+      // someone reading back over the transcript can jump to it themselves,
+      // not just watch it fly by once while it's being spoken.
+      aiDiv.innerHTML = linkifyMentions(full);
+      var found = {};
+      jumpVisitedImage = {};   // fresh per reply -- don't skip an image just because a past reply visited it
+      // Personal photos are named after camera junk (IMG_0186 etc.) -- no one
+      // would ever naturally say that title out loud, so waiting for the model
+      // to mention it verbatim (the normal mechanism below) would never fire.
+      // Trigger this one directly off the query itself instead.
+      if(PERSONAL_PHOTO_RE.test(q)){
+        samplePersonalPhotos(1).forEach(function(i){ queueJump(i); });
+      }
+      // catches whatever the exact-match scan below and the model's own show
+      // calls both missed -- see fuzzyMatchCandidates' comment for why this
+      // is safe to run against this specific bounded pool
+      fuzzyMatchCandidates(full, matchedIdxs.concat(spark), found).forEach(function(idx){
+        found[idx] = true; queueJump(idx);
+      });
+      // Guarantee the graph always moves, even on a purely conversational
+      // reply that never names anything specific or calls show -- without
+      // this, "nothing happening" was the common outcome on casual
+      // back-and-forth, not the exception. Checks the actual jump
+      // queue/runner state, not just this function's own `found` bookkeeping,
+      // since a tool-called show() or the personal-photo trigger above both
+      // queue independently of `found`.
+      if(!jumpQueue.length && !jumpRunning && matchedIdxs.length){
+        queueJump(matchedIdxs[0]);
+      }
+      speak(full, function(clause){
+        // fires the instant this clause STARTS being spoken -- queue a jump for
+        // any mention that's new as of this clause, so the graph moves in step
+        // with Ralph's own cadence instead of racing ahead of or lagging him
+        scanForMentions(clause, found, function(idx){ queueJump(idx); });
+      });
+      sending = false;
+    }, function(err){
+      aiDiv.textContent = (full?full+"\n\n":"") + "[couldn't reach "+provider+": "+err.message+"]";
+      sending = false;
+    });
+  }
+  chatSend.addEventListener("click", sendMessage);
+  chatText.addEventListener("keydown", function(e){ if(e.key==="Enter") sendMessage(); });
+})();
+
+// ---------- particle-cloud 3D face (WIP-only experiment) ----------
+// Inspired by the classic "interactive particles from an image" technique
+// (codrops/brunoimbrizi) but hand-rolled in 2D canvas, matching how the rest
+// of this page already does its own manual 3D projection (no three.js/WebGL
+// anywhere else here). Every non-transparent pixel of the background-removed
+// photo becomes one small coloured particle; each gets a depth offset from an
+// anatomical relief function (nose forward, eye sockets back, etc.), so
+// dragging to orbit actually reveals volume via real parallax between
+// particles -- there's no continuous surface to go "inside-out" or break from
+// a bad angle the way a solid mesh did. Naturally translucent too: the gaps
+// between particles show the graph right through it.
+var FACE = (function(){
+  var cv = document.getElementById("face");
+  if(!cv) return {toggle:function(){},open:function(){},close:function(){},setSpeaking:function(){}};
+  var ctx = cv.getContext("2d");
+  var W=0,H=0,DPR=1, on=false, raf=null, t=0, last=0;
+  var talk=0, talkTarget=0, mouth=0;
+
+  var TEX_URL = new URLSearchParams(location.search).get("facetex")
+    || "https://raw.githubusercontent.com/strauhal/strauh.al3.1/main/ernest/face_cutout.png";
+  var U0=0.19,U1=0.76,V0=0.24,V1=0.75;                 // head bbox inside the source photo
+
+  function resize(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=window.innerWidth; H=window.innerHeight;
+    cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener("resize", resize); resize();
+
+  // same anatomical relief as the earlier mesh attempt, reused here purely to
+  // give each particle a believable depth -- brow ridge, recessed sockets,
+  // protruding nose, cheeks, lips, chin -- rounded overall so the silhouette
+  // reads as a head, not a flat photo card.
+  function depth(nx,ny){
+    var q = 1 - (nx*nx)/(1.06*1.06) - (ny*ny)/(1.15*1.15);
+    var z = (q>0?Math.sqrt(q):0)*0.62;
+    z += 0.05*Math.exp(-Math.pow(ny+0.04,2)/0.02 - (nx*nx)/0.4);
+    z -= 0.05*(Math.exp(-Math.pow(nx-0.25,2)/0.02 - Math.pow(ny-0.14,2)/0.02)
+             + Math.exp(-Math.pow(nx+0.25,2)/0.02 - Math.pow(ny-0.14,2)/0.02));
+    z += 0.16*Math.exp(-(nx*nx)/0.012)*Math.exp(-Math.pow(ny-0.30,2)/0.06);
+    z += 0.04*(Math.exp(-Math.pow(nx-0.5,2)/0.05 - Math.pow(ny-0.30,2)/0.10)
+             + Math.exp(-Math.pow(nx+0.5,2)/0.05 - Math.pow(ny-0.30,2)/0.10));
+    z += 0.03*Math.exp(-(nx*nx)/0.05 - Math.pow(ny-0.63,2)/0.02);
+    z += 0.04*Math.exp(-(nx*nx)/0.06 - Math.pow(ny-0.90,2)/0.03);
+    return z;
+  }
+
+  var particles=[], ready=false;
+  var img=new Image();
+  img.crossOrigin="anonymous";
+  img.onload=function(){
+    var iw=img.naturalWidth, ih=img.naturalHeight;
+    var off=document.createElement("canvas"); off.width=iw; off.height=ih;
+    var octx=off.getContext("2d"); octx.drawImage(img,0,0);
+    var full=octx.getImageData(0,0,iw,ih).data;
+    var STEP=4;                                      // sample every 4th px both ways
+    var u0px=U0*iw, u1px=U1*iw, v0px=V0*ih, v1px=V1*ih;
+    for(var py=Math.floor(v0px); py<v1px; py+=STEP){
+      for(var px=Math.floor(u0px); px<u1px; px+=STEP){
+        var idx=(py*iw+px)*4, a=full[idx+3];
+        if(a<120) continue;                           // skip background/transparent
+        var nx=(px-u0px)/(u1px-u0px)*2-1, ny=1-(py-v0px)/(v1px-v0px)*2;  // -1..1, ny up
+        var z=depth(nx,ny);
+        particles.push({
+          x:nx*0.72, y:ny*0.92, z:z,
+          r:full[idx], g:full[idx+1], b:full[idx+2],
+          jaw: ny<-0.30 ? Math.min(1,(-0.30-ny)/0.55) : 0    // lower-face fraction, for mouth drop
+        });
+      }
+    }
+    ready = particles.length>0;
+  };
+  var texAttempt=0, TEX_RETRY_MS=[1500,3000,6000,12000,20000];
+  img.onerror=function(){
+    if(texAttempt>=TEX_RETRY_MS.length) return;
+    var wait=TEX_RETRY_MS[texAttempt++];
+    setTimeout(function(){ img.src = TEX_URL + (TEX_URL.indexOf("?")>=0?"&":"?") + "_r=" + Date.now(); }, wait);
+  };
+  img.src=TEX_URL;
+
+  // ---- drag-to-orbit (mouse + touch): unrestricted yaw so you can spin all
+  // the way around; pitch clamped so it never flips upside down ----
+  var yaw=0, pitch=-0.05, bobY=0, dragging=false, lastX=0, lastY=0, spin=0;
+  cv.addEventListener("mousedown", function(e){ dragging=true; lastX=e.clientX; lastY=e.clientY; });
+  window.addEventListener("mousemove", function(e){
+    if(!dragging) return;
+    var dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY;
+    yaw += dx*0.008; pitch = Math.max(-1.3, Math.min(1.3, pitch + dy*0.008));
+    spin = dx*0.008;
+  });
+  window.addEventListener("mouseup", function(){ dragging=false; });
+  cv.addEventListener("touchstart", function(e){ if(!e.touches.length) return; dragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }, {passive:true});
+  cv.addEventListener("touchmove", function(e){
+    if(!dragging || !e.touches.length) return;
+    var dx=e.touches[0].clientX-lastX, dy=e.touches[0].clientY-lastY;
+    lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+    yaw += dx*0.008; pitch = Math.max(-1.3, Math.min(1.3, pitch + dy*0.008));
+  }, {passive:true});
+  window.addEventListener("touchend", function(){ dragging=false; });
+
+  var SCALE,CX,CY,FOCAL=3.2;
+  function frame(now){
+    if(!on) return;
+    var dt=Math.min(0.05,(now-last)/1000)||0.016; last=now; t+=dt;
+    talk += (talkTarget-talk)*Math.min(1,dt*6);
+    if(!dragging){ yaw += 0.06*dt + spin*0; spin*=0.9; }  // gentle constant idle drift when untouched
+    bobY = talk*0.012*Math.sin(t*7.2);
+    var mt = talk>0.02 ? Math.max(0,0.35+0.7*Math.sin(t*12)+0.3*Math.sin(t*22)) : 0;
+    mouth += (mt*talk - mouth)*Math.min(1,dt*18);
+
+    SCALE=Math.min(W,H)*0.36; CX=W*0.5; CY=H*0.42;
+    ctx.clearRect(0,0,W,H);
+    if(!ready){ raf=requestAnimationFrame(frame); return; }
+
+    var cp=Math.cos(pitch), sp=Math.sin(pitch), cyw=Math.cos(yaw), syw=Math.sin(yaw);
+    var pr=[];
+    for(var i=0;i<particles.length;i++){
+      var p=particles[i];
+      var py=p.y - mouth*0.10*p.jaw*p.jaw;                  // lower-face drop opens the mouth
+      var y1=py*cp - p.z*sp, z1=py*sp + p.z*cp;
+      var x2=p.x*cyw + z1*syw, z2=-p.x*syw + z1*cyw;
+      var persp=FOCAL/(FOCAL-z2);
+      pr.push({sx:CX+x2*SCALE*persp, sy:CY-(y1+bobY)*SCALE*persp, z:z2, p:p, sc:persp});
+    }
+    pr.sort(function(a,b){ return a.z-b.z; });               // painter: far first
+    for(var i=0;i<pr.length;i++){
+      var d=pr[i], p=d.p;
+      var lit = 0.55+0.45*Math.max(0, (p.z/0.7));            // particles further "out" read a touch brighter
+      ctx.globalAlpha = 0.55*Math.min(1,0.5+d.sc*0.5);
+      ctx.fillStyle = "rgb("+Math.min(255,p.r*lit|0)+","+Math.min(255,p.g*lit|0)+","+Math.min(255,p.b*lit|0)+")";
+      var sz = Math.max(1, 2.1*d.sc);
+      ctx.fillRect(d.sx-sz/2, d.sy-sz/2, sz, sz);
+    }
+    raf=requestAnimationFrame(frame);
+  }
+
+  function open(){ if(on) return; on=true; cv.classList.add("on"); cv.style.pointerEvents="auto"; last=performance.now(); raf=requestAnimationFrame(frame); }
+  function close(){ on=false; cv.classList.remove("on"); cv.style.pointerEvents="none"; if(raf) cancelAnimationFrame(raf); ctx.clearRect(0,0,W,H); }
+  function toggle(){ on?close():open(); }
+  var btn=document.getElementById("btnFace");
+  if(btn) btn.addEventListener("click", toggle);
+  var api={toggle:toggle, open:open, close:close, setSpeaking:function(b){ talkTarget=b?1:0; }};
+  window.__brainFace=api;
+  return api;
+})();
+
+// ---------- boot ----------
+resize();
+computeHighlight();
+fitView();        // initial framing; loop() keeps re-fitting until first user interaction
+ensureLoop();
+
+})();
+}
+</script>
+</body>
+</html>

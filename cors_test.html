@@ -1,0 +1,18 @@
+<!doctype html><html><body><canvas id="c" width="10" height="10"></canvas>
+<script>
+var img = new Image();
+img.crossOrigin = "anonymous";
+img.onload = function(){
+  var c = document.getElementById('c'), ctx = c.getContext('2d');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  ctx.drawImage(img, 0, 0);
+  try {
+    var d = ctx.getImageData(0,0,10,10);
+    document.title = "CORS_OK";
+  } catch(e) {
+    document.title = "CORS_FAIL: " + e.message;
+  }
+};
+img.onerror = function(){ document.title = "IMG_LOAD_FAIL"; };
+img.src = "https://raw.githubusercontent.com/strauhal/strauh.al3.1/main/ernest/face_cutout.png";
+</script></body></html>
