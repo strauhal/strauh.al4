@@ -262,6 +262,8 @@
         let mouseY = 0; 
         let targetMorph = 0;
         let currentMorph = 0; 
+        // Mirrors the mobile viewport breakpoint already defined in style.css.
+        const mobileViewport = window.matchMedia('(max-width: 900px)');
 
         // 1-BIT BUFFER VARIABLES
         let imgData;
@@ -508,6 +510,8 @@
             resize();
             window.addEventListener('resize', resize);
             window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('scroll', onMobileScroll, { passive: true });
+            onMobileScroll();
             createAgents();
             animate();
         }
@@ -564,12 +568,28 @@
             }
             
             createAgents(); 
+
+            if (mobileViewport.matches) onMobileScroll();
         }
 
         function onMouseMove(e) {
+            if (mobileViewport.matches) return;
+
             mouseX = e.clientX;
             mouseY = e.clientY; 
             targetMorph = (mouseX / width) * 2.5;
+        }
+
+        function onMobileScroll() {
+            if (!mobileViewport.matches) return;
+
+            const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+            const scrollProgress = Math.min(1, Math.max(0, window.scrollY / maxScroll));
+
+            // Within the CSS mobile viewport, scrolling moves a virtual cursor across the canvas.
+            mouseX = scrollProgress * width;
+            mouseY = scrollProgress * height;
+            targetMorph = scrollProgress * 2.5;
         }
 
         function animate() {
