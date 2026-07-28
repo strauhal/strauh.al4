@@ -1,0 +1,4078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0000ff">
+  <meta name="description" content="An immersive, spatial museum for art and photography.">
+  <meta property="og:title" content="strauh.al / musuem">
+  <meta property="og:description" content="Enter a blue museum without end.">
+  <meta property="og:image" content="https://strauh.al/banner.gif">
+  <title>strauh.al / musuem</title>
+  <link rel="icon" href="./favicon.ico">
+  <style>
+    :root { color-scheme: dark; --blue: #00f; --white: #fff; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #fff; }
+    body { font-family: "Times New Roman", Times, serif; color: var(--white); }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+    body.looking canvas { cursor: grabbing; }
+    button, a { color: inherit; font: inherit; }
+    button { border-radius: 0; }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      border: 1px solid rgba(255,255,255,.45);
+    }
+    #masthead {
+      position: absolute;
+      top: max(21px, env(safe-area-inset-top));
+      left: max(8px, env(safe-area-inset-left));
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+    }
+    #masthead a {
+      font-size: 32px;
+      font-weight: normal;
+      pointer-events: auto;
+    }
+    #masthead span {
+      font: 10px/1.1 Arial, sans-serif;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      opacity: .76;
+    }
+    #masthead .museum-suffix {
+      font: 32px/normal "Times New Roman", Times, serif;
+      letter-spacing: normal;
+      text-transform: none;
+      opacity: 1;
+      text-decoration: none;
+    }
+    #location {
+      position: absolute;
+      top: max(18px, env(safe-area-inset-top));
+      right: max(20px, env(safe-area-inset-right));
+      font: 10px/1.3 Arial, sans-serif;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      text-align: right;
+    }
+    #location::after {
+      content: attr(data-collection);
+      display: block;
+      margin-top: 7px;
+      color: #fff;
+      opacity: .72;
+    }
+    #actions {
+      position: absolute;
+      right: max(20px, env(safe-area-inset-right));
+      bottom: max(20px, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    #wing-shortcut {
+      position: relative;
+    }
+    #shortcut-menu {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      width: 178px;
+      display: grid;
+      gap: 6px;
+      padding: 7px;
+      border: 1px solid #fff;
+      background: #00f;
+    }
+    #shortcut-menu[hidden] { display: none; }
+    #shortcut-menu .action {
+      width: 100%;
+      min-height: 38px;
+      padding: 0 10px;
+      text-align: left;
+    }
+    .action {
+      appearance: none;
+      min-height: 43px;
+      padding: 0 16px;
+      border: 1px solid #fff;
+      color: #fff;
+      background: rgba(0,0,255,.82);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font: 10px Arial, sans-serif;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+    }
+    .action:hover, .action:focus-visible { color: #00f; background: #fff; outline: none; }
+    .action[hidden] { display: none; }
+    #help {
+      position: absolute;
+      left: max(20px, env(safe-area-inset-left));
+      bottom: max(20px, env(safe-area-inset-bottom));
+      max-width: 420px;
+      font: 10px/1.45 Arial, sans-serif;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    #coordinates {
+      position: absolute;
+      left: max(20px, env(safe-area-inset-left));
+      bottom: max(58px, calc(env(safe-area-inset-bottom) + 58px));
+      padding: 7px 9px;
+      border: 1px solid rgba(255,255,255,.72);
+      background: rgba(0,0,255,.68);
+      font: 10px/1.45 "SFMono-Regular", Consolas, monospace;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      backdrop-filter: blur(6px);
+    }
+    #status {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 30;
+      padding: 10px 14px;
+      border: 1px solid #fff;
+      background: #00f;
+      font: 10px Arial, sans-serif;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    #status.visible { opacity: 1; }
+    #touch-stick {
+      display: none;
+      position: absolute;
+      left: max(24px, env(safe-area-inset-left));
+      bottom: max(82px, calc(env(safe-area-inset-bottom) + 70px));
+      width: 92px;
+      height: 92px;
+      border: 1px solid rgba(255,255,255,.6);
+      border-radius: 50%;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    #touch-knob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 32px;
+      height: 32px;
+      border: 1px solid #fff;
+      border-radius: 50%;
+      background: rgba(0,0,255,.75);
+      transform: translate(-50%, -50%);
+    }
+    @media (pointer: coarse) {
+      #touch-stick { display: block; }
+      #help { display: none; }
+      #actions { bottom: max(18px, env(safe-area-inset-bottom)); }
+    }
+    @media (max-width: 640px) {
+      #location { top: 18px; right: 18px; left: auto; bottom: auto; text-align: right; }
+      #help { display: none; }
+      #actions { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="hud" aria-live="polite">
+    <div id="masthead"><a href="https://strauh.al">strauh.al</a><span class="museum-suffix">/museum</span></div>
+    <div id="location">forecourt<br>elevation 0</div>
+    <div id="coordinates" aria-label="Current museum coordinates">X +000.0 · Y +000.1 · Z +060.0<br>HDG 000° · PITCH +005°</div>
+    <div id="help">Move mouse to look · W A S D runs · shift sprints · space jumps · click locks view · escape releases</div>
+    <div id="touch-stick" aria-label="Movement control"><div id="touch-knob"></div></div>
+    <div id="actions">
+      <div id="wing-shortcut">
+        <button class="action" id="shortcut-toggle" aria-expanded="false" aria-controls="shortcut-menu">elevator (E)</button>
+        <div id="shortcut-menu" hidden>
+          <button class="action" data-wing="ART BEFORE 2000">art before 2000</button>
+          <button class="action" data-wing="ART AFTER 2000">art after 2000</button>
+          <button class="action" data-wing="PHOTOGRAPHY">photography</button>
+        </div>
+      </div>
+      <button class="action" id="reset">return to entrance (R)</button>
+      <button class="action" id="xr" hidden>enter immersive</button>
+    </div>
+  </div>
+  <div id="status">preparing the galleries</div>
+
+  <script>
+    window.museumStartupComplete = false;
+    const showMuseumStartupError = () => {
+      if (window.museumStartupComplete) return;
+      const status = document.getElementById("status");
+      if (!status) return;
+      status.textContent = "the museum could not start — reload this page";
+      status.classList.add("visible");
+    };
+    window.addEventListener("error", showMuseumStartupError);
+    window.addEventListener("unhandledrejection", showMuseumStartupError);
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
+    import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+
+    const BLUE = 0x0000ff;
+    const WHITE = 0xffffff;
+    RectAreaLightUniformsLib.init();
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
+    scene.fog = new THREE.FogExp2(0xffffff, 0.0022);
+
+    const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.05, 1100);
+    camera.position.set(0, 1.68, 0);
+    const rig = new THREE.Group();
+    const entranceSpawn = new THREE.Vector3(0,.1,88);
+    rig.position.copy(entranceSpawn);
+    rig.add(camera);
+    scene.add(rig);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(1);
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = false;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.LinearToneMapping;
+    renderer.toneMappingExposure = .92;
+    renderer.xr.enabled = true;
+    renderer.xr.setFramebufferScaleFactor(1);
+    renderer.domElement.tabIndex = 0;
+    renderer.domElement.setAttribute("aria-label","Interactive museum viewport");
+    document.body.prepend(renderer.domElement);
+
+    const blueMaterial = new THREE.MeshLambertMaterial({ color:BLUE, side:THREE.DoubleSide });
+    const glassMaterial = new THREE.MeshLambertMaterial({
+      color:0xdff5ff, transparent:true, opacity:.34,
+      depthWrite:false, side:THREE.DoubleSide
+    });
+    const whiteLineMaterial = new THREE.LineBasicMaterial({ color: WHITE, linewidth: 1 });
+    const blackMaterial = new THREE.MeshLambertMaterial({ color:0x050514, side:THREE.DoubleSide });
+    const exteriorGroundMaterial = new THREE.MeshBasicMaterial({
+      color:0xffffff,
+      side:THREE.DoubleSide
+    });
+    const frameMaterial = new THREE.MeshLambertMaterial({ color:BLUE, side:THREE.DoubleSide });
+    const artFallbackMaterial = new THREE.MeshLambertMaterial({ color:0x1111a0, side:THREE.DoubleSide });
+    const navOnlyMaterial = new THREE.MeshBasicMaterial({
+      transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide
+    });
+    const navSurfaces = [];
+    const animatedSteps = [];
+    const archiveStairColliders = [];
+    const fragments = [];
+    const entryFragments = [];
+    const cloudGroups = [];
+    const architecturalMeshes = [];
+    const collisionBoxes = [];
+    const collisionSegments = [];
+    const artworkDoorways = [];
+    const columnObstructions = [];
+    const interiorSalonWalls = [];
+    function registerCollisionBox(w,h,d,x,y,z,padding=.52) {
+      collisionBoxes.push({
+        minX:x-w/2-padding, maxX:x+w/2+padding,
+        minY:y-h/2, maxY:y+h/2,
+        minZ:z-d/2-padding, maxZ:z+d/2+padding
+      });
+    }
+    function registerCollisionSegment(a,b,minY,maxY,padding=.72) {
+      collisionSegments.push({a,b,minY,maxY,padding});
+    }
+
+    function edged(geometry, material = blueMaterial, position = [0,0,0], rotation = [0,0,0], parent = scene, edge = true) {
+      const group = new THREE.Group();
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+      if (edge) {
+        const lines = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 18), whiteLineMaterial);
+        lines.renderOrder = 3;
+        group.add(lines);
+      }
+      group.position.set(...position);
+      group.rotation.set(...rotation);
+      parent.add(group);
+      architecturalMeshes.push(group);
+      return group;
+    }
+
+    function box(w, h, d, x, y, z, parent = scene, material = blueMaterial, nav = false, edge = true) {
+      const object = edged(
+        new THREE.BoxGeometry(w,h,d),material,[x,y,z],[0,0,0],parent,edge
+      );
+      if (nav) navSurfaces.push(object.children[0]);
+      if (!nav && parent === scene && h >= 2 && y - h/2 <= .65) {
+        registerCollisionBox(w,h,d,x,y,z);
+      }
+      return object;
+    }
+
+    const plaqueMaterialCache=new Map();
+    function plaque(text, width = 8, height = 1.2) {
+      const aspect=Math.max(1,width/height);
+      const cacheKey=`${text}:${aspect.toFixed(3)}`;
+      if (!plaqueMaterialCache.has(cacheKey)) {
+        const canvas = document.createElement("canvas");
+        canvas.height=128;
+        canvas.width=Math.max(256,Math.round(canvas.height*aspect));
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#0000ff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 4;
+        ctx.strokeRect(2,2,canvas.width-4,canvas.height-4);
+        ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        let fontSize=48;
+        ctx.font=`${fontSize}px "Times New Roman", Times, serif`;
+        while (fontSize>24 && ctx.measureText(text).width>canvas.width-56) {
+          fontSize-=2;
+          ctx.font=`${fontSize}px "Times New Roman", Times, serif`;
+        }
+        ctx.fillText(text,canvas.width/2,canvas.height/2+2);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy=1;
+        texture.minFilter=THREE.LinearMipmapLinearFilter;
+        texture.magFilter=THREE.LinearFilter;
+        plaqueMaterialCache.set(cacheKey,new THREE.MeshBasicMaterial({
+          map:texture,transparent:true,toneMapped:false
+        }));
+      }
+      return new THREE.Mesh(
+        new THREE.PlaneGeometry(width,height),
+        plaqueMaterialCache.get(cacheKey)
+      );
+    }
+
+    function frustumGeometry(bottom,top,height,sides=4,offset=Math.PI/4) {
+      const positions=[];
+      for (let y of [0,height]) {
+        const radius=y===0?bottom:top;
+        for (let i=0;i<sides;i++) {
+          const angle=offset+i/sides*Math.PI*2;
+          positions.push(Math.cos(angle)*radius,y,Math.sin(angle)*radius);
+        }
+      }
+      const indices=[];
+      for (let i=1;i<sides-1;i++) {
+        indices.push(0,i+1,i,sides,sides+i,sides+i+1);
+      }
+      for (let i=0;i<sides;i++) {
+        const next=(i+1)%sides;
+        indices.push(i,next,sides+next,i,sides+next,sides+i);
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    }
+
+    function column(x,z,height=14,parent=scene) {
+      const group=new THREE.Group();
+      group.position.set(x,0,z);
+      if (parent===scene) columnObstructions.push({x,z,half:2.15});
+
+      // A straight-line Corinthian order: stepped plinth, octagonal shaft,
+      // flutes, two angular acanthus tiers, corner volutes, and layered abacus.
+      edged(new THREE.BoxGeometry(3.25,.28,3.25),blueMaterial,[0,.14,0],[0,0,0],group);
+      edged(new THREE.BoxGeometry(2.8,.26,2.8),blueMaterial,[0,.41,0],[0,Math.PI/4,0],group);
+      edged(frustumGeometry(1.48,1.16,.72,8),blueMaterial,[0,.54,0],[0,0,0],group);
+      edged(new THREE.BoxGeometry(2.25,.18,2.25),blueMaterial,[0,1.24,0],[0,Math.PI/4,0],group);
+      edged(frustumGeometry(1.08,.9,height-3.86,8),blueMaterial,[0,1.33,0],[0,0,0],group);
+      edged(frustumGeometry(.94,1.14,.38,8),blueMaterial,[0,height-2.53,0],[0,0,0],group);
+      edged(frustumGeometry(1.12,1.82,1.18,8),blueMaterial,[0,height-2.15,0],[0,Math.PI/8,0],group);
+      edged(new THREE.BoxGeometry(3.55,.22,3.55),blueMaterial,[0,height-.97,0],[0,Math.PI/4,0],group);
+      edged(new THREE.BoxGeometry(3.85,.24,3.85),blueMaterial,[0,height-.74,0],[0,0,0],group);
+      edged(new THREE.BoxGeometry(3.35,.3,3.35),blueMaterial,[0,height-.47,0],[0,Math.PI/4,0],group);
+
+      const detail=[];
+      const line=(a,b) => detail.push(...a,...b);
+      const shaftBottom=1.48, shaftTop=height-2.58;
+      for (let i=0;i<8;i++) {
+        const angle=i*Math.PI/4;
+        line(
+          [Math.cos(angle)*1.025,shaftBottom,Math.sin(angle)*1.025],
+          [Math.cos(angle)*.865,shaftTop,Math.sin(angle)*.865]
+        );
+      }
+      for (let tier=0;tier<2;tier++) {
+        for (let i=0;i<8;i++) {
+          const angle=(i+tier*.5)*Math.PI/4;
+          const side=.12;
+          const y0=height-2.05+tier*.42;
+          const y1=y0+.62;
+          const y2=y0+.25;
+          const radial=(r,y,a=angle) => [Math.cos(a)*r,y,Math.sin(a)*r];
+          line(radial(1.02,y0),radial(1.48+tier*.13,y1));
+          line(radial(1.48+tier*.13,y1),radial(1.2,y2));
+          line(radial(1.32,y1-.12,angle-side),radial(1.48+tier*.13,y1));
+          line(radial(1.48+tier*.13,y1),radial(1.32,y1-.12,angle+side));
+        }
+      }
+      for (const sx of [-1,1]) for (const sz of [-1,1]) {
+        const cx=sx*1.42, cz=sz*1.42, y=height-.86;
+        line([cx-sx*.42,y-.34,cz],[cx,y,cz]);
+        line([cx,y,cz],[cx-sx*.22,y+.2,cz]);
+        line([cx,y,cz-sz*.42],[cx,y,cz]);
+        line([cx,y,cz],[cx,y+.2,cz-sz*.22]);
+        line([cx-sx*.22,y+.2,cz],[cx,y+.38,cz]);
+        line([cx,y+.38,cz],[cx,y+.2,cz-sz*.22]);
+      }
+      const ornament=new THREE.LineSegments(
+        new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(detail,3)),
+        whiteLineMaterial
+      );
+      ornament.renderOrder=4;
+      group.add(ornament);
+      parent.add(group);
+      return group;
+    }
+
+    function beamBetween(x1,y1,x2,y2,z,thickness=.4,depth=.5,parent=scene) {
+      const dx=x2-x1,dy=y2-y1;
+      const length=Math.hypot(dx,dy);
+      return edged(new THREE.BoxGeometry(length,thickness,depth),blueMaterial,
+        [(x1+x2)/2,(y1+y2)/2,z],[0,0,Math.atan2(dy,dx)],parent);
+    }
+
+    function pointedFrame(x,z,width,height,baseY=0,thickness=.45,depth=.65,parent=scene) {
+      const group=new THREE.Group();
+      group.position.set(x,baseY,0);
+      const shoulder=height*.48;
+      edged(new THREE.BoxGeometry(thickness,shoulder,depth),blueMaterial,[-width/2,shoulder/2,z],[0,0,0],group);
+      edged(new THREE.BoxGeometry(thickness,shoulder,depth),blueMaterial,[width/2,shoulder/2,z],[0,0,0],group);
+      beamBetween(-width/2,shoulder,0,height,z,thickness,depth,group);
+      beamBetween(0,height,width/2,shoulder,z,thickness,depth,group);
+      parent.add(group);
+      return group;
+    }
+
+    function cathedralTower(x,z,height,radius,lean=0,parent=scene) {
+      const group=new THREE.Group();
+      group.position.set(x,0,z);
+      group.rotation.z=lean;
+      edged(frustumGeometry(radius,radius*.78,height*.48,6),blueMaterial,[0,0,0],[0,0,0],group);
+      edged(frustumGeometry(radius*.78,radius*.48,height*.3,6),blueMaterial,[0,height*.48,0],[0,0,0],group);
+      edged(frustumGeometry(radius*.48,radius*.22,height*.17,6),blueMaterial,[0,height*.78,0],[0,0,0],group);
+      edged(frustumGeometry(radius*.22,0,height*.12,4),blueMaterial,[0,height*.95,0],[0,0,0],group);
+      for (let level=0;level<5;level++) {
+        const y=height*(.2+level*.12);
+        const recess=edged(new THREE.BoxGeometry(radius*.34,height*.055,.16),blackMaterial,
+          [0,y,radius*(.72-level*.045)],[0,0,0],group);
+        recess.children[0].castShadow=false;
+      }
+      edged(new THREE.BoxGeometry(radius*.38,radius*.38,radius*.38),blueMaterial,
+        [0,height*1.09,0],[0,Math.PI/4,Math.PI/4],group);
+      parent.add(group);
+      return group;
+    }
+
+    function branchingButtress(x,z,height,mirror=1) {
+      const group=new THREE.Group();
+      group.position.set(x,0,z);
+      edged(new THREE.BoxGeometry(3.2,height,3.2),blueMaterial,[0,height/2,0],[0,0,mirror*.1],group);
+      edged(new THREE.BoxGeometry(1.5,height*.58,1.7),blueMaterial,[mirror*3,height*.68,0],[0,0,mirror*.58],group);
+      edged(new THREE.BoxGeometry(1.25,height*.48,1.5),blueMaterial,[-mirror*2.6,height*.73,0],[0,0,-mirror*.5],group);
+      edged(frustumGeometry(1.5,0,3.5,4),blueMaterial,[0,height,0],[0,0,0],group);
+      scene.add(group);
+      return group;
+    }
+
+    function wallWithDoor(w, h, z, doorX = 0, doorW = 6, parent = scene, centerX = 0) {
+      const t = .38;
+      const leftW = (w - doorW) / 2 + doorX;
+      const rightW = (w - doorW) / 2 - doorX;
+      box(leftW, h, t, centerX-w/2 + leftW/2, h/2, z, parent);
+      box(rightW, h, t, centerX+w/2 - rightW/2, h/2, z, parent);
+      box(doorW, 2, t, centerX+doorX, h-1, z, parent);
+      if (parent===scene) artworkDoorways.push({
+        axis:"x", fixed:z, center:centerX+doorX, half:doorW/2
+      });
+    }
+    function wallWithTwoDoors(w,h,z,doors,centerX=0) {
+      const t=.38;
+      const left=centerX-w/2;
+      const right=centerX+w/2;
+      let cursor=left;
+      for (const door of [...doors].sort((a,b)=>a.center-b.center)) {
+        const doorLeft=door.center-door.width/2;
+        const segmentWidth=doorLeft-cursor;
+        if (segmentWidth>.05) {
+          box(segmentWidth,h,t,cursor+segmentWidth/2,h/2,z);
+        }
+        box(door.width,1,t,door.center,h-.5,z);
+        artworkDoorways.push({
+          axis:"x",fixed:z,center:door.center,half:door.width/2
+        });
+        cursor=door.center+door.width/2;
+      }
+      const finalWidth=right-cursor;
+      if (finalWidth>.05) box(finalWidth,h,t,cursor+finalWidth/2,h/2,z);
+    }
+
+    function xWallWithDoor(d, h, x, doorZ = 0, doorW = 6, centerZ = 0) {
+      const t = .38;
+      const nearD = (d - doorW) / 2 + doorZ;
+      const farD = (d - doorW) / 2 - doorZ;
+      box(t, h, nearD, x, h/2, centerZ-d/2 + nearD/2);
+      box(t, h, farD, x, h/2, centerZ+d/2 - farD/2);
+      box(t, 2, doorW, x, h-1, centerZ+doorZ);
+      artworkDoorways.push({
+        axis:"z", fixed:x, center:centerZ+doorZ, half:doorW/2
+      });
+    }
+    function twoStoryHorizontalWall(width,z,doors,centerX=0,height=18) {
+      const thickness=.38;
+      const left=centerX-width/2;
+      const right=centerX+width/2;
+      let cursor=left;
+      for (const door of [...doors].sort((a,b)=>a.center-b.center)) {
+        const doorLeft=door.center-door.width/2;
+        const segmentWidth=doorLeft-cursor;
+        if (segmentWidth>.05) {
+          box(segmentWidth,height,thickness,cursor+segmentWidth/2,height/2,z);
+        }
+        box(door.width,3.15,thickness,door.center,7.575,z);
+        box(door.width,2.8,thickness,door.center,16.6,z);
+        artworkDoorways.push({
+          axis:"x",fixed:z,center:door.center,half:door.width/2
+        });
+        cursor=door.center+door.width/2;
+      }
+      const finalWidth=right-cursor;
+      if (finalWidth>.05) box(finalWidth,height,thickness,cursor+finalWidth/2,height/2,z);
+    }
+    function twoStoryVerticalWall(depth,x,doors,centerZ=0,height=18) {
+      const thickness=.38;
+      const near=centerZ-depth/2;
+      const far=centerZ+depth/2;
+      let cursor=near;
+      for (const door of [...doors].sort((a,b)=>a.center-b.center)) {
+        const doorNear=door.center-door.width/2;
+        const segmentDepth=doorNear-cursor;
+        if (segmentDepth>.05) {
+          box(thickness,height,segmentDepth,x,height/2,cursor+segmentDepth/2);
+        }
+        box(thickness,3.15,door.width,x,7.575,door.center);
+        box(thickness,2.8,door.width,x,16.6,door.center);
+        artworkDoorways.push({
+          axis:"z",fixed:x,center:door.center,half:door.width/2
+        });
+        cursor=door.center+door.width/2;
+      }
+      const finalDepth=far-cursor;
+      if (finalDepth>.05) box(thickness,height,finalDepth,x,height/2,cursor+finalDepth/2);
+    }
+    function doubleSidedSalonWall(width,height,x,z,collection) {
+      box(width,height,.34,x,height/2,z);
+      interiorSalonWalls.push({width,height,x,z,collection});
+    }
+
+    function addStableFlightRamp(flight,parent,width=6.2) {
+      const dx=flight.to[0]-flight.from[0];
+      const dz=flight.to[1]-flight.from[1];
+      const length=Math.hypot(dx,dz)||1;
+      const px=-dz/length*width/2;
+      const pz=dx/length*width/2;
+      const startY=flight.y+.42;
+      const endY=flight.y+2.47;
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute("position",new THREE.Float32BufferAttribute([
+        flight.from[0]-px,startY,flight.from[1]-pz,
+        flight.from[0]+px,startY,flight.from[1]+pz,
+        flight.to[0]+px,endY,flight.to[1]+pz,
+        flight.to[0]-px,endY,flight.to[1]-pz
+      ],3));
+      geometry.setIndex([0,1,2,0,2,3]);
+      geometry.computeVertexNormals();
+      const ramp=new THREE.Mesh(geometry,navOnlyMaterial);
+      parent.add(ramp);
+      navSurfaces.push(ramp);
+      return ramp;
+    }
+
+    // Ground and close monumental approach: the museum begins one room away.
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(1000, 1000),
+      exteriorGroundMaterial
+    );
+    ground.rotation.x = -Math.PI/2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    navSurfaces.push(ground);
+    box(88, .08, 24, 0, .04, 61, scene, blueMaterial, true);
+
+    // Floating fragments create the threshold before the facade.
+    const fragmentGeometry = new THREE.BoxGeometry(1, 1, .12);
+    for (let i=0; i<34; i++) {
+      const theta = i * 2.399963;
+      const radius = 25 + (i % 5) * 4.2;
+      const fragment = edged(fragmentGeometry, blueMaterial,
+        [Math.cos(theta)*radius, 5 + (i%9)*1.7, 58 + Math.sin(theta)*5],
+        [theta*.3, theta, theta*.17], scene);
+      fragment.scale.set(.45 + (i%4)*.36, 1.5 + (i%7)*.42, 1);
+      fragment.userData = { baseY: fragment.position.y, speed: .15 + (i%5)*.025, phase: i };
+      fragments.push(fragment);
+    }
+
+    // Computational entry: an exploded, slowly shifting field of portals,
+    // cantilevers and folded canopy shards. The central walking corridor stays
+    // clear while the architecture performs impossible suspended overlaps.
+    function entryPiece(w,h,d,x,y,z,rotation=[0,0,0],material=blueMaterial,phase=0) {
+      const piece=edged(
+        new THREE.BoxGeometry(w,h,d),material,
+        [x,y,z],rotation,scene
+      );
+      piece.userData={
+        baseY:y,
+        baseRotationY:rotation[1],
+        baseRotationZ:rotation[2],
+        phase
+      };
+      entryFragments.push(piece);
+      return piece;
+    }
+    for (let index=0;index<7;index++) {
+      const z=55+index*3.65;
+      const span=19+index*2.25;
+      const height=11.8+index*.72;
+      const skew=(index%2?1:-1)*(.035+index*.007);
+      entryPiece(.72,height,1.05,-span/2,height/2+1.1,z,[0,index*.018,skew],blueMaterial,index);
+      entryPiece(.72,height*.82,1.05,span/2,height*.41+2.1,z,[0,-index*.021,-skew],blueMaterial,index+.5);
+      entryPiece(span,.62,1.15,0,height+1.15,z,[0,index*.012,skew*.65],blueMaterial,index+1);
+    }
+    const entryPlanes=[
+      [-30,8.5,56,10,15,.42,0,.28,.12],
+      [27,10.5,59,13,18,.42,0,-.34,-.1],
+      [-25,15.5,67,15,9,.36,.12,.48,-.18],
+      [29,17,72,18,7,.36,-.08,-.42,.16],
+      [-38,12,72,9,19,.38,0,.2,.2],
+      [39,9,64,11,14,.38,0,-.25,-.15]
+    ];
+    entryPlanes.forEach((plane,index) => {
+      const [x,y,z,w,h,d,rx,ry,rz]=plane;
+      entryPiece(w,h,d,x,y,z,[rx,ry,rz],blueMaterial,10+index);
+    });
+    function entryCanopyTriangle(points,material,phase) {
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(points.flat(),3)
+      );
+      geometry.setIndex([0,1,2]);
+      geometry.computeVertexNormals();
+      const piece=edged(geometry,material,[0,0,0],[0,0,0],scene);
+      piece.userData={
+        baseY:0,baseRotationY:0,baseRotationZ:0,phase
+      };
+      entryFragments.push(piece);
+    }
+    for (let index=0;index<12;index++) {
+      const x=-40+index*7.1;
+      const z=54+(index%4)*5.7;
+      const y=16+(index%3)*2.25;
+      entryCanopyTriangle([
+        [x,y,z],
+        [x+13+(index%2)*4,y+1.8+(index%3),z+3.5],
+        [x+4.5,y-.65+(index%2)*1.4,z+14]
+      ],index%3===0?glassMaterial:blueMaterial,30+index);
+    }
+
+    // A dense, instanced shard field wraps the entire museum rather than
+    // concentrating every floating object at the entrance. Two draw calls
+    // carry the blue faces and white wire edges for the whole perimeter.
+    const perimeterShardCount=192;
+    const perimeterShardGeometry=new THREE.BoxGeometry(1,1,1);
+    const perimeterShardWireMaterial=new THREE.MeshBasicMaterial({
+      color:WHITE,
+      wireframe:true,
+      transparent:true,
+      opacity:.94
+    });
+    const perimeterShardFill=new THREE.InstancedMesh(
+      perimeterShardGeometry,blueMaterial,perimeterShardCount
+    );
+    const perimeterShardWire=new THREE.InstancedMesh(
+      perimeterShardGeometry,perimeterShardWireMaterial,perimeterShardCount
+    );
+    perimeterShardFill.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    perimeterShardWire.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    perimeterShardFill.frustumCulled=false;
+    perimeterShardWire.frustumCulled=false;
+    perimeterShardWire.renderOrder=4;
+    scene.add(perimeterShardFill,perimeterShardWire);
+    const perimeterShardDummy=new THREE.Object3D();
+    const perimeterShardStates=[];
+    const shardNoise=value => {
+      const raw=Math.sin(value*12.9898+78.233)*43758.5453;
+      return raw-Math.floor(raw);
+    };
+    for (let index=0;index<perimeterShardCount;index++) {
+      const angle=
+        index/perimeterShardCount*Math.PI*2+
+        (shardNoise(index+1)-.5)*.16;
+      const radiusX=89+shardNoise(index+11)*25;
+      const radiusZ=102+shardNoise(index+23)*27;
+      let x=Math.cos(angle)*radiusX;
+      const z=-41+Math.sin(angle)*radiusZ;
+      // Preserve a generous white arrival corridor while keeping dense fields
+      // to both sides of the front facade.
+      if (z>43 && Math.abs(x)<23) {
+        x=(x<0?-1:1)*(23+shardNoise(index+37)*22);
+      }
+      const y=4.5+shardNoise(index+41)*47;
+      const scale=new THREE.Vector3(
+        .35+shardNoise(index+53)*3.8,
+        1.1+shardNoise(index+67)*8.4,
+        .12+shardNoise(index+79)*.38
+      );
+      // Every fourth object becomes a broader folded plate; the rest read as
+      // long, narrow shards from the ground and from upper balconies.
+      if (index%4===0) {
+        scale.x*=2.2;
+        scale.y*=.48;
+      }
+      const rotation=new THREE.Euler(
+        (shardNoise(index+83)-.5)*1.35,
+        angle+(shardNoise(index+97)-.5)*1.2,
+        (shardNoise(index+109)-.5)*1.55
+      );
+      perimeterShardStates.push({
+        x,y,z,scale,rotation,
+        phase:shardNoise(index+127)*Math.PI*2,
+        speed:.17+shardNoise(index+139)*.28
+      });
+      perimeterShardDummy.position.set(x,y,z);
+      perimeterShardDummy.rotation.copy(rotation);
+      perimeterShardDummy.scale.copy(scale);
+      perimeterShardDummy.updateMatrix();
+      perimeterShardFill.setMatrixAt(index,perimeterShardDummy.matrix);
+      perimeterShardWire.setMatrixAt(index,perimeterShardDummy.matrix);
+    }
+    perimeterShardFill.instanceMatrix.needsUpdate=true;
+    perimeterShardWire.instanceMatrix.needsUpdate=true;
+
+    // Gaudí-inspired vertical massing translated entirely into straight, faceted geometry.
+    const sagradaFacade = new THREE.Group();
+    scene.add(sagradaFacade);
+    cathedralTower(-34,45,42,6.4,-.012,sagradaFacade);
+    cathedralTower(-17,43,51,6.7,.008,sagradaFacade);
+    cathedralTower(17,43,55,6.9,-.008,sagradaFacade);
+    cathedralTower(34,45,45,6.4,.012,sagradaFacade);
+    cathedralTower(-54,40,31,5.3,-.018,sagradaFacade);
+    cathedralTower(54,40,34,5.3,.018,sagradaFacade);
+    pointedFrame(0,50.2,18,22,0,1.1,2.6);
+    pointedFrame(0,49.4,25,27,0,.72,1.8);
+    pointedFrame(-28,49.7,12,15,0,.7,1.4);
+    pointedFrame(28,49.7,12,15,0,.7,1.4);
+    // The central window is a diamond lattice—no circles, arcs, or curved ribs.
+    beamBetween(0,33,8,25,48.8,.52,.55);
+    beamBetween(8,25,0,17,48.8,.52,.55);
+    beamBetween(0,17,-8,25,48.8,.52,.55);
+    beamBetween(-8,25,0,33,48.8,.52,.55);
+    beamBetween(-5.5,19.5,5.5,30.5,48.75,.22,.62);
+    beamBetween(5.5,19.5,-5.5,30.5,48.75,.22,.62);
+    // Repeated narrow piers and pointed gables replace the former blank facade planes.
+    for (const x of [-60,-48,-40,-12,12,40,48,60]) {
+      const h=9+(Math.abs(x)%5);
+      box(3.2,h,3,x,h/2,49);
+      pointedFrame(x,49.2,8,h+5,0,.36,.8);
+    }
+    for (const z of [30,4,-22,-48]) {
+      branchingButtress(-79,z,23+(Math.abs(z)%4),-1);
+      branchingButtress(79,z,23+(Math.abs(z)%4),1);
+    }
+
+    // A distant arc of Moebius-like crystal architecture rises behind the
+    // archive. Long, nearly vertical shafts and abrupt asymmetric crowns keep
+    // the silhouette crystalline; nothing swells or pinches like a mountain.
+    const distantMassifMaterial=new THREE.MeshBasicMaterial({
+      color:BLUE,
+      side:THREE.DoubleSide
+    });
+    function crystalSpireGeometry(width,depth,height,seed) {
+      const sides=5+Math.floor(shardNoise(seed*89)*3);
+      const ringHeights=[
+        0,
+        .11+shardNoise(seed*97)*.13,
+        .52+shardNoise(seed*101)*.18,
+        .74+shardNoise(seed*103)*.12
+      ];
+      const ringScales=[
+        1,
+        .9+shardNoise(seed*107)*.16,
+        .78+shardNoise(seed*109)*.18,
+        .5+shardNoise(seed*113)*.23
+      ];
+      const bendX=(shardNoise(seed*127)-.5)*width*1.35;
+      const bendZ=(shardNoise(seed*131)-.5)*depth*1.2;
+      const positions=[];
+      const sideRadius=Array.from({length:sides},(_,side)=>
+        .72+shardNoise(seed*137+side*31)*.48
+      );
+      ringHeights.forEach((heightRatio,ring) => {
+        const progress=ring/(ringHeights.length-1);
+        const crookedProgress=progress*progress;
+        const ringJoltX=ring<2
+          ? 0
+          : (shardNoise(seed*149+ring*19)-.5)*width*.22;
+        const ringJoltZ=ring<2
+          ? 0
+          : (shardNoise(seed*151+ring*23)-.5)*depth*.2;
+        for (let side=0;side<sides;side++) {
+          const angle=side/sides*Math.PI*2+seed*.071;
+          positions.push(
+            Math.cos(angle)*width*.5*sideRadius[side]*ringScales[ring]+
+              bendX*crookedProgress+ringJoltX,
+            height*heightRatio,
+            Math.sin(angle)*depth*.5*sideRadius[side]*ringScales[ring]+
+              bendZ*crookedProgress+ringJoltZ
+          );
+        }
+      });
+      const apex=positions.length/3;
+      positions.push(
+        bendX+(shardNoise(seed*173)-.5)*width*.82,
+        height,
+        bendZ+(shardNoise(seed*191)-.5)*depth*.74
+      );
+      const indices=[];
+      for (let ring=0;ring<ringHeights.length-1;ring++) {
+        for (let side=0;side<sides;side++) {
+          const next=(side+1)%sides;
+          const a=ring*sides+side;
+          const b=ring*sides+next;
+          const c=(ring+1)*sides+next;
+          const d=(ring+1)*sides+side;
+          if ((side+ring+seed)%2) indices.push(a,b,d,b,c,d);
+          else indices.push(a,b,c,a,c,d);
+        }
+      }
+      const topRing=(ringHeights.length-1)*sides;
+      for (let side=0;side<sides;side++) {
+        indices.push(
+          topRing+side,
+          topRing+(side+1)%sides,
+          apex
+        );
+      }
+      for (let side=1;side<sides-1;side++) {
+        indices.push(0,side+1,side);
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",new THREE.Float32BufferAttribute(positions,3)
+      );
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    }
+    const crystalClusterSpecs=[
+      // One dominant citadel and irregular satellites replace the former
+      // evenly spaced row of similarly proportioned crystal pencils.
+      {x:-296,z:-145,height:58,radius:27,count:3,seed:32},
+      {x:-214,z:-228,height:104,radius:40,count:6,seed:21},
+      {x:-62,z:-292,height:202,radius:62,count:13,seed:4},
+      {x:94,z:-274,height:127,radius:43,count:7,seed:16},
+      {x:211,z:-214,height:78,radius:34,count:4,seed:27},
+      {x:298,z:-146,height:48,radius:25,count:2,seed:38}
+    ];
+    const distantCrystalGeometries=[];
+    const distantRubbleGeometries=[];
+    function crystalMergeGeometry(geometry) {
+      const normalized=geometry.index
+        ? geometry.toNonIndexed()
+        : geometry;
+      for (const attribute of Object.keys(normalized.attributes)) {
+        if (attribute!=="position" && attribute!=="normal") {
+          normalized.deleteAttribute(attribute);
+        }
+      }
+      return normalized;
+    }
+    crystalClusterSpecs.forEach((cluster,clusterIndex) => {
+      for (let spire=0;spire<cluster.count;spire++) {
+        const central=spire===0;
+        const angle=
+          shardNoise(cluster.seed*29+spire*17)*Math.PI*2;
+        const radius=central
+          ? 0
+          : cluster.radius*(.28+shardNoise(
+            cluster.seed*41+spire*23
+          )*.76);
+        const spireHeight=central
+          ? cluster.height
+          : cluster.height*(.2+shardNoise(
+            cluster.seed*53+spire*31
+          )*.68);
+        const spireWidth=cluster.radius*(
+          central
+            ? .58+shardNoise(cluster.seed*61)*.25
+            : .12+shardNoise(cluster.seed*67+spire*13)*.4
+        );
+        const spireDepth=spireWidth*(
+          .42+shardNoise(cluster.seed*71+spire*19)*.74
+        );
+        const geometry=crystalSpireGeometry(
+          spireWidth,spireDepth,spireHeight,
+          cluster.seed*101+spire*7
+        );
+        const position=new THREE.Vector3(
+          cluster.x+Math.cos(angle)*radius,
+          0,
+          cluster.z+Math.sin(angle)*radius
+        );
+        const rotation=new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(
+            (shardNoise(cluster.seed*79+spire*37)-.5)*
+              (central?.14:.48),
+            angle+shardNoise(cluster.seed*83+spire*41)*.9,
+            (shardNoise(cluster.seed*89+spire*43)-.5)*
+              (central?.16:.52)
+          )
+        );
+        geometry.applyMatrix4(
+          new THREE.Matrix4().compose(
+            position,rotation,new THREE.Vector3(1,1,1)
+          )
+        );
+        distantCrystalGeometries.push(crystalMergeGeometry(geometry));
+      }
+      // Diagonal splinters break the vertical rhythm and make each group read
+      // as one fractured object rather than a collection of planted columns.
+      const splinterCount=2+(clusterIndex*3)%4;
+      for (let splinter=0;splinter<splinterCount;splinter++) {
+        const angle=
+          shardNoise(cluster.seed*233+splinter*47)*Math.PI*2;
+        const splinterHeight=cluster.height*(
+          .22+shardNoise(cluster.seed*239+splinter*31)*.37
+        );
+        const splinterWidth=cluster.radius*(
+          .16+shardNoise(cluster.seed*241+splinter*37)*.32
+        );
+        const geometry=crystalSpireGeometry(
+          splinterWidth,
+          splinterWidth*(.32+shardNoise(
+            cluster.seed*251+splinter*41
+          )*.45),
+          splinterHeight,
+          cluster.seed*257+splinter*17
+        );
+        geometry.applyMatrix4(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(
+              cluster.x+Math.cos(angle)*cluster.radius*.5,
+              5+shardNoise(cluster.seed*263+splinter*43)*7,
+              cluster.z+Math.sin(angle)*cluster.radius*.5
+            ),
+            new THREE.Quaternion().setFromEuler(
+              new THREE.Euler(
+                (shardNoise(cluster.seed*269+splinter*53)-.5)*1.05,
+                angle,
+                (shardNoise(cluster.seed*271+splinter*59)-.5)*1.2
+              )
+            ),
+            new THREE.Vector3(1,1,1)
+          )
+        );
+        distantCrystalGeometries.push(crystalMergeGeometry(geometry));
+      }
+      const rubbleCount=10+(clusterIndex*5)%9;
+      for (let rubble=0;rubble<rubbleCount;rubble++) {
+        const angle=
+          shardNoise(cluster.seed*97+rubble*29)*Math.PI*2;
+        const radialDistance=cluster.radius*(
+          .26+shardNoise(cluster.seed*103+rubble*31)*1.22
+        );
+        const width=cluster.radius*(
+          .18+shardNoise(cluster.seed*107+rubble*37)*.4
+        );
+        const height=3+
+          shardNoise(cluster.seed*109+rubble*41)*cluster.radius*.34;
+        const depth=cluster.radius*(
+          .16+shardNoise(cluster.seed*113+rubble*43)*.35
+        );
+        const geometry=new THREE.TetrahedronGeometry(1,0);
+        geometry.applyMatrix4(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(
+              cluster.x+Math.cos(angle)*radialDistance,
+              height*.36,
+              cluster.z+Math.sin(angle)*radialDistance
+            ),
+            new THREE.Quaternion().setFromEuler(
+              new THREE.Euler(
+                shardNoise(cluster.seed*127+rubble*47)*.72,
+                angle,
+                (shardNoise(cluster.seed*131+rubble*53)-.5)*.8
+              )
+            ),
+            new THREE.Vector3(width,height,depth)
+          )
+        );
+        distantRubbleGeometries.push(crystalMergeGeometry(geometry));
+      }
+    });
+    const distantCrystalField=mergeGeometries(
+      distantCrystalGeometries.concat(distantRubbleGeometries),false
+    );
+    if (distantCrystalField) {
+      distantCrystalField.computeVertexNormals();
+      edged(
+        distantCrystalField,distantMassifMaterial,
+        [0,0,0],[0,0,0],scene,true
+      );
+    }
+    document.body.dataset.distantFormation="crystal-arc-v2";
+
+    // One generative rule owns the entire interior: a continuous faceted
+    // spiral. Floors, walls, rails, rooms, clearances, and art mounts all derive
+    // from the same ordered bays, so independent systems cannot intersect.
+    document.body.dataset.floorplan="faceted-spiral-v1";
+    const proceduralArtWalls=[];
+    const generatedRoomFootprints=[];
+    const wallJointPoints=[];
+    const generationDiagnostics={roomsAccepted:0,roomsRejected:0};
+    const spiralCenter={x:0,z:-10};
+    const spiralSides=12;
+    const storyHeight=9.2;
+    const innerRadius=29;
+    const outerRadius=42;
+    const wallHeight=8.35;
+    // Snapshot of the actual archive tree, not a visual estimate. Unsorted and
+    // unnamed art stays in a clearly tracked unclassified allocation instead
+    // of silently inflating the 1900s.
+    const archiveInventory=Object.freeze({
+      art:Object.freeze({
+        "1100s":5,"1200s":2,"1300s":6,"1400s":42,"1500s":110,
+        "1600s":112,"1700s":130,"1800s":769,"1900s":1329,
+        unclassified:1163
+      }),
+      after:Object.freeze({"2000s":2097}),
+      photo:Object.freeze({photography:1047})
+    });
+    const inventoryTotal=inventory => Object.values(inventory)
+      .reduce((sum,count)=>sum+count,0);
+    const archiveInventoryTotals=Object.freeze({
+      art:inventoryTotal(archiveInventory.art),
+      after:inventoryTotal(archiveInventory.after),
+      photo:inventoryTotal(archiveInventory.photo)
+    });
+    const archiveInventoryTotal=inventoryTotal(archiveInventoryTotals);
+    const roomWidth=18;
+    const roomDepth=15;
+    const roomDoorwayWidth=6.5;
+    const mountWallMargin=1.15;
+    const mountColumnPitch=2.05;
+    const mountRowCount=3;
+    const slotsForWallLength=length =>
+      Math.max(1,Math.floor(
+        Math.max(0,length-mountWallMargin*2)/mountColumnPitch
+      )+1)*mountRowCount;
+    const outerSegmentLength=2*outerRadius*Math.sin(Math.PI/spiralSides);
+    const fullSegmentSlots=slotsForWallLength(outerSegmentLength);
+    const doorwaySideSlots=slotsForWallLength(
+      (outerSegmentLength-roomDoorwayWidth)/2
+    );
+    const roomSegmentSlots=
+      doorwaySideSlots*2+
+      slotsForWallLength(roomWidth)+
+      slotsForWallLength(roomDepth)*2;
+    const guaranteedMountsPerRevolution=
+      spiralSides/2*fullSegmentSlots+
+      spiralSides/2*roomSegmentSlots;
+    // One reserve revolution lets the live archive grow without immediately
+    // running out of certified wall positions.
+    const targetArtworkCapacity=
+      archiveInventoryTotal+guaranteedMountsPerRevolution;
+    const spiralRevolutions=Math.ceil(
+      targetArtworkCapacity/guaranteedMountsPerRevolution
+    );
+    const startAngle=Math.PI/2-Math.PI/spiralSides;
+    const totalSpiralSegments=spiralSides*spiralRevolutions;
+    function polygonPoint(radius,angle,y=0) {
+      return {
+        x:spiralCenter.x+Math.cos(angle)*radius,
+        y,
+        z:spiralCenter.z+Math.sin(angle)*radius
+      };
+    }
+    function quadSurface(points,material=blueMaterial,nav=false,edge=true) {
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute("position",new THREE.Float32BufferAttribute(
+        points.flatMap(point=>[point.x,point.y,point.z]),3
+      ));
+      geometry.setIndex([0,1,2,0,2,3]);
+      geometry.computeVertexNormals();
+      const object=edged(
+        geometry,material,[0,0,0],[0,0,0],scene,edge
+      );
+      if (nav) navSurfaces.push(object.children[0]);
+      return object;
+    }
+    function segmentPoint(a,b,t) {
+      return {
+        x:THREE.MathUtils.lerp(a.x,b.x,t),
+        y:THREE.MathUtils.lerp(a.y,b.y,t),
+        z:THREE.MathUtils.lerp(a.z,b.z,t)
+      };
+    }
+    function collectionAt(point,side,level=0) {
+      // Allocation is weighted by certified wall slots, not by equal angles.
+      // Over eleven revolutions this yields 1,164 photography slots, 2,328
+      // post-2000 slots, and 4,032 pre-2000/unclassified slots: 15.47%,
+      // 30.94%, and 53.59%, closely matching the measured archive.
+      const compactPhoto=level===3 || level===7 || level===10;
+      const wideAfter=level===0 || level===2 || level===4 ||
+        level===6 || level===8;
+      if (side===3 || (!compactPhoto && side===2)) return "photo";
+      if ((side>=5 && side<=7) || (wideAfter && side===4)) return "after";
+      return "art";
+    }
+    function queueWallJoint(point,height=wallHeight) {
+      wallJointPoints.push({
+        x:point.x,
+        y:point.y+height/2,
+        z:point.z,
+        height
+      });
+    }
+    function addGeneratedWall(a,b,height,normal,collection,level,record=true) {
+      quadSurface([
+        a,b,
+        {x:b.x,y:b.y+height,z:b.z},
+        {x:a.x,y:a.y+height,z:a.z}
+      ]);
+      registerCollisionSegment(
+        {x:a.x,z:a.z},{x:b.x,z:b.z},
+        Math.min(a.y,b.y),Math.max(a.y,b.y)+height,.7
+      );
+      if (record) {
+        proceduralArtWalls.push({
+          a:{...a},b:{...b},height,
+          normal:{...normal},collection,level,
+          id:`generated-wall-${proceduralArtWalls.length+1}`
+        });
+      }
+    }
+    function addGeneratedRail(a,b) {
+      quadSurface([
+        a,b,
+        {x:b.x,y:b.y+1.15,z:b.z},
+        {x:a.x,y:a.y+1.15,z:a.z}
+      ]);
+      registerCollisionSegment(
+        {x:a.x,z:a.z},{x:b.x,z:b.z},
+        Math.min(a.y,b.y),Math.max(a.y,b.y)+1.15,.45
+      );
+    }
+    function addTaperedEntryRail(a,b) {
+      const midpoint=segmentPoint(a,b,.5);
+      quadSurface([
+        a,midpoint,
+        midpoint,
+        {x:a.x,y:a.y+1.15,z:a.z}
+      ]);
+      quadSurface([
+        midpoint,b,
+        {x:b.x,y:b.y+1.15,z:b.z},
+        midpoint
+      ]);
+      const leftCollisionEnd=segmentPoint(a,b,.32);
+      const rightCollisionStart=segmentPoint(a,b,.68);
+      registerCollisionSegment(
+        {x:a.x,z:a.z},
+        {x:leftCollisionEnd.x,z:leftCollisionEnd.z},
+        Math.min(a.y,leftCollisionEnd.y),
+        Math.max(a.y,leftCollisionEnd.y)+1.15,.45
+      );
+      registerCollisionSegment(
+        {x:rightCollisionStart.x,z:rightCollisionStart.z},
+        {x:b.x,z:b.z},
+        Math.min(rightCollisionStart.y,b.y),
+        Math.max(rightCollisionStart.y,b.y)+1.15,.45
+      );
+    }
+    function roomPoint(origin,tangent,outward,along,depth,y) {
+      return {
+        x:origin.x+tangent.x*along+outward.x*depth,
+        y,
+        z:origin.z+tangent.z*along+outward.z*depth
+      };
+    }
+    function polygonsOverlap(a,b) {
+      const polygons=[a,b];
+      for (const polygon of polygons) {
+        for (let index=0;index<polygon.length;index++) {
+          const current=polygon[index];
+          const next=polygon[(index+1)%polygon.length];
+          const axis={x:-(next.z-current.z),z:next.x-current.x};
+          const project=points => points.reduce((range,point) => {
+            const value=point.x*axis.x+point.z*axis.z;
+            range.min=Math.min(range.min,value);
+            range.max=Math.max(range.max,value);
+            return range;
+          },{min:Infinity,max:-Infinity});
+          const projectionA=project(a);
+          const projectionB=project(b);
+          if (projectionA.max<=projectionB.min+.05 ||
+              projectionB.max<=projectionA.min+.05) return false;
+        }
+      }
+      return true;
+    }
+    function addGeneratedRoom(frontCenter,tangent,outward,y,collection,level) {
+      const width=roomWidth;
+      const depth=roomDepth;
+      const leftFront=roomPoint(frontCenter,tangent,outward,-width/2,.05,y);
+      const rightFront=roomPoint(frontCenter,tangent,outward,width/2,.05,y);
+      const leftBack=roomPoint(frontCenter,tangent,outward,-width/2,depth,y);
+      const rightBack=roomPoint(frontCenter,tangent,outward,width/2,depth,y);
+      const footprint=[leftFront,rightFront,rightBack,leftBack];
+      const clashes=generatedRoomFootprints.some(room =>
+        room.level===level && polygonsOverlap(room.points,footprint)
+      );
+      if (clashes) {
+        generationDiagnostics.roomsRejected++;
+        return false;
+      }
+      generatedRoomFootprints.push({level,points:footprint});
+      generationDiagnostics.roomsAccepted++;
+      queueWallJoint(leftFront);
+      queueWallJoint(rightFront);
+      queueWallJoint(leftBack);
+      queueWallJoint(rightBack);
+      quadSurface([leftFront,rightFront,rightBack,leftBack],blueMaterial,true);
+      addGeneratedWall(
+        leftBack,rightBack,wallHeight,
+        {x:-outward.x,z:-outward.z},collection,level
+      );
+      addGeneratedWall(
+        leftFront,leftBack,wallHeight,
+        {x:tangent.x,z:tangent.z},collection,level
+      );
+      addGeneratedWall(
+        rightBack,rightFront,wallHeight,
+        {x:-tangent.x,z:-tangent.z},collection,level
+      );
+      if (level===spiralRevolutions-1) {
+        quadSurface([
+          {...leftFront,y:y+storyHeight-.35},
+          {...rightFront,y:y+storyHeight-.35},
+          {...rightBack,y:y+storyHeight-.35},
+          {...leftBack,y:y+storyHeight-.35}
+        ],glassMaterial);
+      }
+      return true;
+    }
+
+    // The atrium floor and entry threshold connect directly to the first ramp
+    // bay. There is no decorative step or disconnected lobby.
+    const atriumCenter={x:spiralCenter.x,y:.04,z:spiralCenter.z};
+    for (let side=0;side<spiralSides;side++) {
+      const angle0=startAngle+side*Math.PI*2/spiralSides;
+      const angle1=startAngle+(side+1)*Math.PI*2/spiralSides;
+      quadSurface([
+        atriumCenter,
+        polygonPoint(innerRadius,angle0,.04),
+        polygonPoint(innerRadius,angle1,.04),
+        atriumCenter
+      ],blueMaterial,true);
+    }
+    const entryInner={x:-6,y:.02,z:51};
+    const entryOuter={x:6,y:.02,z:51};
+    const rampFrontLeft=polygonPoint(outerRadius,startAngle,.38);
+    const rampFrontRight=polygonPoint(outerRadius,startAngle+Math.PI*2/spiralSides,.38);
+    const archiveLandingNames=new Map([
+      [3,"PHOTOGRAPHY"],
+      [6,"ART AFTER 2000"],
+      [9,"ART BEFORE 2000"]
+    ]);
+    document.body.dataset.archiveSeparation="strict";
+    const archiveLandings=[];
+    quadSurface([
+      entryInner,entryOuter,rampFrontLeft,rampFrontRight
+    ],blueMaterial,true);
+
+    for (let index=0;index<totalSpiralSegments;index++) {
+      const side=index%spiralSides;
+      const level=Math.floor(index/spiralSides);
+      const angle0=startAngle+index*Math.PI*2/spiralSides;
+      const angle1=startAngle+(index+1)*Math.PI*2/spiralSides;
+      const y0=index/spiralSides*storyHeight;
+      const y1=(index+1)/spiralSides*storyHeight;
+      const inner0=polygonPoint(innerRadius,angle0,y0);
+      const inner1=polygonPoint(innerRadius,angle1,y1);
+      const outer0=polygonPoint(outerRadius,angle0,y0);
+      const outer1=polygonPoint(outerRadius,angle1,y1);
+      queueWallJoint(outer0);
+      quadSurface([inner0,outer0,outer1,inner1],blueMaterial,true);
+      const isArchiveLanding=level===0 && archiveLandingNames.has(side);
+      if (isArchiveLanding) {
+        const railLeft=segmentPoint(inner0,inner1,.2);
+        const railRight=segmentPoint(inner0,inner1,.8);
+        addGeneratedRail(inner0,railLeft);
+        addGeneratedRail(railRight,inner1);
+        archiveLandings.push({
+          point:segmentPoint(inner0,inner1,.5),
+          name:archiveLandingNames.get(side),
+          side
+        });
+      } else if (index===0) {
+        addTaperedEntryRail(inner0,inner1);
+      } else {
+        addGeneratedRail(inner0,inner1);
+      }
+
+      const midpoint=segmentPoint(outer0,outer1,.5);
+      const outwardLength=Math.hypot(
+        midpoint.x-spiralCenter.x,midpoint.z-spiralCenter.z
+      );
+      const outward={
+        x:(midpoint.x-spiralCenter.x)/outwardLength,
+        z:(midpoint.z-spiralCenter.z)/outwardLength
+      };
+      const tangentLength=Math.hypot(outer1.x-outer0.x,outer1.z-outer0.z);
+      const tangent={
+        x:(outer1.x-outer0.x)/tangentLength,
+        z:(outer1.z-outer0.z)/tangentLength
+      };
+      const inward={x:-outward.x,z:-outward.z};
+      const collection=collectionAt(midpoint,side,level);
+      const hasRoom=side%2===1;
+      const isEntrance=index===0;
+      const roomAccepted=hasRoom && addGeneratedRoom(
+        midpoint,tangent,outward,(y0+y1)/2,collection,level
+      );
+      if (roomAccepted || isEntrance) {
+        const doorwayWidth=isEntrance?10:roomDoorwayWidth;
+        const doorwayFraction=doorwayWidth/tangentLength;
+        const leftEnd=.5-doorwayFraction/2;
+        const rightStart=.5+doorwayFraction/2;
+        const doorwayLeft=segmentPoint(outer0,outer1,leftEnd);
+        const doorwayRight=segmentPoint(outer0,outer1,rightStart);
+        if (leftEnd>.08) {
+          addGeneratedWall(
+            outer0,doorwayLeft,
+            wallHeight,inward,collection,level
+          );
+        }
+        if (rightStart<.92) {
+          addGeneratedWall(
+            doorwayRight,outer1,
+            wallHeight,inward,collection,level
+          );
+        }
+        const lintelBottom=isEntrance?7:5.8;
+        addGeneratedWall(
+          {...doorwayLeft,y:doorwayLeft.y+lintelBottom},
+          {...doorwayRight,y:doorwayRight.y+lintelBottom},
+          wallHeight-lintelBottom,inward,collection,level,false
+        );
+      } else {
+        addGeneratedWall(
+          outer0,outer1,wallHeight,inward,collection,level
+        );
+      }
+    }
+
+    // A single instanced seam system seals the vertical joints between every
+    // spiral bay and room corner. It costs one draw call and prevents distant
+    // daylight slivers from reading as missing upper-floor walls.
+    if (wallJointPoints.length) {
+      const wallJointMesh=new THREE.InstancedMesh(
+        new THREE.BoxGeometry(.46,1,.46),
+        blueMaterial,
+        wallJointPoints.length
+      );
+      wallJointPoints.forEach((joint,index) => {
+        const matrix=new THREE.Matrix4().compose(
+          new THREE.Vector3(joint.x,joint.y,joint.z),
+          new THREE.Quaternion(),
+          new THREE.Vector3(1,joint.height,1)
+        );
+        wallJointMesh.setMatrixAt(index,matrix);
+      });
+      wallJointMesh.instanceMatrix.needsUpdate=true;
+      wallJointMesh.frustumCulled=false;
+      scene.add(wallJointMesh);
+    }
+
+    // The name belongs to the museum itself: mount it on the outward face of
+    // the first faceted spiral bay, directly above the main opening.
+    const museumFrontMark=plaque("strauh.al/museum",16,1.55);
+    museumFrontMark.position.set(
+      0,
+      7.55,
+      (rampFrontLeft.z+rampFrontRight.z)/2+.42
+    );
+    scene.add(museumFrontMark);
+
+    function buildArchiveStair(landing,index) {
+      const radial={
+        x:landing.point.x-spiralCenter.x,
+        z:landing.point.z-spiralCenter.z
+      };
+      const radialLength=Math.hypot(radial.x,radial.z);
+      radial.x/=radialLength;
+      radial.z/=radialLength;
+      const perpendicular={x:-radial.z,z:radial.x};
+      const bendDirection=index%2===0?1:-1;
+      const start={
+        x:spiralCenter.x+radial.x*7.2,
+        y:.08,
+        z:spiralCenter.z+radial.z*7.2
+      };
+      const end={
+        // Continue beyond the guardrail opening and overlap the spiral floor.
+        // This removes the former unsupported gap and the collision lip at the
+        // top of each stair.
+        x:landing.point.x+radial.x*.9,
+        y:landing.point.y+.05,
+        z:landing.point.z+radial.z*.9
+      };
+      const width=4.4;
+      const stairPoint=(radius,sideOffset,heightProgress) => ({
+        x:spiralCenter.x+radial.x*radius+
+          perpendicular.x*sideOffset*bendDirection,
+        y:THREE.MathUtils.lerp(start.y,end.y,heightProgress),
+        z:spiralCenter.z+radial.z*radius+
+          perpendicular.z*sideOffset*bendDirection
+      });
+      const path=[
+        start,
+        stairPoint(14.2,4.4,.3),
+        stairPoint(21.5,-3.8,.67),
+        end
+      ];
+      for (let segmentIndex=0;segmentIndex<path.length-1;segmentIndex++) {
+        const a=path[segmentIndex];
+        const b=path[segmentIndex+1];
+        const dx=b.x-a.x;
+        const dz=b.z-a.z;
+        const run=Math.hypot(dx,dz);
+        const sideNormal={x:-dz/run,z:dx/run};
+        const leftStart={
+          x:a.x+sideNormal.x*width/2,y:a.y,z:a.z+sideNormal.z*width/2
+        };
+        const rightStart={
+          x:a.x-sideNormal.x*width/2,y:a.y,z:a.z-sideNormal.z*width/2
+        };
+        const leftEnd={
+          x:b.x+sideNormal.x*width/2,y:b.y,z:b.z+sideNormal.z*width/2
+        };
+        const rightEnd={
+          x:b.x-sideNormal.x*width/2,y:b.y,z:b.z-sideNormal.z*width/2
+        };
+        // This analytic corridor is the authoritative stair floor. It spans
+        // the full flight and overlaps the bend capsules, so locomotion never
+        // depends on hitting a triangle edge at the current frame rate.
+        archiveStairColliders.push({
+          a:{x:a.x,y:a.y,z:a.z},
+          b:{x:b.x,y:b.y,z:b.z},
+          width:width+.7,
+          stair:index
+        });
+        quadSurface(
+          [leftStart,rightStart,rightEnd,leftEnd],
+          navOnlyMaterial,true,false
+        );
+        const steps=Math.max(7,Math.ceil(run/.76));
+        const angle=Math.atan2(dx,dz);
+        for (let stepIndex=0;stepIndex<steps;stepIndex++) {
+          const progress=(stepIndex+.5)/steps;
+          const step=box(
+            width,.14,run/steps*1.1,
+            THREE.MathUtils.lerp(a.x,b.x,progress),
+            THREE.MathUtils.lerp(a.y,b.y,progress)-.045,
+            THREE.MathUtils.lerp(a.z,b.z,progress),
+            scene,blueMaterial,false
+          );
+          step.rotation.y=angle;
+          step.userData={
+            baseX:step.position.x,
+            baseY:step.position.y,
+            baseZ:step.position.z,
+            phase:index*2.7+segmentIndex*1.3+stepIndex*.22,
+            direction:bendDirection
+          };
+          animatedSteps.push(step);
+        }
+        if (segmentIndex<path.length-2) {
+          box(
+            width,.12,width,b.x,b.y-.045,b.z,
+            scene,navOnlyMaterial,true,false
+          );
+        }
+      }
+      const sign=plaque(landing.name,landing.name.length>16?12:9,1.08);
+      sign.position.set(
+        start.x-radial.x*.7,
+        2.35+index*.08,
+        start.z-radial.z*.7
+      );
+      sign.rotation.y=Math.atan2(-radial.x,-radial.z);
+      scene.add(sign);
+    }
+    archiveLandings
+      .sort((a,b)=>a.side-b.side)
+      .forEach(buildArchiveStair);
+    document.body.dataset.archiveStaircases=String(archiveLandings.length);
+    document.body.dataset.penroseCount=String(archiveLandings.length);
+    document.body.dataset.archiveStairColliders=String(archiveStairColliders.length);
+
+    // Twelve full-height Corinthian columns define the atrium without
+    // occupying any artwork wall or walkway.
+    const roofY=spiralRevolutions*storyHeight+4.4;
+    for (let side=0;side<spiralSides;side++) {
+      const angle=startAngle+side*Math.PI*2/spiralSides;
+      const position=polygonPoint(innerRadius-5,angle,0);
+      column(position.x,position.z,roofY-.5);
+      registerCollisionBox(3.9,roofY-.5,3.9,
+        position.x,(roofY-.5)/2,position.z,.25);
+    }
+
+    // Legacy groups remain empty; the three labeled, animated archive stairs
+    // above are now the museum's functional Penrose circulation.
+    const penrose=new THREE.Group();
+    scene.add(penrose);
+    const rearPenrose=new THREE.Group();
+    scene.add(rearPenrose);
+
+    // The former glass plate is removed completely. A radial white-edged
+    // structural ring remains around the open crown, allowing the hollow
+    // crossing spire to work as an uninterrupted daylight shaft.
+    const roofOpeningRadius=22.5;
+    for (let side=0;side<spiralSides;side++) {
+      const angle0=startAngle+side*Math.PI*2/spiralSides;
+      const angle1=startAngle+(side+1)*Math.PI*2/spiralSides;
+      const inner0=polygonPoint(roofOpeningRadius,angle0,roofY);
+      const inner1=polygonPoint(roofOpeningRadius,angle1,roofY);
+      const edge0=polygonPoint(61,angle0,roofY);
+      const edge1=polygonPoint(61,angle1,roofY);
+      const roofBeam=new THREE.LineSegments(
+        new THREE.BufferGeometry().setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute([
+            inner0.x,inner0.y+.05,inner0.z,
+            edge0.x,edge0.y+.05,edge0.z,
+            inner0.x,inner0.y+.05,inner0.z,
+            inner1.x,inner1.y+.05,inner1.z
+          ],3)
+        ),
+        whiteLineMaterial
+      );
+      roofBeam.renderOrder=4;
+      scene.add(roofBeam);
+    }
+
+    // Notre-Dame's timber-and-lead silhouette is translated into the archive's
+    // straight-edged language: a twelve-sided stepped crown, an open polygonal
+    // lantern, and a long slotted needle picked out by the same one-pixel white
+    // edges as the museum.
+    const centralSpireParts=[];
+    function normalizedSpireGeometry(geometry) {
+      const normalized=geometry.index
+        ? geometry.toNonIndexed()
+        : geometry;
+      for (const attribute of Object.keys(normalized.attributes)) {
+        if (attribute!=="position" && attribute!=="normal") {
+          normalized.deleteAttribute(attribute);
+        }
+      }
+      return normalized;
+    }
+    function addSpireGeometry(geometry,position,rotation,scale) {
+      geometry.applyMatrix4(
+        new THREE.Matrix4().compose(
+          new THREE.Vector3(...position),
+          new THREE.Quaternion().setFromEuler(
+            new THREE.Euler(...rotation)
+          ),
+          new THREE.Vector3(...scale)
+        )
+      );
+      centralSpireParts.push(normalizedSpireGeometry(geometry));
+    }
+    function addSpireBox(
+      w,h,d,x,y,z,rx=0,ry=0,rz=0
+    ) {
+      addSpireGeometry(
+        new THREE.BoxGeometry(w,h,d),
+        [x,y,z],[rx,ry,rz],[1,1,1]
+      );
+    }
+    function addSpireBeam(a,b,thickness=.42,depth=thickness) {
+      const start=new THREE.Vector3(...a);
+      const end=new THREE.Vector3(...b);
+      const direction=end.clone().sub(start);
+      const midpoint=start.clone().add(end).multiplyScalar(.5);
+      const geometry=new THREE.BoxGeometry(
+        thickness,direction.length(),depth
+      );
+      const quaternion=new THREE.Quaternion().setFromUnitVectors(
+        new THREE.Vector3(0,1,0),
+        direction.clone().normalize()
+      );
+      geometry.applyMatrix4(
+        new THREE.Matrix4().compose(
+          midpoint,quaternion,new THREE.Vector3(1,1,1)
+        )
+      );
+      centralSpireParts.push(normalizedSpireGeometry(geometry));
+    }
+    function addSpireRing(radius,y,thickness=.48,depth=.48) {
+      for (let side=0;side<spiralSides;side++) {
+        const angle0=startAngle+side*Math.PI*2/spiralSides;
+        const angle1=startAngle+(side+1)*Math.PI*2/spiralSides;
+        addSpireBeam(
+          [
+            spiralCenter.x+Math.cos(angle0)*radius,y,
+            spiralCenter.z+Math.sin(angle0)*radius
+          ],
+          [
+            spiralCenter.x+Math.cos(angle1)*radius,y,
+            spiralCenter.z+Math.sin(angle1)*radius
+          ],
+          thickness,depth
+        );
+      }
+    }
+    function addSpirePoly(
+      topRadius,bottomRadius,height,y,sides=8,rotation=0
+    ) {
+      addSpireGeometry(
+        new THREE.CylinderGeometry(
+          topRadius,bottomRadius,height,sides,1,true
+        ),
+        [spiralCenter.x,y,spiralCenter.z],
+        [0,rotation,0],[1,1,1]
+      );
+    }
+    function addSpireFacetedShell(
+      topRadius,bottomRadius,bottomY,topY,
+      sides=8,rotation=0,gapRatio=.1
+    ) {
+      const step=Math.PI*2/sides;
+      const inset=step*gapRatio*.5;
+      for (let side=0;side<sides;side++) {
+        const angle0=rotation+side*step+inset;
+        const angle1=rotation+(side+1)*step-inset;
+        const bottom0=[
+          spiralCenter.x+Math.cos(angle0)*bottomRadius,bottomY,
+          spiralCenter.z+Math.sin(angle0)*bottomRadius
+        ];
+        const bottom1=[
+          spiralCenter.x+Math.cos(angle1)*bottomRadius,bottomY,
+          spiralCenter.z+Math.sin(angle1)*bottomRadius
+        ];
+        const top0=[
+          spiralCenter.x+Math.cos(angle0)*topRadius,topY,
+          spiralCenter.z+Math.sin(angle0)*topRadius
+        ];
+        const top1=[
+          spiralCenter.x+Math.cos(angle1)*topRadius,topY,
+          spiralCenter.z+Math.sin(angle1)*topRadius
+        ];
+        const geometry=new THREE.BufferGeometry();
+        geometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute([
+            ...bottom0,...top1,...bottom1,
+            ...bottom0,...top0,...top1
+          ],3)
+        );
+        geometry.computeVertexNormals();
+        centralSpireParts.push(normalizedSpireGeometry(geometry));
+      }
+    }
+    // The low plinth keeps the original outer silhouette, but it is assembled
+    // from rings and separated ribs. The negative space between them opens
+    // directly onto the roof oculus.
+    // The transition is inset inside the museum crown and uses shallow,
+    // blade-thin facets. It still grows directly out of the roof, but leaves
+    // a clean perimeter reveal instead of spilling over the crown's edge.
+    addSpireFacetedShell(
+      13.9,16.35,roofY-.16,roofY+1.06,
+      12,startAngle,.028
+    );
+    addSpireFacetedShell(
+      11.6,13.9,roofY+1.06,roofY+2.62,
+      12,startAngle,.034
+    );
+    addSpireFacetedShell(
+      9.6,11.6,roofY+2.62,roofY+4.42,
+      12,startAngle,.04
+    );
+    addSpireRing(16.35,roofY-.14,.28,.3);
+    addSpireRing(13.9,roofY+1.06,.25,.28);
+    addSpireRing(11.6,roofY+2.62,.23,.25);
+    addSpireRing(9.6,roofY+4.42,.21,.23);
+    for (let side=0;side<spiralSides;side++) {
+      const angle=startAngle+side*Math.PI*2/spiralSides;
+      const outer=[
+        spiralCenter.x+Math.cos(angle)*9.6,
+        roofY+4.42,
+        spiralCenter.z+Math.sin(angle)*9.6
+      ];
+      const inner=[
+        spiralCenter.x+Math.cos(angle)*6.65,
+        roofY+11.8,
+        spiralCenter.z+Math.sin(angle)*6.65
+      ];
+      addSpireBeam(outer,inner,.44,.5);
+    }
+    // Open belfry: paired piers and pointed lancet heads retain sacred
+    // verticality, while omitting literal medieval pinnacles and ornament.
+    addSpireRing(6.7,roofY+4.1,.55,.6);
+    addSpireRing(6.25,roofY+14.7,.5,.54);
+    for (let side=0;side<spiralSides;side++) {
+      const angle=startAngle+side*Math.PI*2/spiralSides;
+      const nextAngle=
+        startAngle+(side+1)*Math.PI*2/spiralSides;
+      const bayAngle=
+        startAngle+(side+.5)*Math.PI*2/spiralSides;
+      const radius=6.48;
+      const x=spiralCenter.x+Math.cos(angle)*radius;
+      const z=spiralCenter.z+Math.sin(angle)*radius;
+      addSpireBox(
+        .7,7.4,.88,x,roofY+7.85,z,0,-angle,0
+      );
+      // Two straight voussoirs meet at a steep apex to form each lancet.
+      const leftSpring=[
+        spiralCenter.x+Math.cos(angle)*6.48,
+        roofY+11.55,
+        spiralCenter.z+Math.sin(angle)*6.48
+      ];
+      const rightSpring=[
+        spiralCenter.x+Math.cos(nextAngle)*6.48,
+        roofY+11.55,
+        spiralCenter.z+Math.sin(nextAngle)*6.48
+      ];
+      const lancetApex=[
+        spiralCenter.x+Math.cos(bayAngle)*5.82,
+        roofY+15.25,
+        spiralCenter.z+Math.sin(bayAngle)*5.82
+      ];
+      addSpireBeam(leftSpring,lancetApex,.42,.46);
+      addSpireBeam(rightSpring,lancetApex,.42,.46);
+    }
+    // Two open ribbed shoulders replace the formerly solid tapered masses.
+    // Their repeated lancet-like bays are the visible gaps that admit lateral
+    // daylight while preserving the stepped Notre-Dame silhouette.
+    addSpireRing(6.2,roofY+14.75,.52,.56);
+    addSpireRing(4.75,roofY+18.9,.46,.5);
+    addSpireRing(3.95,roofY+22.8,.42,.46);
+    for (let side=0;side<spiralSides;side++) {
+      const angle=startAngle+side*Math.PI*2/spiralSides;
+      const lower=[
+        spiralCenter.x+Math.cos(angle)*6.2,roofY+14.75,
+        spiralCenter.z+Math.sin(angle)*6.2
+      ];
+      const middle=[
+        spiralCenter.x+Math.cos(angle)*4.75,roofY+18.9,
+        spiralCenter.z+Math.sin(angle)*4.75
+      ];
+      const upper=[
+        spiralCenter.x+Math.cos(angle)*3.95,roofY+22.8,
+        spiralCenter.z+Math.sin(angle)*3.95
+      ];
+      addSpireBeam(lower,middle,.42,.46);
+      addSpireBeam(middle,upper,.36,.4);
+    }
+    // A steep lead-clad needle grows from the belfry as eight broad planes.
+    // Narrow vertical light cuts separate the planes, repeating the museum's
+    // recessed slots without any medieval spikes or radio-tower cross bracing.
+    addSpireFacetedShell(
+      .46,4.05,roofY+22.8,roofY+61.3,
+      8,Math.PI/8,.11
+    );
+    addSpireRing(4.02,roofY+22.95,.52,.56);
+    for (let rib=0;rib<8;rib++) {
+      const angle=Math.PI/8+rib*Math.PI/4;
+      addSpireBeam(
+        [
+          spiralCenter.x+Math.cos(angle)*4.02,roofY+22.9,
+          spiralCenter.z+Math.sin(angle)*4.02
+        ],
+        [
+          spiralCenter.x+Math.cos(angle)*.48,roofY+61.25,
+          spiralCenter.z+Math.sin(angle)*.48
+        ],
+        .24,.28
+      );
+    }
+    // An oversized Latin cross and faceted finial terminate the fleche. Its
+    // proportions remain legible from the distant white forecourt.
+    addSpirePoly(.14,.38,5.8,roofY+64.1,6,Math.PI/6);
+    addSpireBox(
+      7.8,.56,.56,spiralCenter.x,roofY+67.4,spiralCenter.z
+    );
+    addSpireBox(
+      .56,9.2,.56,spiralCenter.x,roofY+68.6,spiralCenter.z
+    );
+    addSpireGeometry(
+      new THREE.OctahedronGeometry(.72,0),
+      [spiralCenter.x,roofY+73.55,spiralCenter.z],
+      [0,0,0],[1,1.6,1]
+    );
+    // A final needle continues beyond the cross to a mathematically sharp
+    // point, matching the extreme termination of Notre-Dame's flèche.
+    addSpireGeometry(
+      new THREE.CylinderGeometry(0,.2,7.2,6,1,false),
+      [spiralCenter.x,roofY+77.65,spiralCenter.z],
+      [0,Math.PI/6,0],[1,1,1]
+    );
+    const centralSpireGeometry=mergeGeometries(
+      centralSpireParts,false
+    );
+    if (centralSpireGeometry) {
+      centralSpireGeometry.computeVertexNormals();
+      const centralSpire=edged(
+        centralSpireGeometry,blueMaterial,
+        [0,0,0],[0,0,0],scene,true
+      );
+      // Scale around the roof center rather than the world origin so the root
+      // remains locked into the crown while the silhouette becomes genuinely
+      // monumental from the distant forecourt.
+      const spireScale={x:3.55,y:5.05,z:3.55};
+      centralSpire.scale.set(
+        spireScale.x,spireScale.y,spireScale.z
+      );
+      centralSpire.position.set(
+        spiralCenter.x*(1-spireScale.x),
+        roofY*(1-spireScale.y),
+        spiralCenter.z*(1-spireScale.z)
+      );
+      centralSpire.name="strauh-al-central-spire";
+    }
+    // A broad, shadowless source directly above the open shaft produces a
+    // natural matte pool of daylight in the atrium without glossy hotspots.
+    const spireDaylight=new THREE.RectAreaLight(
+      0xffffff,12,44,44
+    );
+    spireDaylight.position.set(
+      spiralCenter.x,roofY+18,spiralCenter.z
+    );
+    spireDaylight.lookAt(
+      spiralCenter.x,0,spiralCenter.z
+    );
+    scene.add(spireDaylight);
+    document.body.dataset.centralSpire="inset-sharp-fleche-v7";
+
+    window.museumExpansionPlan={
+      grammar:"faceted-spiral",
+      targetArtworkCapacity,
+      archiveInventory,
+      archiveInventoryTotals,
+      archiveInventoryTotal,
+      guaranteedMountsPerRevolution,
+      sides:spiralSides,
+      revolutions:spiralRevolutions,
+      storyHeight,
+      generatedWalls:proceduralArtWalls.length,
+      generatedRooms:generationDiagnostics.roomsAccepted,
+      rejectedRooms:generationDiagnostics.roomsRejected,
+      invariant:"circulation-first",
+      generationOrder:[
+        "continuous-ramp",
+        "inner-guardrail",
+        "outer-wall-and-door-reservations",
+        "certified-radial-rooms",
+        "artwork-wall-packing"
+      ]
+    };
+
+    const artItems = [
+      ["Listening to the Qin · Emperor Huizong · c.1110","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1100s/listening_to_the_qin_ting_qin_tu_by_emperor_huizong_c_1110.jpeg"],
+      ["Auspicious Cranes · Emperor Huizong · 1112","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1100s/auspicious_cranes_section_of_a_hanging_scroll_by_emperor_huizong_1112.jpeg"],
+      ["A Thousand Li of Rivers and Mountains · 1113","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1100s/a_thousand_li_of_rivers_and_mountains_by_wang_ximeng_1113.jpeg"],
+      ["Water Village · Zhao Mengfu · 1302","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1300s/water_village_shuicun_tu_by_zhao_mengfu_1302.jpg"],
+      ["Six Gentlemen · Ni Zan · 1345","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1300s/six_gentlemen_liu_junzi_tu_by_ni_zan_1345.jpeg"],
+      ["The Arnolfini Portrait · Jan van Eyck · 1434","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1400s/the_arnolfini_portrait_by_jan_van_eyck_1434.jpeg"],
+      ["The Last Judgment · Rogier van der Weyden","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1400s/the_last_judgment_beaune_altarpiece_central_panel_by_rogier_van_der_weyden_c_14431451.jpeg"],
+      ["The Annunciation · Piero della Francesca","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1400s/the_annunciation_by_piero_della_francesca_c_14501455.jpeg"],
+      ["Saint John on Patmos · Master E. S. · c.1465","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1400s/saint_john_on_patmos_by_master_e_s_c_1465.jpeg"],
+      ["Portrait of a Young Woman · Petrus Christus","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1400s/portrait_of_a_young_woman_by_petrus_christus_c_1470.jpeg"],
+      ["Map of Hell · Sandro Botticelli","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1400s/map_of_hell_abyss_of_hell_by_sandro_botticelli_c_14801490.jpeg"],
+      ["The Pietà · Michelangelo · 1499","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/1400s/the_pieta_by_michelangelo_1499.jpeg"]
+    ];
+    const after2000Items = [
+      ["Crazy Taxi 2 · 2001","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/2000s/Illustration%20-%20Crazy%20Taxi%202.jpg"],
+      ["Whimsical Town with Airplane","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/2000s/Illustration%20-%20Whimsical%20Artwork%20of%20a%20Town%20with%20an%20Airplane%2C%20People%2C%20and%20Animals.jpeg"],
+      ["Colorful Abstract Drawing","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/2000s/Illustration%20-%20Colorful%20Abstract%20Drawing%20With%20A%20Pink%20Boat-Like%20Shape.jpeg"],
+      ["South Tower · Sean Adair · 2001","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/2000s/Photograph%20-%20Explosion%20at%20World%20Trade%20Center%20South%20Tower%2C%20September%2011%2C%202001%20by%20Sean%20Adair.jpeg"],
+      ["Hal Emmerich · Yoji Shinkawa · 2001","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/2000s/Hal%20Emmerich%20(Otacon)%20Character%20Design%20by%20Yoji%20Shinkawa%20(2001).jpg"],
+      ["Patterned Pavement · Rinko Kawauchi","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/2000s/Photograph%20-%20People%20Walking%20on%20Patterned%20Pavement%20at%20Night%20by%20Rinko%20Kawauchi.jpg"],
+      ["Woman with Large Eyes","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/2000s/Illustration%20-%20Expressive%20Painting%20of%20Woman%20with%20Large%20Eyes%20and%20Dark%20Dress.jpeg"],
+      ["Two Women · Takato Yamamoto","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/2000s/Illustration%20-%20Two%20Women%20Kissing%20Amidst%20Ornate%20Patterns%20And%20Red%20Moon%20by%20Takato%20Yamamoto.jpg"]
+    ];
+    const photoItems = [
+      ["Abstract light / grain / gradient","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Abstract%20Light%20Leak%20with%20Grainy%20Texture%20and%20Color%20Gradient.jpeg"],
+      ["Rectangular iceberg / frozen sea","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Aerial%20View%20Of%20A%20Rectangular%20Iceberg%20In%20Frozen%20Sea.jpg"],
+      ["Barcelona / Sagrada Familia / Mediterranean","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Aerial%20View%20of%20Barcelona%20with%20Sagrada%20Familia%20and%20Mediterranean%20Sea.jpg"],
+      ["Concentrated solar power plant / desert","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Aerial%20View%20of%20Concentrated%20Solar%20Power%20Plant%20in%20Desert.jpeg"],
+      ["Terraced rice paddies / aerial study","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Aerial%20View%20of%20Green%20Terraced%20Rice%20Paddies.jpg"],
+      ["Les Espaces d'Abraxas / Noisy-le-Grand","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Aerial%20View%20of%20Les%20Espaces%20d'Abraxas%2C%20Noisy-le-Grand%2C%20France.jpg"],
+      ["People's shadows / beach volleyball","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Aerial%20View%20Of%20People's%20Shadows%20Playing%20Beach%20Volleyball.jpg"],
+      ["Bird / broken mirrors · Eric Kogan","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Bird%20Perched%20on%20Trash%20Can%20with%20Sky%20Reflected%20in%20Broken%20Mirrors.%20by%20Eric%20Kogan.jpg"],
+      ["Person curled on hexagonal floor","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Black%20And%20White%20Image%20Of%20Person%20Curled%20Up%20On%20Hexagonal%20Floor.jpg"],
+      ["Man feeding swans · Marcin Ryczek","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Black%20and%20White%20Photo%20of%20Man%20Feeding%20Swans%20and%20Ducks%20by%20Marcin%20Ryczek.jpg"],
+      ["Gold mine · Sebastião Salgado","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Black%20and%20White%20Photograph%20of%20a%20Gold%20Mine%20by%20Sebasti%C3%A3o%20Salgado.jpg"],
+      ["Gas station at night","https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/photography/Black%20And%20White%20Photograph%20Of%20A%20Gas%20Station%20At%20Night.jpg"]
+    ];
+
+    const texturePromiseCache = new Map();
+    const textureQueue = [];
+    const textureJobsByURL = new Map();
+    const visibleAnimatedTextures = new Set();
+    let activeTextureJobs = 0;
+    let lastMovementAt=-Infinity;
+    const textureTierRank={none:0,preview:1,full:2};
+    const isAnimatedImageURL=url => /\.gif(?:$|\?)/i.test(url);
+    const effectiveTextureTier=(_url,tier) => tier;
+    const textureCacheKey=(url,tier) =>
+      `${effectiveTextureTier(url,tier)}:${url}`;
+    function previewImageURL(url) {
+      if (isAnimatedImageURL(url)) return url;
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=192&h=192&fit=inside&q=48&output=webp`;
+    }
+    function disposeTextureResource(texture) {
+      if (!texture) return;
+      texture.dispose();
+      texture.image?.close?.();
+      if (texture.userData.objectURL) {
+        URL.revokeObjectURL(texture.userData.objectURL);
+        texture.userData.objectURL=null;
+      }
+    }
+    function pumpTextureQueue() {
+      const limit=1;
+      textureQueue.sort((a,b) => b.priority-a.priority);
+      while (activeTextureJobs < limit && textureQueue.length) {
+        const job = textureQueue.shift();
+        if (job.cancelled) continue;
+        job.running=true;
+        activeTextureJobs++;
+        job.run().finally(() => { activeTextureJobs--; pumpTextureQueue(); });
+      }
+    }
+    function optimizedTexture(url, priority = 0, requestedTier="preview") {
+      const tier=effectiveTextureTier(url,requestedTier);
+      const key=textureCacheKey(url,tier);
+      if (texturePromiseCache.has(key)) return texturePromiseCache.get(key);
+      const promise = new Promise((resolve,reject) => {
+        const controller = new AbortController();
+        const job = {
+          url,key,tier,priority,controller,cancelled:false,running:false,
+          cancel() {
+            if (this.cancelled) return;
+            this.cancelled = true;
+            controller.abort();
+            if (textureJobsByURL.get(key) === this) textureJobsByURL.delete(key);
+            const error = new Error("view changed");
+            error.name = "AbortError";
+            reject(error);
+          },
+          run: async () => {
+          try {
+            const requestURL=tier==="preview"?previewImageURL(url):url;
+            let response = await fetch(requestURL,{
+              mode:"cors",signal:controller.signal,cache:"force-cache"
+            });
+            // The thumbnail service is an optimization, not a single point of
+            // failure. If it is unavailable, decode a small bitmap locally.
+            if (!response.ok && requestURL!==url) {
+              response=await fetch(url,{
+                mode:"cors",signal:controller.signal,cache:"force-cache"
+              });
+            }
+            if (!response.ok) throw new Error(`image ${response.status}`);
+            const blob = await response.blob();
+            let texture;
+            if (blob.type==="image/gif" || isAnimatedImageURL(url)) {
+              const objectURL=URL.createObjectURL(blob);
+              const image=new Image();
+              image.src=objectURL;
+              try { await image.decode(); }
+              catch (_) { await new Promise((resolve,reject) => { image.onload=resolve; image.onerror=reject; }); }
+              texture=new THREE.Texture(image);
+              texture.generateMipmaps=false;
+              texture.minFilter=THREE.LinearFilter;
+              texture.magFilter=THREE.LinearFilter;
+              texture.userData.animated=true;
+              texture.userData.objectURL=objectURL;
+            } else {
+              // ImageBitmap bypasses Texture.flipY in WebGL, so orient at decode time.
+              const source = await createImageBitmap(blob,{ imageOrientation:"flipY" });
+              const maxTextureDimension=tier==="preview"
+                ? 192
+                : Math.min(renderer.capabilities.maxTextureSize,4096);
+              const scale = Math.min(1,maxTextureDimension/Math.max(source.width,source.height));
+              let bitmap = source;
+              if (scale < 1) {
+                bitmap = await createImageBitmap(source,0,0,source.width,source.height,{
+                  resizeWidth:Math.max(1,Math.round(source.width*scale)),
+                  resizeHeight:Math.max(1,Math.round(source.height*scale)),
+                  resizeQuality:"medium"
+                });
+                source.close();
+              }
+              texture=new THREE.Texture(bitmap);
+            }
+            texture.needsUpdate = true;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.anisotropy = 1;
+            texture.userData.tier=tier;
+            texture.userData.cacheKey=key;
+            resolve(texture);
+          } catch (error) {
+            reject(error);
+          } finally {
+            textureJobsByURL.delete(key);
+          }
+        }};
+        textureQueue.push(job);
+        textureJobsByURL.set(key,job);
+        pumpTextureQueue();
+      });
+      texturePromiseCache.set(key,promise);
+      promise.catch(() => texturePromiseCache.delete(key));
+      return promise;
+    }
+    const artworkSurfaces = [];
+    let artworkProxyMesh = null;
+    const artworkProxyHidden = new Set();
+    const artworkProxyPosition = new THREE.Vector3();
+    const artworkProxyQuaternion = new THREE.Quaternion();
+    const artworkProxyScale = new THREE.Vector3();
+    const artworkProxyUp = new THREE.Vector3(0,1,0);
+    function setArtworkProxyVisible(surface,visible) {
+      if (!artworkProxyMesh || surface.proxyIndex===undefined ||
+          surface.proxyHidden===!visible) return false;
+      if (visible) {
+        artworkProxyMesh.setMatrixAt(surface.proxyIndex,surface.proxyMatrix);
+      } else {
+        const hiddenMatrix=new THREE.Matrix4().compose(
+          surface.worldPosition,
+          artworkProxyQuaternion.identity(),
+          artworkProxyScale.set(0,0,0)
+        );
+        artworkProxyMesh.setMatrixAt(surface.proxyIndex,hiddenMatrix);
+      }
+      surface.proxyHidden=!visible;
+      return true;
+    }
+    function addArtworkProxy(surface) {
+      if (!artworkProxyMesh || artworkProxyMesh.count>=artworkProxyMesh.userData.capacity) return;
+      artworkProxyPosition.copy(surface.worldPosition)
+        .addScaledVector(surface.worldNormal,.12);
+      artworkProxyQuaternion.setFromAxisAngle(artworkProxyUp,surface.rotationY);
+      artworkProxyScale.set(surface.maxW,surface.maxH,1);
+      surface.proxyMatrix=new THREE.Matrix4().compose(
+        artworkProxyPosition,artworkProxyQuaternion,artworkProxyScale
+      );
+      surface.proxyIndex=artworkProxyMesh.count++;
+      surface.proxyHidden=false;
+      artworkProxyMesh.setMatrixAt(surface.proxyIndex,surface.proxyMatrix);
+      artworkProxyMesh.instanceMatrix.needsUpdate=true;
+    }
+    const artworkFrameAssets = new Map();
+    function ornateFrameGeometry(width,height,variant) {
+      const p = [];
+      const z = .305;
+      const seg = (x1,y1,x2,y2) => p.push(x1,y1,z,x2,y2,z);
+      const rect = inset => {
+        const x=width/2+inset, y=height/2+inset;
+        seg(-x,-y,x,-y); seg(x,-y,x,y); seg(x,y,-x,y); seg(-x,y,-x,-y);
+      };
+      rect(.18);
+      if (variant===0) {
+        rect(.34);
+        for (const sx of [-1,1]) for (const sy of [-1,1]) {
+          seg(sx*(width/2+.18),sy*(height/2+.18),sx*(width/2+.52),sy*(height/2+.52));
+        }
+      } else if (variant===1) {
+        const c=.52, k=.2;
+        for (const sx of [-1,1]) for (const sy of [-1,1]) {
+          const x=sx*(width/2+.18), y=sy*(height/2+.18);
+          seg(x,y,x-sx*c,y); seg(x,y,x,y-sy*c);
+          seg(x-sx*k,y-sy*c,x-sx*c,y-sy*k);
+          seg(x-sx*c,y-sy*k,x-sx*k,y);
+        }
+      } else if (variant===2) {
+        rect(.31);
+        const top=height/2+.31, peak=top+.52;
+        seg(-width/2-.4,top,0,peak); seg(0,peak,width/2+.4,top);
+        const bottom=-height/2-.31, drop=bottom-.38;
+        seg(-width*.32,bottom,0,drop); seg(0,drop,width*.32,bottom);
+      } else if (variant===3) {
+        rect(.38);
+        for (const sx of [-1,1]) for (const sy of [-1,1]) {
+          const x=sx*(width/2+.36), y=sy*(height/2+.36);
+          const d=.34;
+          seg(x,y+sy*d,x+sx*d,y); seg(x+sx*d,y,x,y-sy*d);
+          seg(x,y-sy*d,x-sx*d,y); seg(x-sx*d,y,x,y+sy*d);
+        }
+      } else {
+        rect(.32);
+        const count=Math.max(3,Math.floor(width/.55));
+        for (let i=0;i<=count;i++) {
+          const x=-width/2+i*width/count;
+          seg(x,height/2+.18,x,height/2+.43);
+          seg(x,-height/2-.18,x,-height/2-.43);
+        }
+        for (const sx of [-1,1]) {
+          seg(sx*(width/2+.18),-height*.28,sx*(width/2+.45),0);
+          seg(sx*(width/2+.45),0,sx*(width/2+.18),height*.28);
+        }
+      }
+      return new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(p,3));
+    }
+    function frameBandGeometry(width,height,innerOutset,outerOutset,depth,z,bevel) {
+      const outerW=width+outerOutset*2;
+      const outerH=height+outerOutset*2;
+      const innerW=width+innerOutset*2;
+      const innerH=height+innerOutset*2;
+      const shape=new THREE.Shape();
+      shape.moveTo(-outerW/2,-outerH/2);
+      shape.lineTo(outerW/2,-outerH/2);
+      shape.lineTo(outerW/2,outerH/2);
+      shape.lineTo(-outerW/2,outerH/2);
+      shape.closePath();
+      const hole=new THREE.Path();
+      hole.moveTo(-innerW/2,-innerH/2);
+      hole.lineTo(-innerW/2,innerH/2);
+      hole.lineTo(innerW/2,innerH/2);
+      hole.lineTo(innerW/2,-innerH/2);
+      hole.closePath();
+      shape.holes.push(hole);
+      const geometry=new THREE.ExtrudeGeometry(shape,{
+        depth,
+        steps:1,
+        curveSegments:1,
+        bevelEnabled:bevel>0,
+        bevelSegments:1,
+        bevelSize:bevel,
+        bevelThickness:bevel
+      });
+      geometry.translate(0,0,z);
+      return geometry;
+    }
+    function frameMouldingGeometry(width,height,variant,style) {
+      if (style==="photography") {
+        return frameBandGeometry(width,height,0,.075,.045,.035,0);
+      }
+      const depthShift=(variant%3)*.018;
+      const parts=[
+        // The image sits in a recessed rabbet. Three stepped bands create a
+        // deep profile with slanted bevels and a visible indentation.
+        frameBandGeometry(width,height,0,.145,.2,.055,.035),
+        frameBandGeometry(width,height,.145,.225,.065,.025,.018),
+        frameBandGeometry(width,height,.225,.43,.31+depthShift,.035,.055)
+      ];
+      if (variant===2) {
+        parts.push(frameBandGeometry(
+          width,height,.43,.51,.12,.075,.025
+        ));
+      } else if (variant===4) {
+        parts.push(frameBandGeometry(
+          width,height,.43,.48,.2,.02,.02
+        ));
+      }
+      const merged=mergeGeometries(parts,false);
+      parts.forEach(part=>part.dispose());
+      return merged;
+    }
+    function artworkFrameAssetsFor(width,height,variant,style) {
+      const key=`${style}:${width.toFixed(3)}:${height.toFixed(3)}:${variant}`;
+      if (!artworkFrameAssets.has(key)) {
+        const shellGeometry=frameMouldingGeometry(width,height,variant,style);
+        const edgeGeometry=new THREE.EdgesGeometry(shellGeometry,22);
+        let detailGeometry=edgeGeometry;
+        if (style!=="photography") {
+          const ornamentGeometry=ornateFrameGeometry(width,height,variant);
+          detailGeometry=mergeGeometries([edgeGeometry,ornamentGeometry],false);
+          edgeGeometry.dispose();
+          ornamentGeometry.dispose();
+        }
+        artworkFrameAssets.set(key,{
+          key,shellGeometry,detailGeometry,refCount:0
+        });
+      }
+      return artworkFrameAssets.get(key);
+    }
+    function retainArtworkFrameAssets(width,height,variant,style) {
+      const assets=artworkFrameAssetsFor(width,height,variant,style);
+      assets.refCount++;
+      return assets;
+    }
+    function releaseArtworkFrameAssets(key) {
+      const assets=artworkFrameAssets.get(key);
+      if (!assets) return;
+      assets.refCount=Math.max(0,assets.refCount-1);
+      if (assets.refCount===0) {
+        assets.shellGeometry.dispose();
+        assets.detailGeometry.dispose();
+        artworkFrameAssets.delete(key);
+      }
+    }
+    function createArtworkFrame(width,height,variant,parent,style) {
+      const assets=retainArtworkFrameAssets(width,height,variant,style);
+      const shell=new THREE.Mesh(assets.shellGeometry,frameMaterial);
+      shell.receiveShadow=true;
+      const details=new THREE.LineSegments(assets.detailGeometry,whiteLineMaterial);
+      details.renderOrder=4;
+      parent.add(shell,details);
+      return {shell,details,assetKey:assets.key};
+    }
+    function resizeArtworkFrame(surface,width,height) {
+      if (!surface.frameParts) return;
+      const assets=retainArtworkFrameAssets(
+        width,height,surface.frameVariant,surface.frameStyle
+      );
+      const previousKey=surface.frameParts.assetKey;
+      surface.frameParts.shell.geometry=assets.shellGeometry;
+      surface.frameParts.details.geometry=assets.detailGeometry;
+      surface.frameParts.assetKey=assets.key;
+      releaseArtworkFrameAssets(previousKey);
+    }
+    function stableFrameVariant(item,x,y,z) {
+      const seed=`${item[1]}:${x.toFixed(1)}:${y.toFixed(1)}:${z.toFixed(1)}`;
+      let hash=2166136261;
+      for (let i=0;i<seed.length;i++) hash=Math.imul(hash^seed.charCodeAt(i),16777619);
+      return Math.abs(hash)%5;
+    }
+    function artworkLabelMaterial(title,width,height=.4) {
+      const canvas=document.createElement("canvas");
+      canvas.height=96;
+      canvas.width=Math.max(384,Math.round(canvas.height*width/height));
+      const context=canvas.getContext("2d");
+      context.fillStyle="#00f";
+      context.fillRect(0,0,canvas.width,canvas.height);
+      context.strokeStyle="#fff";
+      context.lineWidth=3;
+      context.strokeRect(2,2,canvas.width-4,canvas.height-4);
+      let fontSize=40;
+      context.font=`${fontSize}px "Times New Roman", Times, serif`;
+      while (fontSize>21 && context.measureText(title).width>canvas.width-44) {
+        fontSize-=2;
+        context.font=`${fontSize}px "Times New Roman", Times, serif`;
+      }
+      const displayTitle=context.measureText(title).width>canvas.width-44
+        ? `${title.slice(0,56)}…`
+        : title;
+      context.fillStyle="#fff";
+      context.textAlign="center";
+      context.textBaseline="middle";
+      context.fillText(displayTitle,canvas.width/2,canvas.height/2+1);
+      const texture=new THREE.CanvasTexture(canvas);
+      texture.colorSpace=THREE.SRGBColorSpace;
+      texture.minFilter=THREE.LinearMipmapLinearFilter;
+      texture.magFilter=THREE.LinearFilter;
+      const material=new THREE.MeshBasicMaterial({
+        map:texture,transparent:true,toneMapped:false,side:THREE.DoubleSide
+      });
+      return material;
+    }
+    function disposeArtworkLabel(label) {
+      if (!label) return;
+      label.geometry.dispose();
+      label.material.map?.dispose();
+      label.material.dispose();
+    }
+    function sizeArtworkLabel(surface,width,height) {
+      if (!surface.titleLabel) return;
+      const labelWidth=THREE.MathUtils.clamp(width*1.2,2.15,4.2);
+      if (Math.abs((surface.titleLabel.userData.width||0)-labelWidth)>.035) {
+        surface.titleLabel.geometry.dispose();
+        surface.titleLabel.material.map?.dispose();
+        surface.titleLabel.material.dispose();
+        surface.titleLabel.geometry=new THREE.PlaneGeometry(labelWidth,.4);
+        surface.titleLabel.material=artworkLabelMaterial(
+          surface.item[0],labelWidth,.4
+        );
+        surface.titleLabel.userData.width=labelWidth;
+      }
+      surface.titleLabel.position.y=-height/2-.34;
+    }
+    function ensureArtworkLabel(surface) {
+      materializeArtwork(surface);
+      if (!surface.titleLabel) {
+        const width=THREE.MathUtils.clamp(surface.renderWidth*1.2,2.15,4.2);
+        surface.titleLabel=new THREE.Mesh(
+          new THREE.PlaneGeometry(width,.4),
+          artworkLabelMaterial(surface.item[0],width,.4)
+        );
+        surface.titleLabel.userData.width=width;
+        surface.titleLabel.position.z=
+          surface.frameStyle==="photography"?.14:.46;
+        surface.group.add(surface.titleLabel);
+      }
+      sizeArtworkLabel(
+        surface,surface.renderWidth,surface.renderHeight
+      );
+      surface.titleLabel.visible=true;
+    }
+    function materializeArtwork(surface) {
+      if (surface.group) return surface.group;
+      const group=new THREE.Group();
+      group.position.copy(surface.worldPosition);
+      group.rotation.y=surface.rotationY;
+      const frameParts=createArtworkFrame(
+        surface.renderWidth,surface.renderHeight,surface.frameVariant,group,
+        surface.frameStyle
+      );
+      frameParts.shell.castShadow=false;
+      const fallback=artFallbackMaterial.clone();
+      fallback.side=THREE.DoubleSide;
+      const imageMesh=new THREE.Mesh(
+        new THREE.PlaneGeometry(surface.renderWidth,surface.renderHeight),fallback
+      );
+      imageMesh.position.z=surface.frameStyle==="photography"?.085:.11;
+      imageMesh.userData.title=surface.item[0];
+      group.add(imageMesh);
+      group.visible=false;
+      group.updateMatrix();
+      group.matrixAutoUpdate=false;
+      surface.group=group;
+      surface.imageMesh=imageMesh;
+      surface.frameParts=frameParts;
+      scene.add(group);
+      return group;
+    }
+    function dematerializeArtwork(surface) {
+      if (!surface.group || surface.loaded || surface.loading) return;
+      scene.remove(surface.group);
+      surface.imageMesh.geometry.dispose();
+      surface.imageMesh.material.dispose();
+      disposeArtworkLabel(surface.titleLabel);
+      releaseArtworkFrameAssets(surface.frameParts?.assetKey);
+      surface.group=null;
+      surface.imageMesh=null;
+      surface.frameParts=null;
+      surface.titleLabel=null;
+    }
+    function artwork(item, x, y, z, rotationY, maxW, maxH, collection) {
+      const frameVariant=collection==="photography"
+        ? 0
+        : stableFrameVariant(item,x,y,z);
+      const surface = {
+        group:null,imageMesh:null,item,maxW,maxH,rotationY,collection,
+        frameStyle:collection==="photography"?"photography":"fine-art",
+        frameVariant,frameParts:null,
+        worldPosition:new THREE.Vector3(x,y,z),
+        worldNormal:new THREE.Vector3(Math.sin(rotationY),0,Math.cos(rotationY)),
+        renderWidth:maxW,renderHeight:maxH,titleLabel:null,
+        loading:false,loadingTier:null,requestedTier:"none",
+        textureTier:"none",requestSerial:0,
+        loaded:false,failed:false,lastWantedAt:-Infinity,lastFullWantedAt:-Infinity
+      };
+      artworkSurfaces.push(surface);
+      addArtworkProxy(surface);
+      return surface;
+    }
+
+    function streamArtwork(surface, priority, requestedTier="preview") {
+      const tier=effectiveTextureTier(surface.item[1],requestedTier);
+      if (textureTierRank[tier]>textureTierRank[surface.requestedTier]) {
+        surface.requestedTier=tier;
+      }
+      if (surface.loading ||
+          textureTierRank[surface.textureTier]>=textureTierRank[tier]) return;
+      materializeArtwork(surface);
+      surface.loading = true;
+      surface.loadingTier=tier;
+      const requestSerial=++surface.requestSerial;
+      optimizedTexture(surface.item[1],priority,tier).then(texture => {
+        if (requestSerial!==surface.requestSerial || !surface.group) {
+          texturePromiseCache.delete(texture.userData.cacheKey);
+          disposeTextureResource(texture);
+          return;
+        }
+        const aspect = texture.image.width / texture.image.height;
+        let w = surface.maxW, h = w / aspect;
+        if (h > surface.maxH) { h = surface.maxH; w = h * aspect; }
+        surface.renderWidth=w;
+        surface.renderHeight=h;
+        resizeArtworkFrame(surface,w,h);
+        surface.imageMesh.geometry.dispose();
+        surface.imageMesh.geometry = new THREE.PlaneGeometry(w, h);
+        const previousTexture=surface.texture;
+        surface.imageMesh.material.dispose();
+        surface.imageMesh.material = new THREE.MeshBasicMaterial({
+          map:texture, toneMapped:false, side:THREE.DoubleSide
+        });
+        surface.texture=texture;
+        surface.textureTier=texture.userData.tier||tier;
+        surface.loading = false;
+        surface.loadingTier=null;
+        surface.loaded = true;
+        surface.failed = false;
+        if (previousTexture && previousTexture!==texture) {
+          texturePromiseCache.delete(previousTexture.userData.cacheKey);
+          disposeTextureResource(previousTexture);
+        }
+        if (surface.titleLabel) {
+          sizeArtworkLabel(surface,w,h);
+        }
+        if (textureTierRank[surface.requestedTier]>
+            textureTierRank[surface.textureTier]) {
+          streamArtwork(surface,priority+20,surface.requestedTier);
+        }
+      }).catch(error => {
+        if (requestSerial!==surface.requestSerial) return;
+        if (error?.name === "AbortError") {
+          surface.loading = false;
+          surface.loadingTier=null;
+          return;
+        }
+        surface.loading = false;
+        surface.loadingTier=null;
+        surface.requestedTier=surface.textureTier;
+        surface.loaded=Boolean(surface.texture);
+        surface.failed = true;
+      });
+    }
+    function releaseArtworkTexture(surface) {
+      if (!surface.loaded || !surface.texture) return;
+      surface.requestSerial++;
+      const texture=surface.texture;
+      texturePromiseCache.delete(texture.userData.cacheKey);
+      disposeTextureResource(texture);
+      surface.imageMesh.material.dispose();
+      const fallback=artFallbackMaterial.clone();
+      fallback.side=THREE.DoubleSide;
+      surface.imageMesh.material=fallback;
+      surface.texture=null;
+      surface.textureTier="none";
+      surface.requestedTier="none";
+      surface.loading=false;
+      surface.loadingTier=null;
+      surface.loaded=false;
+      surface.failed=false;
+    }
+
+    let catalogIndexedCount = 0;
+    let catalogMountedCount = 0;
+    let catalogGifMountedCount = 0;
+    function showCollectionCount(visible, pending) {
+      const indexed = catalogIndexedCount ? ` · ${catalogIndexedCount.toLocaleString()} indexed` : "";
+      document.getElementById("location").dataset.collection = pending
+        ? `${visible} in view · ${pending} streaming${indexed}`
+        : `${visible} works in view${indexed}`;
+    }
+
+    const centuries = ["1100s","1200s","1300s","1400s","1500s","1600s","1700s","1800s","1900s"];
+    const centuryZ = new Map(centuries.map((century,i) => [century,30-i*19]));
+    function inferCentury(item) {
+      const collectionPath=item[1].match(
+        /\/(photography|unsorted|unnamed)\//
+      )?.[1];
+      if (collectionPath==="photography") return "photography";
+      if (collectionPath==="unsorted" || collectionPath==="unnamed") {
+        return "unclassified";
+      }
+      const pathMatch = item[1].match(/\/((?:1[1-9]|20)00s)\//);
+      const yearMatch = item[0].match(/\b((?:1[1-9]|20)\d{2})\b/);
+      if (pathMatch?.[1] === "2000s" && yearMatch && Number(yearMatch[1]) < 2000) {
+        return `${Math.floor(Number(yearMatch[1])/100)*100}s`;
+      }
+      if (pathMatch) return pathMatch[1];
+      return yearMatch ? `${Math.floor(Number(yearMatch[1])/100)*100}s` : "1900s";
+    }
+    function centuryForWall(set,z) {
+      if (set===mountSets.after) return "2000s";
+      if (set===mountSets.photo || set===mountSets.balconyPhoto) {
+        return "1900s";
+      }
+      return centuries.reduce((best,century) =>
+        Math.abs(z-centuryZ.get(century))<Math.abs(z-centuryZ.get(best)) ? century : best
+      ,"1100s");
+    }
+    function uniqueEntries(entries) {
+      const byURL=new Map();
+      for (const item of entries) if (!byURL.has(item[1])) byURL.set(item[1],item);
+      return [...byURL.values()];
+    }
+    async function fetchCollection(path) {
+      const response=await fetch(path,{mode:"cors"});
+      if (!response.ok) throw new Error(`catalog ${response.status}`);
+      const doc=new DOMParser().parseFromString(await response.text(),"text/html");
+      return uniqueEntries([...doc.querySelectorAll("a[href]")]
+        .map(a => [a.textContent.trim() || "Untitled",a.href])
+        .filter(([,url]) => /\.(?:jpe?g|png|webp|gif)(?:$|\?)/i.test(url)));
+    }
+    const mountSets={art:[],photo:[],after:[],balconyArt:[],balconyPhoto:[]};
+    let mountWallSerial=0;
+    const collectionForSet=set =>
+      set===mountSets.art || set===mountSets.balconyArt ? "art" :
+      set===mountSets.photo || set===mountSets.balconyPhoto ? "photography" : "after";
+    const mount=(set,x,y,z,rotationY,maxW=1.82,maxH=1.82,metadata={}) =>
+      set.push({x,y,z,rotationY,maxW,maxH,collection:collectionForSet(set),...metadata});
+    const salonSizes=[
+      [1.42,1.92],[1.92,1.38],[1.62,1.7],[1.5,1.84],
+      [1.82,1.5],[2.05,1.28],[1.28,2.02]
+    ];
+    const salonStagger=[-.42,.24,.08,-.28,.38,-.12];
+    const salonVerticalStagger=[-.16,.24,-.06,.19,-.23,.1,.28];
+    function verticalWall(set,x,z1,z2,rotationY,ys,spacing=3.55,labelY=12.05) {
+      const direction=z2>=z1?1:-1;
+      const wallId=`vertical-${++mountWallSerial}`;
+      const positions=[];
+      let column=0;
+      for (let z=z1; direction>0?z<=z2:z>=z2; z+=direction*spacing,column++) {
+        positions.push({z,column});
+      }
+      const rows=ys.map((y,row)=>({y,row})).sort((a,b)=>b.y-a.y);
+      for (const {y,row} of rows) {
+        for (const {z,column} of positions) {
+          const [w,h]=salonSizes[(column*2+row)%salonSizes.length];
+          const offset=salonStagger[row%salonStagger.length]*(column%2?1:-1);
+          const mountY=y+salonVerticalStagger[(column+row*3)%salonVerticalStagger.length];
+          const mountZ=z+offset;
+          mount(set,x,mountY,mountZ,rotationY,w,h,{
+            wallId,labelY,century:centuryForWall(set,mountZ)
+          });
+        }
+      }
+    }
+    function horizontalWall(set,z,x1,x2,rotationY,ys,spacing=3.55,labelY=12.05) {
+      const direction=x2>=x1?1:-1;
+      const wallId=`horizontal-${++mountWallSerial}`;
+      const positions=[];
+      let column=0;
+      for (let x=x1; direction>0?x<=x2:x>=x2; x+=direction*spacing,column++) {
+        positions.push({x,column});
+      }
+      const rows=ys.map((y,row)=>({y,row})).sort((a,b)=>b.y-a.y);
+      for (const {y,row} of rows) {
+        for (const {x,column} of positions) {
+          const [w,h]=salonSizes[(column+row*2)%salonSizes.length];
+          const offset=salonStagger[row%salonStagger.length]*(column%2?1:-1);
+          const mountY=y+salonVerticalStagger[(column*2+row)%salonVerticalStagger.length];
+          mount(set,x+offset,mountY,z,rotationY,w,h,{
+            wallId,labelY,century:centuryForWall(set,z)
+          });
+        }
+      }
+    }
+    function mountClearsDoorways(mount) {
+      const footprint=mount.maxW/2+.62;
+      return !artworkDoorways.some(door => {
+        if (door.axis==="x") {
+          return Math.abs(mount.z-door.fixed)<.7 &&
+            Math.abs(mount.x-door.center)<door.half+footprint;
+        }
+        return Math.abs(mount.x-door.fixed)<.7 &&
+          Math.abs(mount.z-door.center)<door.half+footprint;
+      });
+    }
+    function mountClearsColumns(mount) {
+      const horizontal=Math.abs(Math.sin(mount.rotationY))<.5;
+      return !columnObstructions.some(column => {
+        const distanceFromWall=horizontal
+          ? Math.abs(mount.z-column.z)
+          : Math.abs(mount.x-column.x);
+        const distanceAlongWall=horizontal
+          ? Math.abs(mount.x-column.x)
+          : Math.abs(mount.z-column.z);
+        return distanceFromWall<7.5 &&
+          distanceAlongWall<column.half+mount.maxW/2+1;
+      });
+    }
+    function pruneCrowdedMounts(mounts) {
+      const accepted=[];
+      for (const mount of mounts) {
+        if (!mountClearsDoorways(mount) || !mountClearsColumns(mount)) continue;
+        const horizontal=Math.abs(Math.sin(mount.rotationY))<.5;
+        const along=horizontal?mount.x:mount.z;
+        const fixed=horizontal?mount.z:mount.x;
+        const overlaps=accepted.some(other => {
+          const otherHorizontal=Math.abs(Math.sin(other.rotationY))<.5;
+          if (horizontal!==otherHorizontal) return false;
+          const otherFixed=horizontal?other.z:other.x;
+          if (Math.abs(fixed-otherFixed)>.3 ||
+              Math.abs(Math.sin(mount.rotationY-other.rotationY))>.15) return false;
+          const otherAlong=horizontal?other.x:other.z;
+          const horizontalGap=mount.maxW/2+other.maxW/2+.72;
+          const verticalGap=mount.maxH/2+other.maxH/2+.52;
+          return Math.abs(along-otherAlong)<horizontalGap &&
+            Math.abs(mount.y-other.y)<verticalGap;
+        });
+        if (!overlaps) accepted.push(mount);
+      }
+      return accepted;
+    }
+    function proportionalWallPlan(walls,inventory) {
+      const entries=Object.entries(inventory)
+        .filter(([,count])=>count>0);
+      const total=inventoryTotal(inventory);
+      const sortedWalls=walls
+        .slice()
+        .sort((a,b)=>a.level-b.level ||
+          Number(a.id.split("-").at(-1))-Number(b.id.split("-").at(-1)));
+      const wallSlots=wall=>slotsForWallLength(
+        Math.hypot(wall.b.x-wall.a.x,wall.b.z-wall.a.z)
+      );
+      const totalCapacity=sortedWalls.reduce(
+        (sum,wall)=>sum+wallSlots(wall),0
+      );
+      const desiredCapacity=Object.fromEntries(entries.map(
+        ([bucket,count])=>[bucket,totalCapacity*count/total]
+      ));
+      const allocationByBucket=Object.fromEntries(
+        entries.map(([bucket])=>[bucket,0])
+      );
+      const capacityByBucket=Object.fromEntries(
+        entries.map(([bucket])=>[bucket,0])
+      );
+      const plan=new Map();
+      let bucketIndex=0;
+      sortedWalls.forEach((wall,index) => {
+        const remainingWalls=sortedWalls.length-index;
+        const remainingBuckets=entries.length-bucketIndex;
+        const currentBucket=entries[bucketIndex]?.[0]||"unclassified";
+        if (
+          bucketIndex<entries.length-1 &&
+          allocationByBucket[currentBucket]>0 &&
+          capacityByBucket[currentBucket]>=desiredCapacity[currentBucket] &&
+          remainingWalls>=remainingBuckets
+        ) {
+          bucketIndex++;
+        }
+        const bucket=entries[bucketIndex]?.[0]||"unclassified";
+        const slots=wallSlots(wall);
+        plan.set(wall.id,bucket);
+        allocationByBucket[bucket]++;
+        capacityByBucket[bucket]+=slots;
+      });
+      return {
+        plan,allocationByBucket,capacityByBucket,totalCapacity
+      };
+    }
+    function buildMuseumMounts() {
+      // Three interleaved salon bands carry the same capacity as the old
+      // four-row grid, but no two bands share a column line or a fixed
+      // baseline. The top 1.15 metres remain a protected header zone.
+      const rows=[1.3,3.48,5.62];
+      const sizes=[
+        [1.02,.92],[1.16,.82],[.9,1.08],
+        [1.12,.9],[.94,1.02],[1.18,.78]
+      ];
+      const rowOffsets=[-.27,.23,.03];
+      const deterministicOffset=(wall,row,column,salt=0) => {
+        const value=Math.sin(
+          wall*91.173+row*37.719+column*17.113+salt*53.417
+        )*43758.5453;
+        return (value-Math.floor(value))*2-1;
+      };
+      const artWallPlan=proportionalWallPlan(
+        proceduralArtWalls.filter(wall=>wall.collection==="art"),
+        archiveInventory.art
+      );
+      const plannedMountAllocation={art:{},after:{},photo:{}};
+      proceduralArtWalls.forEach((wall,wallIndex) => {
+        const set=mountSets[wall.collection];
+        const dx=wall.b.x-wall.a.x;
+        const dz=wall.b.z-wall.a.z;
+        const length=Math.hypot(dx,dz);
+        if (length<3.2) return;
+        const margin=mountWallMargin;
+        const usable=length-margin*2;
+        const columns=Math.max(
+          1,Math.floor(usable/mountColumnPitch)+1
+        );
+        const rotationY=Math.atan2(wall.normal.x,wall.normal.z);
+        const targetCentury=wall.collection==="after"
+          ? "2000s"
+          : wall.collection==="photo"
+            ? "photography"
+            : artWallPlan.plan.get(wall.id)||"unclassified";
+        for (let row=0;row<rows.length;row++) {
+          for (let columnIndex=0;columnIndex<columns;columnIndex++) {
+            const distance=columns===1
+              ? length/2
+              : margin+columnIndex*(usable/(columns-1));
+            const alongJitter=
+              rowOffsets[(row+wallIndex)%rowOffsets.length]+
+              deterministicOffset(wallIndex,row,columnIndex,1)*.065;
+            const t=THREE.MathUtils.clamp(
+              (distance+alongJitter)/length,margin/length,1-margin/length
+            );
+            const base=segmentPoint(wall.a,wall.b,t);
+            const [maxW,maxH]=sizes[
+              (wallIndex*2+row*3+columnIndex)%sizes.length
+            ];
+            const verticalJitter=
+              deterministicOffset(wallIndex,row,columnIndex,2)*.24;
+            const headerClearanceTop=7.18;
+            const ornamentAllowance=.72;
+            const localY=Math.min(
+              rows[row]+verticalJitter,
+              headerClearanceTop-maxH/2-ornamentAllowance
+            );
+            mount(
+              set,
+              base.x+wall.normal.x*.24,
+              base.y+localY,
+              base.z+wall.normal.z*.24,
+              rotationY,maxW,maxH,{
+                wallId:wall.id,
+                labelY:base.y+7.7,
+                century:targetCentury
+              }
+            );
+            plannedMountAllocation[wall.collection][targetCentury]=
+              (plannedMountAllocation[wall.collection][targetCentury]||0)+1;
+          }
+        }
+      });
+      window.museumExpansionPlan.artWallAllocation=
+        artWallPlan.allocationByBucket;
+      window.museumExpansionPlan.artSlotAllocation=
+        artWallPlan.capacityByBucket;
+      window.museumExpansionPlan.plannedMountAllocation=
+        plannedMountAllocation;
+      // The spiral wall packer already operates in each wall's local
+      // coordinate system with guaranteed spacing. Re-running the old
+      // axis-aligned pruning pass would incorrectly erase work from diagonal
+      // walls and reintroduce unexplained blank areas.
+    }
+    buildMuseumMounts();
+    const generatedMountCapacity=Object.values(mountSets)
+      .reduce((total,mounts)=>total+mounts.length,0);
+    const proxyCanvas=document.createElement("canvas");
+    proxyCanvas.width=32;
+    proxyCanvas.height=32;
+    const proxyContext=proxyCanvas.getContext("2d");
+    proxyContext.fillStyle="#1010a8";
+    proxyContext.fillRect(0,0,32,32);
+    proxyContext.fillStyle="#4f76bd";
+    proxyContext.fillRect(5,5,22,22);
+    proxyContext.fillStyle="#7298cf";
+    proxyContext.fillRect(5,5,11,11);
+    proxyContext.strokeStyle="#fff";
+    proxyContext.lineWidth=2;
+    proxyContext.strokeRect(1,1,30,30);
+    const proxyTexture=new THREE.CanvasTexture(proxyCanvas);
+    proxyTexture.colorSpace=THREE.SRGBColorSpace;
+    proxyTexture.magFilter=THREE.NearestFilter;
+    proxyTexture.minFilter=THREE.NearestFilter;
+    artworkProxyMesh=new THREE.InstancedMesh(
+      new THREE.PlaneGeometry(1,1),
+      new THREE.MeshBasicMaterial({
+        map:proxyTexture,toneMapped:false,side:THREE.FrontSide
+      }),
+      generatedMountCapacity
+    );
+    artworkProxyMesh.count=0;
+    artworkProxyMesh.frustumCulled=false;
+    artworkProxyMesh.renderOrder=2;
+    artworkProxyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    artworkProxyMesh.userData.capacity=generatedMountCapacity;
+    scene.add(artworkProxyMesh);
+    window.museumExpansionPlan.generatedMountCapacity=generatedMountCapacity;
+    document.body.dataset.generatedMountCapacity=String(generatedMountCapacity);
+    document.body.dataset.generatedRooms=String(
+      generationDiagnostics.roomsAccepted
+    );
+    const dynamicArchitecture=new Set([
+      ...animatedSteps,...fragments,...entryFragments
+    ]);
+    for (const object of architecturalMeshes) {
+      if (dynamicArchitecture.has(object)) continue;
+      object.updateMatrix();
+      object.matrixAutoUpdate=false;
+    }
+
+    const mountedCenturyByWall=new Map();
+    async function mountUniqueCollection(entries,mounts,usedURLs,matchCentury=false) {
+      let cursor=0;
+      const buckets=new Map();
+      const bucketCursors=new Map();
+      const wallMountCounts=new Map();
+      if (matchCentury) {
+        for (const item of entries) {
+          const century=inferCentury(item);
+          if (!buckets.has(century)) buckets.set(century,[]);
+          buckets.get(century).push(item);
+        }
+        for (const descriptor of mounts) {
+          if (descriptor.occupied) continue;
+          wallMountCounts.set(
+            descriptor.wallId,(wallMountCounts.get(descriptor.wallId)||0)+1
+          );
+        }
+      }
+      const nextUnused=(items,key) => {
+        let index=key==="all" ? cursor : bucketCursors.get(key)||0;
+        while (index<items.length && usedURLs.has(items[index][1])) index++;
+        if (key==="all") cursor=index+1;
+        else bucketCursors.set(key,index+1);
+        return items[index];
+      };
+      for (const descriptor of mounts) {
+        if (descriptor.occupied) continue;
+        let item;
+        if (matchCentury) {
+          const targetCentury=Number(descriptor.century.slice(0,4));
+          if (!mountedCenturyByWall.has(descriptor.wallId)) {
+            const needed=wallMountCounts.get(descriptor.wallId)||1;
+            const choices=[...buckets.keys()].map(century => {
+              const items=buckets.get(century);
+              const start=bucketCursors.get(century)||0;
+              let available=0;
+              for (let index=start;index<items.length;index++) {
+                if (!usedURLs.has(items[index][1])) available++;
+              }
+              return {
+                century,available,
+                distance:Math.abs(Number(century.slice(0,4))-targetCentury)
+              };
+            }).filter(choice=>choice.available>0);
+            const sufficient=choices
+              .filter(choice=>choice.available>=needed)
+              .sort((a,b)=>a.distance-b.distance);
+            const fallback=choices.sort((a,b)=>
+              b.available-a.available || a.distance-b.distance
+            );
+            const exact=choices.find(choice=>
+              choice.century===descriptor.century &&
+              choice.available>=needed
+            );
+            const selectedCentury=(
+              exact||sufficient[0]||fallback[0]
+            )?.century;
+            if (selectedCentury) {
+              mountedCenturyByWall.set(descriptor.wallId,selectedCentury);
+            }
+          }
+          const chosenCentury=mountedCenturyByWall.get(descriptor.wallId);
+          if (chosenCentury) {
+            item=nextUnused(buckets.get(chosenCentury),chosenCentury);
+          }
+          if (!item) continue;
+        } else {
+          item=nextUnused(entries,"all");
+        }
+        if (!item) break;
+        usedURLs.add(item[1]);
+        descriptor.occupied=true;
+        descriptor.mountedCentury=inferCentury(item);
+        artwork(
+          item,descriptor.x,descriptor.y,descriptor.z,descriptor.rotationY,
+          descriptor.maxW,descriptor.maxH,descriptor.collection
+        );
+        catalogMountedCount++;
+        if (/\.gif(?:$|\?)/i.test(item[1])) {
+          catalogGifMountedCount++;
+          if (!document.body.dataset.firstGifMount) {
+            document.body.dataset.firstGifMount=`${descriptor.x},${descriptor.y},${descriptor.z},${descriptor.rotationY}`;
+          }
+        }
+        document.body.dataset.mountedWorks=String(catalogMountedCount);
+        document.body.dataset.mountedGifs=String(catalogGifMountedCount);
+        if (catalogMountedCount%72===0) await new Promise(requestAnimationFrame);
+      }
+    }
+    async function buildFullCollection() {
+      const usedURLs=new Set();
+      const seedArt=uniqueEntries(artItems);
+      const seedPhotography=uniqueEntries(photoItems);
+      const seedAfter=uniqueEntries(after2000Items);
+      catalogIndexedCount=
+        seedArt.length+seedPhotography.length+seedAfter.length;
+      // Put a real, local-known selection onto the first approach walls before
+      // waiting for either remote catalog page. The museum must never open as
+      // an empty architectural shell.
+      await Promise.all([
+        mountUniqueCollection(seedArt,mountSets.art,usedURLs,true),
+        mountUniqueCollection(seedPhotography,mountSets.photo,usedURLs,false),
+        mountUniqueCollection(seedAfter,mountSets.after,usedURLs,false)
+      ]);
+      try {
+        const [allArt,allPhotography]=await Promise.all([
+          fetchCollection("https://strauh.al/art"),
+          fetchCollection("https://strauh.al/photography")
+        ]);
+        catalogIndexedCount=uniqueEntries(
+          [...allArt,...allPhotography]
+        ).length;
+        const historical=allArt.filter(item =>
+          !["2000s","photography"].includes(inferCentury(item))
+        );
+        const after=allArt.filter(item => inferCentury(item)==="2000s");
+        await Promise.all([
+          mountUniqueCollection(historical,mountSets.art,usedURLs,true),
+          mountUniqueCollection(allPhotography,mountSets.photo,usedURLs,false),
+          mountUniqueCollection(after,mountSets.after,usedURLs,false)
+        ]);
+        await mountUniqueCollection(historical,mountSets.balconyArt,usedURLs,true);
+        await mountUniqueCollection(allPhotography,mountSets.balconyPhoto,usedURLs,false);
+      } catch (_) {}
+    }
+    buildFullCollection();
+
+    // Neutral daylight preserves blue without introducing violet or warm color casts.
+    scene.add(new THREE.HemisphereLight(0xf7fcff,0x8fc7ff,2.25));
+    const sun = new THREE.DirectionalLight(0xffffff,3.8);
+    sun.position.set(-78,110,-145);
+    sun.castShadow = false;
+    sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.camera.left = -110; sun.shadow.camera.right = 110;
+    sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -100;
+    sun.shadow.camera.near = 1; sun.shadow.camera.far = 300;
+    sun.shadow.bias = -.00015;
+    scene.add(sun);
+    const roofBounce = new THREE.RectAreaLight(0xc8e9ff,14,34,140);
+    roofBounce.position.set(0, 22, -48);
+    roofBounce.rotation.x = Math.PI/2;
+    scene.add(roofBounce);
+    const floorBounce = new THREE.RectAreaLight(0x78aaff,8,120,170);
+    floorBounce.position.set(0, .35, -42);
+    floorBounce.rotation.x = -Math.PI/2;
+    scene.add(floorBounce);
+
+    // A painted atmospheric dome keeps the exterior believable without a heavy HDR file.
+    const sky = new THREE.Mesh(
+      new THREE.BoxGeometry(600,600,600),
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        uniforms: {
+          topColor: { value: new THREE.Color(0xffffff) },
+          bottomColor: { value: new THREE.Color(0xffffff) },
+          offset: { value: 30 },
+          exponent: { value: .58 }
+        },
+        vertexShader: "varying vec3 vWorldPosition; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vWorldPosition=w.xyz; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+        fragmentShader: "uniform vec3 topColor; uniform vec3 bottomColor; uniform float offset; uniform float exponent; varying vec3 vWorldPosition; void main(){ float h=normalize(vWorldPosition+offset).y; gl_FragColor=vec4(mix(bottomColor,topColor,max(pow(max(h,0.0),exponent),0.0)),1.0); }"
+      })
+    );
+    scene.add(sky);
+
+    // Cloud banks are explicit translucent rectangular prisms: architectural,
+    // lightweight and consistent with the museum's straight-line vocabulary.
+    const cloudMaterial=new THREE.MeshBasicMaterial({
+      color:0xbfdcff,transparent:true,opacity:.2,
+      depthWrite:false,side:THREE.DoubleSide
+    });
+    for (let i=0;i<7;i++) {
+      const cloud=new THREE.Group();
+      for (let prism=0;prism<4;prism++) {
+        const width=18+((i+prism)%4)*5;
+        const height=.65+((i+prism)%3)*.28;
+        const depth=5.5+((i*2+prism)%4)*2.1;
+        edged(
+          new THREE.BoxGeometry(width,height,depth),
+          cloudMaterial,
+          [(prism-1.5)*7,prism*.48,(prism%2?1:-1)*3.5],
+          [0,(prism-1.5)*.08,0],
+          cloud
+        );
+      }
+      cloud.position.set(-175+i*54,48+(i%3)*7,-172+(i%4)*46);
+      cloud.rotation.y=i*.47;
+      cloud.userData.speed=.38+(i%4)*.07;
+      scene.add(cloud);
+      cloudGroups.push(cloud);
+    }
+
+    // Lightweight articulated birds: shared low-poly geometry keeps the flock
+    // cheap, while each bird has two independent wing pivots that visibly flap.
+    const flyingBirds=[];
+    function makeBirdSeamedGeometry(sourceGeometry) {
+      const geometry=sourceGeometry.index
+        ? sourceGeometry.toNonIndexed()
+        : sourceGeometry;
+      if (!geometry.attributes.position) return geometry;
+      const barycentric=[];
+      for (let vertex=0;vertex<geometry.attributes.position.count;vertex+=3) {
+        barycentric.push(
+          1,0,0,
+          0,1,0,
+          0,0,1
+        );
+      }
+      geometry.setAttribute(
+        "barycentric",
+        new THREE.Float32BufferAttribute(barycentric,3)
+      );
+      return geometry;
+    }
+    const birdBodyGeometry=makeBirdSeamedGeometry(
+      new THREE.OctahedronGeometry(1,0)
+    );
+    const leftWingGeometry=makeBirdSeamedGeometry(new THREE.BufferGeometry());
+    leftWingGeometry.setAttribute("position",new THREE.Float32BufferAttribute([
+      0,0,0, .25,.02,1.65, -.42,-.02,1.18
+    ],3));
+    leftWingGeometry.setAttribute(
+      "barycentric",
+      new THREE.Float32BufferAttribute([
+        1,0,0, 0,1,0, 0,0,1
+      ],3)
+    );
+    leftWingGeometry.computeVertexNormals();
+    const rightWingGeometry=makeBirdSeamedGeometry(new THREE.BufferGeometry());
+    rightWingGeometry.setAttribute("position",new THREE.Float32BufferAttribute([
+      0,0,0, -.42,-.02,-1.18, .25,.02,-1.65
+    ],3));
+    rightWingGeometry.setAttribute(
+      "barycentric",
+      new THREE.Float32BufferAttribute([
+        1,0,0, 0,1,0, 0,0,1
+      ],3)
+    );
+    rightWingGeometry.computeVertexNormals();
+    const tailGeometry=makeBirdSeamedGeometry(new THREE.BufferGeometry());
+    tailGeometry.setAttribute("position",new THREE.Float32BufferAttribute([
+      -.58,0,0, -1.18,.04,.48, -1.04,.02,0,
+      -.58,0,0, -1.04,.02,0, -1.18,.04,-.48
+    ],3));
+    tailGeometry.setAttribute(
+      "barycentric",
+      new THREE.Float32BufferAttribute([
+        1,0,0, 0,1,0, 0,0,1,
+        1,0,0, 0,1,0, 0,0,1
+      ],3)
+    );
+    tailGeometry.computeVertexNormals();
+    // Barycentric edge shading draws the blue fill and one-device-pixel white
+    // seams in the same pass. This preserves the archive's edge language
+    // without doubling every animated bird part with LineSegments geometry.
+    const birdMaterial=new THREE.ShaderMaterial({
+      side:THREE.DoubleSide,
+      extensions:{derivatives:true},
+      vertexShader:`
+        attribute vec3 barycentric;
+        varying vec3 vBarycentric;
+        void main() {
+          vBarycentric=barycentric;
+          gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+        }
+      `,
+      fragmentShader:`
+        varying vec3 vBarycentric;
+        void main() {
+          vec3 edgeWidth=fwidth(vBarycentric);
+          vec3 inset=smoothstep(
+            vec3(0.0),
+            edgeWidth,
+            vBarycentric
+          );
+          float interior=min(min(inset.x,inset.y),inset.z);
+          gl_FragColor=mix(
+            vec4(1.0,1.0,1.0,1.0),
+            vec4(0.0,0.0,1.0,1.0),
+            interior
+          );
+        }
+      `
+    });
+    function createFlyingBird(x,y,z,scale,phase,speed,route=null) {
+      const bird=new THREE.Group();
+      const body=new THREE.Mesh(birdBodyGeometry,birdMaterial);
+      body.scale.set(.78,.22,.24);
+      const leftWing=new THREE.Mesh(leftWingGeometry,birdMaterial);
+      const rightWing=new THREE.Mesh(rightWingGeometry,birdMaterial);
+      const tail=new THREE.Mesh(tailGeometry,birdMaterial);
+      leftWing.position.x=-.02;
+      rightWing.position.x=-.02;
+      tail.position.x=-.12;
+      bird.add(body,leftWing,rightWing,tail);
+      bird.position.set(x,y,z);
+      bird.scale.setScalar(scale);
+      const flightSeed=Math.floor(phase*1000)+Math.floor(x*7-z*3);
+      bird.userData={
+        body,leftWing,rightWing,tail,
+        baseY:y,baseZ:z,phase,speed,
+        glideBias:.18+((phase*17)%5)*.035,
+        bobOffset:0,
+        bobVelocity:0,
+        mass:.88+((phase*13)%5)*.045,
+        flightSeed,
+        wingPhase:(phase*2.37)%(Math.PI*2),
+        wingRate:7.45+shardNoise(flightSeed+23)*1.5,
+        strokeAmplitude:.78+shardNoise(flightSeed+29)*.14,
+        bankOffset:0,
+        bankVelocity:0,
+        route,
+        routeProgress:route
+          ? ((phase*.137)%1+1)%1
+          : 0
+      };
+      scene.add(bird);
+      flyingBirds.push(bird);
+    }
+    const flockOrigins=[
+      {position:[-145,57,-132],count:5},
+      {position:[-42,66,-188],count:5},
+      {position:[76,54,-112],count:5},
+      // Two restrained foreground passes make the birds discoverable from the
+      // entrance without turning the white sky into constant visual noise.
+      {position:[-128,49,60],count:4},
+      {position:[24,61,90],count:4}
+    ];
+    flockOrigins.forEach((flock,flockIndex) => {
+      const origin=flock.position;
+      for (let birdIndex=0;birdIndex<flock.count;birdIndex++) {
+        createFlyingBird(
+          origin[0]-birdIndex*7-(birdIndex%2)*3,
+          origin[1]+(birdIndex%3)*1.6,
+          origin[2]+(birdIndex-2)*5.5,
+          .72+(birdIndex%3)*.1,
+          flockIndex*2.1+birdIndex*.64,
+          5.8+flockIndex*.55+(birdIndex%2)*.35
+        );
+      }
+    });
+    // Two sparse routes pass through certified open building volumes: one
+    // crosses the atrium laterally through opposing facade crevices, and the
+    // other enters above the front threshold before leaving through the rear
+    // crown. They reuse the same articulated bird geometry and animation.
+    const interiorBirdRoutes=[
+      {
+        start:new THREE.Vector3(-94,18,-4),
+        control:new THREE.Vector3(0,20,-12),
+        end:new THREE.Vector3(94,18,-24),
+        length:190
+      },
+      {
+        start:new THREE.Vector3(18,23,102),
+        control:new THREE.Vector3(8,25,-12),
+        end:new THREE.Vector3(-34,20,-116),
+        length:226
+      }
+    ];
+    interiorBirdRoutes.forEach((route,routeIndex) => {
+      for (let birdIndex=0;birdIndex<2;birdIndex++) {
+        createFlyingBird(
+          route.start.x,route.start.y,route.start.z,
+          .66+birdIndex*.07,
+          31+routeIndex*4+birdIndex*2.35,
+          6.1+birdIndex*.3,
+          route
+        );
+      }
+    });
+
+    // A visible daylight disc sits behind the cloud field so passing banks
+    // alternately veil and reveal the apparent source of the roof light.
+    const sunCanvas=document.createElement("canvas");
+    sunCanvas.width=256;
+    sunCanvas.height=256;
+    const sunContext=sunCanvas.getContext("2d");
+    const sunGradient=sunContext.createRadialGradient(128,128,8,128,128,126);
+    sunGradient.addColorStop(0,"rgba(255,255,255,1)");
+    sunGradient.addColorStop(.18,"rgba(255,255,255,.96)");
+    sunGradient.addColorStop(.48,"rgba(226,244,255,.52)");
+    sunGradient.addColorStop(1,"rgba(210,237,255,0)");
+    sunContext.fillStyle=sunGradient;
+    sunContext.fillRect(0,0,256,256);
+    const sunGlow=new THREE.Sprite(new THREE.SpriteMaterial({
+      map:new THREE.CanvasTexture(sunCanvas),
+      transparent:true,
+      depthWrite:false,
+      blending:THREE.AdditiveBlending
+    }));
+    // Keep the disc behind the entire rear wreckage arc so it can never read
+    // as a glossy reflection painted onto a blue facet.
+    sunGlow.position.set(-78,86,-292);
+    sunGlow.scale.set(34,34,1);
+    scene.add(sunGlow);
+
+    // Desktop, touch and headset locomotion.
+    const keys = new Set();
+    const keyReleaseTimers = new Map();
+    let yaw = 0;
+    let pitch = .08;
+    let pointerLocked = false;
+    let grounded = true, verticalVelocity = 0;
+    let touchMove = new THREE.Vector2();
+    let lookPointer = null, lookLastX = 0, lookLastY = 0;
+    let hoverLookReady = false;
+    let edgeLookX = 0, edgeLookY = 0;
+    const baseFov=68;
+    const clock = new THREE.Clock();
+    // The facade approach ends at Z 73, but the intended entrance viewpoint
+    // lives on the white forecourt beyond it. Keep that whole arrival zone
+    // navigable so the first movement frame cannot clamp the visitor inward.
+    const bounds = { minX: -79, maxX: 79, minZ: -136, maxZ: 126 };
+    const raycaster = new THREE.Raycaster();
+    const groundRaycaster = new THREE.Raycaster();
+    const tempMatrix = new THREE.Matrix4();
+    const down = new THREE.Vector3(0,-1,0);
+    const lastSafeUpperPosition=new THREE.Vector3();
+    let hasSafeUpperPosition=false;
+    window.museumState = { initialized:true,x:rig.position.x,y:rig.position.y,z:rig.position.z,yaw,pitch,frames:0 };
+    renderer.domElement.dataset.position = `${rig.position.x},${rig.position.y},${rig.position.z}`;
+    renderer.domElement.dataset.camera = `${yaw},${pitch}`;
+    const coordinateReadout=document.getElementById("coordinates");
+    const signed=value => `${value>=0?"+":""}${value.toFixed(1).padStart(6,"0")}`;
+    function updateCoordinateReadout() {
+      const heading=((THREE.MathUtils.radToDeg(-yaw)%360)+360)%360;
+      const pitchDegrees=THREE.MathUtils.radToDeg(pitch);
+      coordinateReadout.innerHTML =
+        `X ${signed(rig.position.x)} · Y ${signed(rig.position.y)} · Z ${signed(rig.position.z)}<br>`+
+        `HDG ${String(Math.round(heading)).padStart(3,"0")}° · PITCH ${signed(pitchDegrees)}° · LENS ${Math.round(camera.fov)}°`;
+    }
+
+    function resetPosition() {
+      rig.position.copy(entranceSpawn);
+      yaw = 0; pitch = .08;
+      grounded = true; verticalVelocity = 0;
+      hasSafeUpperPosition=false;
+      camera.rotation.set(pitch,yaw,0,"YXZ");
+      document.getElementById("location").innerHTML = "forecourt<br>elevation 0";
+      updateCoordinateReadout();
+    }
+    document.getElementById("reset").addEventListener("click", resetPosition);
+    const shortcutToggle=document.getElementById("shortcut-toggle");
+    const shortcutMenu=document.getElementById("shortcut-menu");
+    function closeWingShortcut() {
+      shortcutMenu.hidden=true;
+      shortcutToggle.setAttribute("aria-expanded","false");
+    }
+    shortcutToggle.addEventListener("click",event => {
+      event.stopPropagation();
+      shortcutMenu.hidden=!shortcutMenu.hidden;
+      shortcutToggle.setAttribute(
+        "aria-expanded",String(!shortcutMenu.hidden)
+      );
+    });
+    shortcutMenu.addEventListener("click",event => {
+      const button=event.target.closest("[data-wing]");
+      if (!button) return;
+      const landing=archiveLandings.find(
+        item=>item.name===button.dataset.wing
+      );
+      if (!landing) return;
+      rig.position.set(
+        landing.point.x,
+        landing.point.y+.08,
+        landing.point.z
+      );
+      const inwardYaw=Math.atan2(
+        landing.point.x-spiralCenter.x,
+        landing.point.z-spiralCenter.z
+      );
+      yaw=inwardYaw;
+      pitch=.04;
+      grounded=true;
+      verticalVelocity=0;
+      lastSafeUpperPosition.copy(rig.position);
+      hasSafeUpperPosition=true;
+      camera.rotation.set(pitch,yaw,0,"YXZ");
+      closeWingShortcut();
+      updateCoordinateReadout();
+    });
+    document.addEventListener("pointerdown",event => {
+      if (!event.target.closest("#wing-shortcut")) closeWingShortcut();
+    });
+    renderer.domElement.addEventListener("click", () => {
+      renderer.domElement.focus();
+      if (!renderer.xr.isPresenting && document.pointerLockElement !== renderer.domElement) {
+        renderer.domElement.requestPointerLock?.();
+      }
+    });
+    document.addEventListener("pointerlockchange", () => {
+      pointerLocked = document.pointerLockElement === renderer.domElement;
+      if (pointerLocked) edgeLookX=edgeLookY=0;
+      document.body.classList.toggle("looking",pointerLocked);
+    });
+    document.addEventListener("mousemove",e => {
+      if (!pointerLocked || renderer.xr.isPresenting) return;
+      lastMovementAt=performance.now();
+      yaw -= e.movementX*.00205;
+      pitch = THREE.MathUtils.clamp(pitch-e.movementY*.00185,-1.15,1.15);
+    });
+    addEventListener("keydown", e => {
+      clearTimeout(keyReleaseTimers.get(e.code));
+      keys.add(e.code);
+      if (e.code==="KeyE" && !e.repeat) {
+        e.preventDefault();
+        document.exitPointerLock?.();
+        pointerLocked=false;
+        edgeLookX=edgeLookY=0;
+        lookPointer=null;
+        document.body.classList.remove("looking");
+        shortcutMenu.hidden=!shortcutMenu.hidden;
+        shortcutToggle.setAttribute(
+          "aria-expanded",String(!shortcutMenu.hidden)
+        );
+      }
+      if (e.code==="KeyR" && !e.repeat) {
+        e.preventDefault();
+        resetPosition();
+      }
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (grounded && !e.repeat && !renderer.xr.isPresenting) {
+          verticalVelocity = 6.3;
+          grounded = false;
+        }
+      }
+    });
+    addEventListener("keyup", e => {
+      keyReleaseTimers.set(e.code,setTimeout(() => keys.delete(e.code),80));
+    });
+    addEventListener("blur",() => {
+      keys.clear();
+      keyReleaseTimers.forEach(clearTimeout);
+      keyReleaseTimers.clear();
+    });
+
+    const stick = document.getElementById("touch-stick");
+    const knob = document.getElementById("touch-knob");
+    function updateEdgeLook(e) {
+      const nx=e.clientX/innerWidth*2-1;
+      const ny=e.clientY/innerHeight*2-1;
+      edgeLookX=Math.abs(nx)>.84 ? Math.sign(nx)*(Math.abs(nx)-.84)/.16 : 0;
+      edgeLookY=Math.abs(ny)>.84 ? Math.sign(ny)*(Math.abs(ny)-.84)/.16 : 0;
+    }
+    function updateStick(e) {
+      const rect = stick.getBoundingClientRect();
+      const x = e.clientX - (rect.left+rect.width/2);
+      const y = e.clientY - (rect.top+rect.height/2);
+      const length = Math.min(35, Math.hypot(x,y));
+      const angle = Math.atan2(y,x);
+      touchMove.set(Math.cos(angle)*length/35, Math.sin(angle)*length/35);
+      knob.style.transform = `translate(calc(-50% + ${touchMove.x*35}px), calc(-50% + ${touchMove.y*35}px))`;
+    }
+    stick.addEventListener("pointerdown", e => { stick.setPointerCapture(e.pointerId); updateStick(e); });
+    stick.addEventListener("pointermove", e => { if(stick.hasPointerCapture(e.pointerId)) updateStick(e); });
+    stick.addEventListener("pointerup", () => { touchMove.set(0,0); knob.style.transform="translate(-50%,-50%)"; });
+    renderer.domElement.addEventListener("pointerenter", e => {
+      if (e.pointerType==="touch") return;
+      lookLastX=e.clientX;
+      lookLastY=e.clientY;
+      updateEdgeLook(e);
+      hoverLookReady=true;
+    });
+    renderer.domElement.addEventListener("pointerleave", () => {
+      if (!pointerLocked && lookPointer===null) hoverLookReady=false;
+    });
+    renderer.domElement.addEventListener("pointerdown", e => {
+      renderer.domElement.focus();
+      if (pointerLocked) return;
+      if (e.pointerType === "touch") {
+        lookPointer=e.pointerId; lookLastX=e.clientX; lookLastY=e.clientY;
+        renderer.domElement.setPointerCapture?.(e.pointerId);
+        document.body.classList.add("looking");
+      }
+    });
+    renderer.domElement.addEventListener("pointermove", e => {
+      if (pointerLocked) return;
+      lastMovementAt=performance.now();
+      if (e.pointerType==="touch") {
+        if (e.pointerId !== lookPointer) return;
+        yaw -= (e.clientX-lookLastX)*.005;
+        pitch = THREE.MathUtils.clamp(pitch-(e.clientY-lookLastY)*.005,-1.2,1.2);
+      } else if (hoverLookReady) {
+        yaw -= (e.clientX-lookLastX)*.00235;
+        pitch = THREE.MathUtils.clamp(pitch-(e.clientY-lookLastY)*.0021,-1.2,1.2);
+        updateEdgeLook(e);
+      }
+      lookLastX=e.clientX; lookLastY=e.clientY;
+    });
+    function endLook(e) {
+      if (e.pointerId===lookPointer) {
+        lookPointer=null;
+        document.body.classList.remove("looking");
+      }
+    }
+    renderer.domElement.addEventListener("pointerup",endLook);
+    renderer.domElement.addEventListener("pointercancel",endLook);
+    renderer.domElement.addEventListener("contextmenu",e=>e.preventDefault());
+
+    function blockedAt(x,z) {
+      const feet=rig.position.y+.05;
+      const head=rig.position.y+1.78;
+      if (collisionBoxes.some(box =>
+        x>box.minX && x<box.maxX && z>box.minZ && z<box.maxZ &&
+        head>box.minY && feet<box.maxY
+      )) return true;
+      return collisionSegments.some(segment => {
+        if (head<=segment.minY || feet>=segment.maxY) return false;
+        const dx=segment.b.x-segment.a.x;
+        const dz=segment.b.z-segment.a.z;
+        const lengthSquared=dx*dx+dz*dz||1;
+        const t=THREE.MathUtils.clamp(
+          ((x-segment.a.x)*dx+(z-segment.a.z)*dz)/lengthSquared,0,1
+        );
+        const nearestX=segment.a.x+dx*t;
+        const nearestZ=segment.a.z+dz*t;
+        return Math.hypot(x-nearestX,z-nearestZ)<segment.padding;
+      });
+    }
+
+    function archiveStairFloorAt(x,z,currentY) {
+      let best=null;
+      for (const corridor of archiveStairColliders) {
+        const dx=corridor.b.x-corridor.a.x;
+        const dz=corridor.b.z-corridor.a.z;
+        const lengthSquared=dx*dx+dz*dz||1;
+        const t=THREE.MathUtils.clamp(
+          ((x-corridor.a.x)*dx+(z-corridor.a.z)*dz)/lengthSquared,
+          0,1
+        );
+        const nearestX=corridor.a.x+dx*t;
+        const nearestZ=corridor.a.z+dz*t;
+        const lateralDistance=Math.hypot(x-nearestX,z-nearestZ);
+        if (lateralDistance>corridor.width/2) continue;
+        const y=THREE.MathUtils.lerp(corridor.a.y,corridor.b.y,t)+.025;
+        const verticalDistance=Math.abs(y-currentY);
+        if (y>currentY+.95 || y<currentY-2.35) continue;
+        const score=lateralDistance+verticalDistance*.18;
+        if (!best || score<best.score) best={y,score,corridor};
+      }
+      return best;
+    }
+
+    function updateWalk(dt) {
+      if (renderer.xr.isPresenting) return;
+      if (!pointerLocked) {
+        yaw-=edgeLookX*dt*1.35;
+        pitch=THREE.MathUtils.clamp(pitch-edgeLookY*dt*1.05,-1.2,1.2);
+      }
+      camera.rotation.set(pitch,yaw,0,"YXZ");
+      const forward = Number(keys.has("KeyW")||keys.has("ArrowUp")) - Number(keys.has("KeyS")||keys.has("ArrowDown")) - touchMove.y;
+      const side = Number(keys.has("KeyD")||keys.has("ArrowRight")) - Number(keys.has("KeyA")||keys.has("ArrowLeft")) + touchMove.x;
+      const sprinting=keys.has("ShiftLeft")||keys.has("ShiftRight");
+      const targetFov=sprinting?84:baseFov;
+      const nextFov=THREE.MathUtils.damp(camera.fov,targetFov,sprinting?8:11,dt);
+      if (Math.abs(nextFov-camera.fov)>.01) {
+        camera.fov=nextFov;
+        camera.updateProjectionMatrix();
+      }
+      const speed = (sprinting ? 12.5 : 7.5) * dt;
+      const forwardVector = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+      forwardVector.y = 0;
+      forwardVector.normalize();
+      const rightVector = new THREE.Vector3().crossVectors(forwardVector,new THREE.Vector3(0,1,0)).normalize();
+      const move = new THREE.Vector3()
+        .addScaledVector(forwardVector,forward)
+        .addScaledVector(rightVector,side);
+      if (move.lengthSq()) {
+        lastMovementAt=performance.now();
+        move.normalize().multiplyScalar(speed);
+        const nextX = THREE.MathUtils.clamp(rig.position.x+move.x,bounds.minX,bounds.maxX);
+        const nextZ = THREE.MathUtils.clamp(rig.position.z+move.z,bounds.minZ,bounds.maxZ);
+        // Resolve axes separately so the visitor slides along walls instead of
+        // tunnelling through them or stopping dead at a shallow angle.
+        if (!blockedAt(nextX,rig.position.z)) rig.position.x=nextX;
+        if (!blockedAt(rig.position.x,nextZ)) rig.position.z=nextZ;
+      }
+      if (!grounded) {
+        verticalVelocity -= 15.5*dt;
+        rig.position.y += verticalVelocity*dt;
+      }
+      // Grounded movement follows continuous stair ramps beneath the decorative
+      // treads; airborne movement lands only while descending.
+      groundRaycaster.set(new THREE.Vector3(rig.position.x,rig.position.y+.8,rig.position.z),down);
+      groundRaycaster.far = 2.15;
+      const floorHits = groundRaycaster.intersectObjects(navSurfaces,false);
+      const stairFloor=archiveStairFloorAt(
+        rig.position.x,rig.position.z,rig.position.y
+      );
+      let floorY=floorHits.length?floorHits[0].point.y+.02:null;
+      if (stairFloor && (
+        floorY===null ||
+        Math.abs(stairFloor.y-rig.position.y)<
+          Math.abs(floorY-rig.position.y)+.08
+      )) {
+        floorY=stairFloor.y;
+      }
+      if (floorY!==null) {
+        const delta = floorY-rig.position.y;
+        if (grounded && delta <= .62 && delta >= -1.3) {
+          // Lock exactly to the analytic stair rather than damping behind its
+          // incline; the latter could put the ray origin below the next flight
+          // during a sprint or a low-frame-rate frame.
+          rig.position.y = stairFloor
+            ? floorY
+            : THREE.MathUtils.damp(rig.position.y,floorY,20,dt);
+        } else if (!grounded && verticalVelocity <= 0 && delta >= -.12 && delta <= .72) {
+          rig.position.y = floorY;
+          verticalVelocity = 0;
+          grounded = true;
+        } else if (grounded && delta < -1.3) {
+          if (hasSafeUpperPosition &&
+              lastSafeUpperPosition.y>1 &&
+              floorY<lastSafeUpperPosition.y-1.8) {
+            rig.position.copy(lastSafeUpperPosition);
+            verticalVelocity=0;
+            grounded=true;
+          } else {
+            grounded = false;
+          }
+        }
+        const wouldDiscardUpperRecovery=
+          hasSafeUpperPosition &&
+          lastSafeUpperPosition.y>1 &&
+          floorY<lastSafeUpperPosition.y-1.8;
+        if (floorY>=0 && grounded && Math.abs(delta)<.72 &&
+            !wouldDiscardUpperRecovery) {
+          lastSafeUpperPosition.set(rig.position.x,floorY,rig.position.z);
+          hasSafeUpperPosition=true;
+        }
+      } else if (grounded) {
+        if (rig.position.y>5 && hasSafeUpperPosition) {
+          rig.position.copy(lastSafeUpperPosition);
+          verticalVelocity=0;
+          grounded=true;
+        } else {
+          grounded = false;
+        }
+      }
+      // Exterior ground can sit below an upper museum floor and used to catch
+      // a falling visitor before the no-hit recovery branch ran. Restore the
+      // last certified museum surface as soon as a multi-storey drop begins.
+      if (hasSafeUpperPosition &&
+          lastSafeUpperPosition.y>1 &&
+          rig.position.y<lastSafeUpperPosition.y-2.2) {
+        rig.position.copy(lastSafeUpperPosition);
+        verticalVelocity=0;
+        grounded=true;
+      }
+      const radialDistance=Math.hypot(
+        rig.position.x-spiralCenter.x,rig.position.z-spiralCenter.z
+      );
+      const angle=((Math.atan2(
+        rig.position.z-spiralCenter.z,rig.position.x-spiralCenter.x
+      )-startAngle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+      const zoneSide=Math.floor(angle/(Math.PI*2/spiralSides));
+      const zeroBasedLevel=THREE.MathUtils.clamp(
+        Math.floor(rig.position.y/storyHeight),0,spiralRevolutions-1
+      );
+      const collection=collectionAt(rig.position,zoneSide,zeroBasedLevel);
+      const zone=rig.position.z>50
+        ? "forecourt"
+        : radialDistance<innerRadius-1
+          ? "central atrium"
+            : collection==="after"
+              ? "art after 2000"
+              : collection==="photo"
+                ? "photography wing"
+                : "art before 2000";
+      const level=zeroBasedLevel+1;
+      document.getElementById("location").innerHTML =
+        `${zone}<br>floor ${level} · elevation ${Math.round(rig.position.y)}`;
+      window.museumState = { initialized:true,x:rig.position.x,y:rig.position.y,z:rig.position.z,yaw,pitch,forward,side,pointerLocked,frames:(window.museumState.frames||0)+1 };
+      renderer.domElement.dataset.position = `${rig.position.x.toFixed(3)},${rig.position.y.toFixed(3)},${rig.position.z.toFixed(3)}`;
+      renderer.domElement.dataset.camera = `${yaw.toFixed(4)},${pitch.toFixed(4)}`;
+      renderer.domElement.dataset.frames = String(window.museumState.frames);
+      updateCoordinateReadout();
+    }
+
+    // WebXR: a single standards-based immersive-vr path for Meta Quest and visionOS Safari.
+    const xrButton = document.getElementById("xr");
+    async function detectXR() {
+      if (!navigator.xr || !window.isSecureContext) return;
+      try {
+        if (await navigator.xr.isSessionSupported("immersive-vr")) {
+          xrButton.hidden = false;
+          xrButton.textContent = /Vision|Apple/i.test(navigator.userAgent) ? "enter spatial museum" : "enter immersive";
+        }
+      } catch (_) {}
+    }
+    detectXR();
+    xrButton.addEventListener("click", async () => {
+      try {
+        if (renderer.xr.isPresenting) {
+          await renderer.xr.getSession().end();
+          return;
+        }
+        const session = await navigator.xr.requestSession("immersive-vr", {
+          requiredFeatures: ["local-floor"],
+          optionalFeatures: ["bounded-floor", "hand-tracking", "layers"]
+        });
+        await renderer.xr.setSession(session);
+        xrButton.textContent = "leave immersive";
+        session.addEventListener("end", () => xrButton.textContent = "enter immersive", { once:true });
+      } catch (error) {
+        const status = document.getElementById("status");
+        status.textContent = "immersive mode needs HTTPS and headset permission";
+        status.classList.add("visible");
+        setTimeout(()=>status.classList.remove("visible"), 3600);
+      }
+    });
+
+    function addXRPointer(index) {
+      const controller = renderer.xr.getController(index);
+      const lineGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-1)]);
+      const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: WHITE }));
+      line.scale.z = 18;
+      controller.add(line);
+      controller.addEventListener("select", () => {
+        tempMatrix.identity().extractRotation(controller.matrixWorld);
+        raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+        raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
+        const hits = raycaster.intersectObjects(navSurfaces, false);
+        if (hits.length) {
+          const point = hits[0].point;
+          rig.position.x = THREE.MathUtils.clamp(point.x,bounds.minX,bounds.maxX);
+          rig.position.z = THREE.MathUtils.clamp(point.z,bounds.minZ,bounds.maxZ);
+          rig.position.y = Math.max(0, point.y);
+        }
+      });
+      rig.add(controller);
+    }
+    addXRPointer(0); addXRPointer(1);
+
+    const artworkFrustum = new THREE.Frustum();
+    const artworkViewProjection = new THREE.Matrix4();
+    const artworkCameraPosition = new THREE.Vector3();
+    const artworkCameraDirection = new THREE.Vector3();
+    const artworkToCamera = new THREE.Vector3();
+    const artworkSphere = new THREE.Sphere();
+    let lastArtworkVisibilityUpdate = -Infinity;
+    let lastTextureTrim = -Infinity;
+    function updateArtworkStreaming(time) {
+      if (time-lastArtworkVisibilityUpdate < 285) return;
+      lastArtworkVisibilityUpdate = time;
+      const movingRecently=time-lastMovementAt<180;
+      rig.updateMatrixWorld(true);
+      const xrCamera = renderer.xr.isPresenting ? renderer.xr.getCamera(camera) : camera;
+      const viewCamera = xrCamera.isArrayCamera ? xrCamera.cameras[0] : xrCamera;
+      viewCamera.updateMatrixWorld(true);
+      viewCamera.matrixWorldInverse.copy(viewCamera.matrixWorld).invert();
+      artworkViewProjection.multiplyMatrices(viewCamera.projectionMatrix,viewCamera.matrixWorldInverse);
+      artworkFrustum.setFromProjectionMatrix(artworkViewProjection);
+      viewCamera.getWorldPosition(artworkCameraPosition);
+      viewCamera.getWorldDirection(artworkCameraDirection);
+      const cameraPolarAngle=Math.atan2(
+        artworkCameraPosition.z-spiralCenter.z,
+        artworkCameraPosition.x-spiralCenter.x
+      );
+
+      let visible = 0;
+      let pending = 0;
+      let proxyMatrixDirty=false;
+      for (const surface of artworkProxyHidden) {
+        proxyMatrixDirty=setArtworkProxyVisible(surface,true) || proxyMatrixDirty;
+      }
+      artworkProxyHidden.clear();
+      const wantedTextureKeys = new Set();
+      visibleAnimatedTextures.clear();
+      const drawCandidates=[];
+      const preloadCandidates=[];
+      for (const surface of artworkSurfaces) {
+        artworkToCamera.subVectors(surface.worldPosition,artworkCameraPosition);
+        const distance = artworkToCamera.length();
+        const alignment = distance ? artworkCameraDirection.dot(artworkToCamera.multiplyScalar(1/distance)) : 1;
+        // artworkToCamera points from the visitor toward the artwork.  The
+        // generated wall normal points from the wall toward the visitor's
+        // viewing side, so a visible front face has the opposite direction.
+        // Using the un-negated dot product selected paintings through the
+        // backs of walls while rejecting the paintings directly in front of
+        // the visitor.
+        const facing = -surface.worldNormal.dot(artworkToCamera);
+        const surfacePolarAngle=Math.atan2(
+          surface.worldPosition.z-spiralCenter.z,
+          surface.worldPosition.x-spiralCenter.x
+        );
+        const angularDifference=Math.abs(Math.atan2(
+          Math.sin(surfacePolarAngle-cameraPolarAngle),
+          Math.cos(surfacePolarAngle-cameraPolarAngle)
+        ));
+        const nearbyStory=Math.abs(
+          surface.worldPosition.y-artworkCameraPosition.y
+        )<8.7;
+        const nearbySector=angularDifference<1.2 || distance<18;
+        artworkSphere.center.copy(surface.worldPosition);
+        artworkSphere.radius = Math.max(surface.maxW,surface.maxH)*.72;
+
+        // Exact-frustum visibility prevents any image draw calls behind the visitor.
+        // Front-face and near-field tests reject work hidden on the far side of walls.
+        const shouldDraw = nearbyStory && nearbySector &&
+          distance < 48 && alignment > .1 && facing > .03 &&
+          artworkFrustum.intersectsSphere(artworkSphere);
+        const shouldStream = shouldDraw || (
+          nearbyStory && nearbySector &&
+          distance < 56 && alignment > .4 && facing > -.08
+        );
+        if (surface.group?.visible) surface.group.visible=false;
+        if (surface.titleLabel?.visible) surface.titleLabel.visible=false;
+        const verticalCoverage=
+          2*Math.atan(surface.maxH/(2*Math.max(distance,.1)))/
+          THREE.MathUtils.degToRad(viewCamera.fov||baseFov);
+        const candidate={
+          surface,distance,alignment,verticalCoverage,
+          score:distance-alignment*9
+        };
+        if (shouldDraw) drawCandidates.push(candidate);
+        else if (shouldStream) preloadCandidates.push(candidate);
+      }
+      drawCandidates.sort((a,b)=>a.score-b.score);
+      preloadCandidates.sort((a,b)=>a.score-b.score);
+      const drawLimit=renderer.xr.isPresenting?20:(movingRecently?24:36);
+      const selected=drawCandidates.slice(0,drawLimit);
+      const preload=movingRecently
+        ? []
+        : preloadCandidates.slice(0,renderer.xr.isPresenting?1:2);
+      const fullResolutionLimit=renderer.xr.isPresenting?1:2;
+      const fullResolutionSurfaces=new Set(
+        selected
+          .filter(candidate=>
+            candidate.distance<12 &&
+            candidate.verticalCoverage>.22 &&
+            candidate.alignment>.28
+          )
+          .sort((a,b)=>b.verticalCoverage-a.verticalCoverage)
+          .slice(0,fullResolutionLimit)
+          .map(candidate=>candidate.surface)
+      );
+      for (const {surface,distance,alignment} of selected) {
+        materializeArtwork(surface);
+        surface.group.visible=true;
+        proxyMatrixDirty=setArtworkProxyVisible(surface,false) || proxyMatrixDirty;
+        artworkProxyHidden.add(surface);
+        if (distance<5.5 && alignment>.18) ensureArtworkLabel(surface);
+        surface.lastWantedAt=time;
+        const desiredTier=fullResolutionSurfaces.has(surface) &&
+          !isAnimatedImageURL(surface.item[1])
+          ? "full"
+          : "preview";
+        if (desiredTier==="full") surface.lastFullWantedAt=time;
+        if (surface.textureTier==="full" && desiredTier==="preview" &&
+            time-surface.lastFullWantedAt>650) {
+          releaseArtworkTexture(surface);
+        }
+        surface.requestedTier=desiredTier;
+        visible++;
+        if (textureTierRank[surface.textureTier]<
+            textureTierRank[effectiveTextureTier(surface.item[1],desiredTier)]) {
+          pending++;
+        }
+        if (surface.texture?.userData.animated) visibleAnimatedTextures.add(surface.texture);
+        const desiredKey=textureCacheKey(surface.item[1],desiredTier);
+        wantedTextureKeys.add(desiredKey);
+        if (surface.loadingTier) {
+          wantedTextureKeys.add(textureCacheKey(surface.item[1],surface.loadingTier));
+        }
+        if (!surface.loading &&
+            textureTierRank[surface.textureTier]<
+            textureTierRank[effectiveTextureTier(surface.item[1],desiredTier)]) {
+          streamArtwork(
+            surface,
+            alignment*8-distance*.08+(desiredTier==="full"?30:0),
+            desiredTier
+          );
+        }
+      }
+      for (const {surface,distance,alignment} of preload) {
+        surface.lastWantedAt=time;
+        surface.requestedTier="preview";
+        wantedTextureKeys.add(textureCacheKey(surface.item[1],"preview"));
+        if (surface.loadingTier) {
+          wantedTextureKeys.add(textureCacheKey(surface.item[1],surface.loadingTier));
+        }
+        if (!movingRecently && surface.textureTier==="none" && !surface.loading) {
+          streamArtwork(surface,alignment*8-distance*.08,"preview");
+        }
+      }
+      if (proxyMatrixDirty && artworkProxyMesh) {
+        artworkProxyMesh.instanceMatrix.needsUpdate=true;
+      }
+      for (const [key,job] of textureJobsByURL) {
+        if (!wantedTextureKeys.has(key)) job.cancel();
+      }
+      if (time-lastTextureTrim>1000) {
+        lastTextureTrim=time;
+        const resident=artworkSurfaces.filter(surface=>surface.loaded && surface.texture);
+        // Full originals disappear almost immediately after they stop filling
+        // the view. Small previews get a modest LRU pool and also expire by age,
+        // so a long museum visit cannot grow GPU memory without bound.
+        resident
+          .filter(surface=>
+            surface.textureTier==="full" &&
+            !fullResolutionSurfaces.has(surface) &&
+            time-surface.lastFullWantedAt>700
+          )
+          .forEach(releaseArtworkTexture);
+        resident
+          .filter(surface=>
+            surface.textureTier==="preview" &&
+            time-surface.lastWantedAt>2400
+          )
+          .forEach(releaseArtworkTexture);
+        const previewResident=artworkSurfaces.filter(surface=>
+          surface.loaded && surface.textureTier==="preview"
+        );
+        const previewResidentLimit=renderer.xr.isPresenting?22:40;
+        if (previewResident.length>previewResidentLimit) {
+          previewResident
+            .filter(surface=>time-surface.lastWantedAt>650)
+            .sort((a,b)=>a.lastWantedAt-b.lastWantedAt)
+            .slice(0,previewResident.length-previewResidentLimit)
+            .forEach(releaseArtworkTexture);
+        }
+        renderer.domElement.dataset.residentTextures=String(
+          artworkSurfaces.reduce((count,surface)=>count+Number(surface.loaded),0)
+        );
+        renderer.domElement.dataset.previewTextures=String(
+          artworkSurfaces.reduce(
+            (count,surface)=>count+Number(surface.textureTier==="preview"),0
+          )
+        );
+        renderer.domElement.dataset.fullTextures=String(
+          artworkSurfaces.reduce(
+            (count,surface)=>count+Number(surface.textureTier==="full"),0
+          )
+        );
+        renderer.domElement.dataset.textureCacheEntries=
+          String(texturePromiseCache.size);
+        artworkSurfaces
+          .filter(surface=>
+            surface.group && !surface.loaded && !surface.loading &&
+            time-surface.lastWantedAt>3600
+          )
+          .forEach(dematerializeArtwork);
+      }
+      showCollectionCount(visible,pending);
+      window.artworkStreamingState = {
+        visible, pending, total:artworkSurfaces.length,
+        queued:textureQueue.filter(job => !job.cancelled).length,
+        active:activeTextureJobs
+      };
+      if (animatedSteps[0]) {
+        const step=animatedSteps[0].position;
+        renderer.domElement.dataset.penrose=`${step.x.toFixed(3)},${step.y.toFixed(3)},${step.z.toFixed(3)}`;
+      }
+      renderer.domElement.dataset.colliders=String(collisionBoxes.length);
+      renderer.domElement.dataset.animatedGifs=String(visibleAnimatedTextures.size);
+    }
+
+    function animate(time) {
+      const dt = Math.min(clock.getDelta(), .05);
+      animatedSteps.forEach(step => {
+        // The visible treads move above stable invisible ramps, preserving the
+        // Penrose wave without ever opening a collision gap under the visitor.
+        const wave=Math.sin(time*.00115+step.userData.phase);
+        step.position.y=step.userData.baseY+wave*.18;
+        step.position.x=step.userData.baseX+Math.cos(time*.00082+step.userData.phase)*.035*step.userData.direction;
+        step.position.z=step.userData.baseZ+Math.sin(time*.00067+step.userData.phase)*.025;
+        step.rotation.z=wave*.014;
+      });
+      penrose.updateMatrixWorld(true);
+      rearPenrose.updateMatrixWorld(true);
+      updateWalk(dt);
+      updateArtworkStreaming(time);
+      fragments.forEach((fragment, i) => {
+        fragment.position.y = fragment.userData.baseY + Math.sin(time*.001*fragment.userData.speed + fragment.userData.phase)*1.2;
+        fragment.rotation.y += dt*(.05+(i%4)*.018);
+        fragment.rotation.x += dt*.025;
+      });
+      entryFragments.forEach((piece,index) => {
+        const phase=time*.00024+piece.userData.phase;
+        piece.position.y=piece.userData.baseY+Math.sin(phase)*.18;
+        piece.rotation.y=piece.userData.baseRotationY+Math.sin(phase*.73)*.018;
+        piece.rotation.z=piece.userData.baseRotationZ+Math.cos(phase*.61)*.012;
+      });
+      perimeterShardStates.forEach((state,index) => {
+        const phase=time*.00018*state.speed+state.phase;
+        perimeterShardDummy.position.set(
+          state.x+Math.sin(phase*.41)*.32,
+          state.y+Math.sin(phase)*.72,
+          state.z+Math.cos(phase*.37)*.28
+        );
+        perimeterShardDummy.rotation.set(
+          state.rotation.x+Math.sin(phase*.53)*.09,
+          state.rotation.y+Math.sin(phase*.31)*.13,
+          state.rotation.z+Math.cos(phase*.47)*.08
+        );
+        perimeterShardDummy.scale.copy(state.scale);
+        perimeterShardDummy.updateMatrix();
+        perimeterShardFill.setMatrixAt(index,perimeterShardDummy.matrix);
+        perimeterShardWire.setMatrixAt(index,perimeterShardDummy.matrix);
+      });
+      perimeterShardFill.instanceMatrix.needsUpdate=true;
+      perimeterShardWire.instanceMatrix.needsUpdate=true;
+      cloudGroups.forEach(cloud => {
+        cloud.position.x+=dt*cloud.userData.speed;
+        if (cloud.position.x>185) cloud.position.x-=370;
+      });
+      flyingBirds.forEach((bird,index) => {
+        const flightSeconds=time*.001;
+        const flight=bird.userData;
+        // A compact avian stroke model: a quick, extended power stroke takes
+        // 38% of the cycle; the slower recovery stroke folds and sweeps the
+        // wings inward. Every bird keeps its own rate and phase.
+        const beatVariation=
+          .94+Math.sin(flightSeconds*.57+flight.phase*1.9)*.06;
+        flight.wingPhase=(
+          flight.wingPhase+dt*flight.wingRate*beatVariation
+        )%(Math.PI*2);
+        const cycle=flight.wingPhase/(Math.PI*2);
+        const powerStroke=cycle<.38;
+        const strokeProgress=powerStroke
+          ? THREE.MathUtils.smoothstep(cycle,0,.38)
+          : THREE.MathUtils.smoothstep(cycle,.38,1);
+        const rawFlap=powerStroke
+          ? 1-2*strokeProgress
+          : -1+2*strokeProgress;
+        const recoveryFold=powerStroke
+          ? 0
+          : Math.sin(strokeProgress*Math.PI);
+        const downstrokePulse=powerStroke
+          ? Math.sin(strokeProgress*Math.PI)
+          : 0;
+        const flap=rawFlap*flight.strokeAmplitude;
+        const coursePhase=flightSeconds*.48+flight.phase;
+        const leftAsymmetry=
+          Math.sin(coursePhase*.91+flight.phase)*.018;
+        const rightAsymmetry=
+          Math.sin(coursePhase*.83+flight.phase*1.31)*.018;
+        const recoverySweep=recoveryFold*.12;
+        flight.leftWing.rotation.x=flap+leftAsymmetry;
+        flight.rightWing.rotation.x=-flap+rightAsymmetry;
+        flight.leftWing.rotation.y=-recoverySweep;
+        flight.rightWing.rotation.y=recoverySweep;
+        flight.leftWing.rotation.z=
+          -.075+downstrokePulse*.055-recoveryFold*.06;
+        flight.rightWing.rotation.z=
+          .075-downstrokePulse*.055+recoveryFold*.06;
+        const foldedSpan=1-recoveryFold*.19;
+        flight.leftWing.scale.z=foldedSpan;
+        flight.rightWing.scale.z=foldedSpan;
+        // Downstroke-generated lift drives a damped vertical spring. The
+        // delayed response gives the body perceptible weight instead of making
+        // the entire bird trace the same rigid wing sine wave.
+        const downstroke=.24+downstrokePulse*.72;
+        const bobAcceleration=
+          downstroke*2.65/flight.mass-
+          .82-
+          flight.bobOffset*7.4-
+          flight.bobVelocity*3.15;
+        flight.bobVelocity+=bobAcceleration*dt;
+        flight.bobOffset+=flight.bobVelocity*dt;
+        flight.bobOffset=THREE.MathUtils.clamp(
+          flight.bobOffset,-.18,.24
+        );
+        let routeHeading=0;
+        if (flight.route) {
+          flight.routeProgress=(
+            flight.routeProgress+
+            dt*flight.speed/flight.route.length
+          )%1;
+          const routeT=flight.routeProgress;
+          const inverseT=1-routeT;
+          const route=flight.route;
+          bird.position.x=
+            inverseT*inverseT*route.start.x+
+            2*inverseT*routeT*route.control.x+
+            routeT*routeT*route.end.x;
+          bird.position.y=
+            inverseT*inverseT*route.start.y+
+            2*inverseT*routeT*route.control.y+
+            routeT*routeT*route.end.y+
+            Math.sin(flightSeconds*1.4+flight.phase)*
+              flight.glideBias+
+            flight.bobOffset;
+          bird.position.z=
+            inverseT*inverseT*route.start.z+
+            2*inverseT*routeT*route.control.z+
+            routeT*routeT*route.end.z+
+            Math.sin(coursePhase)*.65;
+          const tangentX=
+            2*inverseT*(route.control.x-route.start.x)+
+            2*routeT*(route.end.x-route.control.x);
+          const tangentZ=
+            2*inverseT*(route.control.z-route.start.z)+
+            2*routeT*(route.end.z-route.control.z);
+          routeHeading=Math.atan2(-tangentZ,tangentX);
+        } else {
+          bird.position.x+=
+            dt*flight.speed*
+            (.97+Math.sin(coursePhase*.73)*.03);
+          bird.position.y=
+            flight.baseY+
+            Math.sin(flightSeconds*1.4+flight.phase)*
+              flight.glideBias+
+            flight.bobOffset;
+          bird.position.z=
+            flight.baseZ+
+            Math.sin(coursePhase)*2.65;
+        }
+        const desiredBank=
+          Math.sin(coursePhase*.81)*.042+
+          Math.sin(flightSeconds*.31+flight.phase*1.7)*.012;
+        const bankAcceleration=
+          (desiredBank-flight.bankOffset)*4.2-
+          flight.bankVelocity*2.8;
+        flight.bankVelocity+=bankAcceleration*dt;
+        flight.bankOffset+=flight.bankVelocity*dt;
+        const bodyPitch=-flight.bobVelocity*.19;
+        bird.rotation.z=
+          bodyPitch+
+          Math.sin(time*.0009+index)*.026;
+        // Shallow course corrections keep the flight readable as a flock
+        // without making every bird follow an identical mechanical rail.
+        bird.rotation.x=flight.bankOffset;
+        bird.rotation.y=
+          routeHeading+Math.cos(coursePhase)*.035;
+        flight.body.position.y=-Math.abs(rawFlap)*.018;
+        flight.body.rotation.z=bodyPitch*.28;
+        flight.tail.rotation.z=
+          THREE.MathUtils.clamp(-bodyPitch*.72,-.16,.16);
+        if (!flight.route && bird.position.x>190) {
+          bird.position.x-=380;
+        }
+      });
+      visibleAnimatedTextures.forEach(texture => texture.needsUpdate=true);
+      const daylightPhase=Math.sin(time*.00003);
+      const sunX=-78+daylightPhase*18;
+      sun.position.x=sunX;
+      sunGlow.position.x=sunX;
+      sun.intensity=3.65+Math.max(0,Math.sin(time*.00018))*.55;
+      sunGlow.material.opacity=.76+Math.sin(time*.00018)*.12;
+      renderer.render(scene,camera);
+    }
+    renderer.setAnimationLoop(animate);
+    window.museumStartupComplete=true;
+
+    addEventListener("resize", () => {
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth,innerHeight);
+      renderer.setPixelRatio(1);
+    });
+
+    // Fail softly when a GPU context is interrupted by a headset browser.
+    renderer.domElement.addEventListener("webglcontextlost", e => {
+      e.preventDefault();
+      const status = document.getElementById("status");
+      status.textContent = "restoring the museum";
+      status.classList.add("visible");
+    });
+    renderer.domElement.addEventListener("webglcontextrestored", () => {
+      document.getElementById("status").classList.remove("visible");
+    });
+  </script>
+</body>
+</html>
