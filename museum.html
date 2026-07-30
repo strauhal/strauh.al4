@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0000ff">
   <meta name="description" content="An immersive, spatial museum for art and photography.">
-  <meta property="og:title" content="strauh.al/museum">
-  <meta property="og:description" content="museum.">
+  <meta property="og:title" content="strauh.al / museum">
+  <meta property="og:description" content="Enter a blue museum without end.">
   <meta property="og:image" content="https://strauh.al/banner.gif">
-  <title>strauh.al/museum</title>
+  <title>strauh.al / museum</title>
   <link rel="icon" href="./favicon.ico">
   <style>
     :root { color-scheme: dark; --blue: #00f; --white: #fff; }
@@ -260,7 +260,9 @@
     renderer.toneMappingExposure = .92;
     renderer.xr.enabled = true;
     renderer.xr.setReferenceSpaceType("local-floor");
-    renderer.xr.setFramebufferScaleFactor(1);
+    // Quest's default recommended framebuffer is intentionally conservative.
+    // The museum is low-poly enough to supersample it for crisp 1 px edges.
+    renderer.xr.setFramebufferScaleFactor(1.55);
     renderer.domElement.tabIndex = 0;
     renderer.domElement.setAttribute("aria-label","Interactive museum viewport");
     document.body.prepend(renderer.domElement);
@@ -2812,7 +2814,7 @@
       }
     }
     function pumpTextureQueue() {
-      const limit=renderer.xr.isPresenting?1:2;
+      const limit=2;
       textureQueue.sort((a,b) => b.priority-a.priority);
       while (activeTextureJobs < limit && textureQueue.length) {
         const job = textureQueue.shift();
@@ -2847,9 +2849,20 @@
           run: async () => {
           try {
             const requestURL=tier==="preview"?previewImageURL(url):url;
-            let response = await fetch(requestURL,{
-              mode:"cors",signal:controller.signal,cache:"force-cache"
-            });
+            let response;
+            try {
+              response=await fetch(requestURL,{
+                mode:"cors",signal:controller.signal,cache:"force-cache"
+              });
+            } catch (error) {
+              // Some headset browsers block or lose the thumbnail proxy even
+              // though the original image is reachable. Fall back on network
+              // errors as well as HTTP errors.
+              if (requestURL===url || error.name==="AbortError") throw error;
+              response=await fetch(url,{
+                mode:"cors",signal:controller.signal,cache:"force-cache"
+              });
+            }
             // The thumbnail service is an optimization, not a single point of
             // failure. If it is unavailable, decode a small bitmap locally.
             if (!response.ok && requestURL!==url) {
@@ -2876,7 +2889,7 @@
               // ImageBitmap bypasses Texture.flipY in WebGL, so orient at decode time.
               const source = await createImageBitmap(blob,{ imageOrientation:"flipY" });
               const maxTextureDimension=tier==="preview"
-                ? 160
+                ? 384
                 : Math.min(renderer.capabilities.maxTextureSize,4096);
               const scale = Math.min(1,maxTextureDimension/Math.max(source.width,source.height));
               let bitmap = source;
@@ -2892,7 +2905,9 @@
             }
             texture.needsUpdate = true;
             texture.colorSpace = THREE.SRGBColorSpace;
-            texture.anisotropy = 1;
+            texture.anisotropy = Math.min(
+              8,renderer.capabilities.getMaxAnisotropy()
+            );
             texture.userData.tier=tier;
             texture.userData.cacheKey=key;
             texture.userData.evicted=false;
@@ -4822,6 +4837,10 @@
       look:new THREE.Vector2(),
       active:new Map()
     };
+    const xrHardwareMove=new THREE.Vector2();
+    const xrHardwareLook=new THREE.Vector2();
+    const xrCombinedMove=new THREE.Vector2();
+    const xrCombinedLook=new THREE.Vector2();
     const xrControlDeck=new THREE.Group();
     const xrElevatorChoices=new THREE.Group();
     const xrDeckPosition=new THREE.Vector3();
@@ -4838,7 +4857,7 @@
     const xrMoveVector=new THREE.Vector3();
     const xrStickRadius=.13;
     let lastXRPinchAt=-Infinity;
-    let pendingXRTeleport=null;
+    let pendingXRPanelToggle=null;
     let xrDeckInitialized=false;
     let xrRunState=false;
 
@@ -4950,7 +4969,7 @@
     });
     scene.add(xrControlDeck);
     document.body.dataset.xrControls=
-      "gaze-pinch-buttons|dual-hand-sticks|double-pinch-flight";
+      "quest-gamepad-sticks|vision-pinch-sticks|double-pinch-flight|trigger-menu";
 
     function toggleXRFlight() {
       flying=!flying;
@@ -4980,6 +4999,7 @@
       raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
     }
     function xrControlHit(controller) {
+      if (!xrControlDeck.visible) return null;
       setXRControllerRay(controller);
       return raycaster.intersectObjects(xrInteractive,false)[0]||null;
     }
@@ -5007,20 +5027,13 @@
       stick.userData.knob.position.set(0,0,.008);
       xrStickState.active.delete(index);
     }
-    function performXRTeleport(origin,direction) {
-      raycaster.ray.origin.copy(origin);
-      raycaster.ray.direction.copy(direction);
-      const hit=raycaster.intersectObjects(navSurfaces,false)[0];
-      if (!hit) return;
-      rig.position.x=THREE.MathUtils.clamp(
-        hit.point.x,bounds.minX,bounds.maxX
-      );
-      rig.position.z=THREE.MathUtils.clamp(
-        hit.point.z,bounds.minZ,bounds.maxZ
-      );
-      rig.position.y=Math.max(0,hit.point.y);
-      grounded=true;
-      verticalVelocity=0;
+    function toggleXRControlDeck() {
+      xrControlDeck.visible=!xrControlDeck.visible;
+      xrDeckInitialized=false;
+      if (!xrControlDeck.visible) {
+        xrElevatorChoices.visible=false;
+        xrStickState.active.forEach((_,index)=>releaseXRStick(index));
+      }
     }
     let xrAvailability = "checking";
     function showXRStatus(message,duration=4400) {
@@ -5088,6 +5101,7 @@
           optionalFeatures: ["bounded-floor", "hand-tracking", "layers"]
         });
         await renderer.xr.setSession(session);
+        try { renderer.xr.setFoveation(0); } catch (_) {}
         session.updateRenderState({
           depthNear:camera.near,
           depthFar:camera.far
@@ -5097,7 +5111,7 @@
         document.body.dataset.xrFeatures=[
           ...(session.enabledFeatures||[])
         ].join(",");
-        xrControlDeck.visible=true;
+        xrControlDeck.visible=false;
         xrDeckInitialized=false;
         rig.rotation.y=yaw;
         camera.rotation.set(0,0,0);
@@ -5107,8 +5121,8 @@
           xrControlDeck.visible=false;
           xrElevatorChoices.visible=false;
           xrStickState.active.forEach((_,index)=>releaseXRStick(index));
-          clearTimeout(pendingXRTeleport);
-          pendingXRTeleport=null;
+          clearTimeout(pendingXRPanelToggle);
+          pendingXRPanelToggle=null;
           yaw=rig.rotation.y;
           rig.rotation.set(0,0,0);
           camera.rotation.set(pitch,yaw,0,"YXZ");
@@ -5135,8 +5149,16 @@
       controller.addEventListener("connected",event => {
         line.visible=event.data.targetRayMode!=="gaze";
         controller.userData.targetRayMode=event.data.targetRayMode;
+        controller.userData.inputSource=event.data;
       });
-      controller.addEventListener("disconnected",()=>line.visible=false);
+      controller.addEventListener("disconnected",()=>{
+        line.visible=false;
+        controller.userData.inputSource=null;
+        releaseXRStick(index);
+      });
+      controller.addEventListener("squeezestart",()=>{
+        toggleXRControlDeck();
+      });
       controller.addEventListener("selectstart",()=>{
         const hit=xrControlHit(controller);
         controller.userData.usedXRControl=Boolean(hit);
@@ -5157,22 +5179,27 @@
           controller.userData.usedXRControl=false;
           return;
         }
-        setXRControllerRay(controller);
-        const origin=raycaster.ray.origin.clone();
-        const direction=raycaster.ray.direction.clone();
+        // Quest trigger presses reveal or dismiss the spatial version of the
+        // desktop controls. They no longer enter a delayed teleport path.
+        if (controller.userData.inputSource?.gamepad) {
+          toggleXRControlDeck();
+          return;
+        }
+        // Vision Pro exposes look+pinch as a transient pointer. A single pinch
+        // toggles the panel; a fast double pinch toggles flight instead.
         const now=performance.now();
         if (now-lastXRPinchAt<360) {
-          clearTimeout(pendingXRTeleport);
-          pendingXRTeleport=null;
+          clearTimeout(pendingXRPanelToggle);
+          pendingXRPanelToggle=null;
           lastXRPinchAt=-Infinity;
           toggleXRFlight();
           return;
         }
         lastXRPinchAt=now;
-        clearTimeout(pendingXRTeleport);
-        pendingXRTeleport=setTimeout(()=>{
-          performXRTeleport(origin,direction);
-          pendingXRTeleport=null;
+        clearTimeout(pendingXRPanelToggle);
+        pendingXRPanelToggle=setTimeout(()=>{
+          toggleXRControlDeck();
+          pendingXRPanelToggle=null;
         },370);
       });
       rig.add(controller);
@@ -5185,6 +5212,46 @@
     }
     addXRPointer(0); addXRPointer(1);
 
+    function strongestXRThumbstick(gamepad,target,invertY=true) {
+      target.set(0,0);
+      if (!gamepad?.axes?.length) return target;
+      let bestMagnitude=-1;
+      // Quest commonly exposes the thumbstick at axes 2/3, while other WebXR
+      // runtimes use 0/1. Choosing the strongest complete pair handles both.
+      for (let index=0;index+1<gamepad.axes.length;index+=2) {
+        const x=gamepad.axes[index]||0;
+        const y=gamepad.axes[index+1]||0;
+        const magnitude=x*x+y*y;
+        if (magnitude>bestMagnitude) {
+          bestMagnitude=magnitude;
+          target.set(x,invertY?-y:y);
+        }
+      }
+      const length=target.length();
+      if (length<.12) return target.set(0,0);
+      const remapped=THREE.MathUtils.clamp((length-.12)/.88,0,1);
+      target.multiplyScalar(remapped/length);
+      return target;
+    }
+    function readXRControllerSticks() {
+      xrHardwareMove.set(0,0);
+      xrHardwareLook.set(0,0);
+      const session=renderer.xr.getSession();
+      if (!session) return;
+      let fallbackIndex=0;
+      for (const source of session.inputSources) {
+        if (!source.gamepad) continue;
+        const handedness=source.handedness==="left"||
+          source.handedness==="right"
+          ?source.handedness
+          :(fallbackIndex++===0?"left":"right");
+        if (handedness==="left") {
+          strongestXRThumbstick(source.gamepad,xrHardwareMove);
+        } else if (handedness==="right") {
+          strongestXRThumbstick(source.gamepad,xrHardwareLook);
+        }
+      }
+    }
     function updateXRControls(dt) {
       if (!renderer.xr.isPresenting) return;
       const xrCamera=renderer.xr.getCamera(camera);
@@ -5228,7 +5295,12 @@
         if (hit) hit.object.material.color.setHex(0x8cadff);
       });
 
-      const moveInput=xrStickState.move;
+      readXRControllerSticks();
+      const moveInput=xrCombinedMove.copy(
+        xrHardwareMove.lengthSq()>xrStickState.move.lengthSq()
+          ?xrHardwareMove
+          :xrStickState.move
+      );
       const moveMagnitude=moveInput.length();
       const running=moveMagnitude>.78;
       if (running!==xrRunState) {
@@ -5262,7 +5334,11 @@
         }
       }
 
-      const lookInput=xrStickState.look;
+      const lookInput=xrCombinedLook.copy(
+        xrHardwareLook.lengthSq()>xrStickState.look.lengthSq()
+          ?xrHardwareLook
+          :xrStickState.look
+      );
       if (Math.abs(lookInput.x)>.1) {
         rig.rotation.y-=lookInput.x*1.35*dt;
       }
@@ -5305,7 +5381,7 @@
         }
       }
       document.body.dataset.xrInput=
-        "left-stick-move|right-stick-look|gaze-pinch-select";
+        "quest-gamepad-sticks|vision-pinch-sticks|trigger-menu";
     }
 
     const artworkFrustum = new THREE.Frustum();
@@ -5319,9 +5395,10 @@
     function updateArtworkStreaming(time) {
       if (time-lastArtworkVisibilityUpdate < 285) return;
       lastArtworkVisibilityUpdate = time;
+      const xrPresenting=renderer.xr.isPresenting;
       const movingRecently=time-lastMovementAt<180;
       rig.updateMatrixWorld(true);
-      const xrCamera = renderer.xr.isPresenting ? renderer.xr.getCamera(camera) : camera;
+      const xrCamera = xrPresenting ? renderer.xr.getCamera(camera) : camera;
       const viewCamera = xrCamera.isArrayCamera ? xrCamera.cameras[0] : xrCamera;
       viewCamera.updateMatrixWorld(true);
       viewCamera.matrixWorldInverse.copy(viewCamera.matrixWorld).invert();
@@ -5367,18 +5444,26 @@
         const nearbyStory=Math.abs(
           surface.worldPosition.y-artworkCameraPosition.y
         )<8.7;
-        const nearbySector=angularDifference<1.2 || distance<18;
+        const nearbySector=angularDifference<(xrPresenting?1.65:1.2) ||
+          distance<(xrPresenting?24:18);
         artworkSphere.center.copy(surface.worldPosition);
         artworkSphere.radius = Math.max(surface.maxW,surface.maxH)*.72;
 
         // Exact-frustum visibility prevents any image draw calls behind the visitor.
         // Front-face and near-field tests reject work hidden on the far side of walls.
+        // A single-eye frustum is too narrow and can be stale during a Quest
+        // pose update. In XR, use the combined head direction plus distance;
+        // desktop retains its exact camera-frustum culling.
         const shouldDraw = nearbyStory && nearbySector &&
-          distance < 48 && alignment > .1 && facing > .03 &&
-          artworkFrustum.intersectsSphere(artworkSphere);
+          distance < (xrPresenting?58:48) &&
+          alignment > (xrPresenting?-.12:.1) &&
+          facing > (xrPresenting?-.1:.03) &&
+          (xrPresenting||artworkFrustum.intersectsSphere(artworkSphere));
         const shouldStream = shouldDraw || (
           nearbyStory && nearbySector &&
-          distance < 56 && alignment > .4 && facing > -.08
+          distance < (xrPresenting?68:56) &&
+          alignment > (xrPresenting?-.2:.4) &&
+          facing > (xrPresenting?-.18:-.08)
         );
         if (surface.group?.visible) surface.group.visible=false;
         if (surface.titleLabel?.visible) surface.titleLabel.visible=false;
@@ -5398,12 +5483,12 @@
       }
       drawCandidates.sort((a,b)=>a.score-b.score);
       preloadCandidates.sort((a,b)=>a.score-b.score);
-      const drawLimit=renderer.xr.isPresenting?20:(movingRecently?24:36);
+      const drawLimit=xrPresenting?36:(movingRecently?24:36);
       const selected=drawCandidates.slice(0,drawLimit);
       const preload=preloadCandidates.slice(
-        0,renderer.xr.isPresenting?2:(movingRecently?4:7)
+        0,xrPresenting?8:(movingRecently?4:7)
       );
-      const fullResolutionLimit=renderer.xr.isPresenting?1:2;
+      const fullResolutionLimit=xrPresenting?3:2;
       const fullResolutionSurfaces=new Set(
         selected
           .filter(candidate=>
@@ -5499,7 +5584,7 @@
         const previewResident=artworkSurfaces.filter(surface=>
           surface.loaded && surface.textureTier==="preview"
         );
-        const previewResidentLimit=renderer.xr.isPresenting?36:68;
+        const previewResidentLimit=xrPresenting?72:68;
         if (previewResident.length>previewResidentLimit) {
           previewResident
             .filter(surface=>time-surface.lastWantedAt>4500)
@@ -5520,10 +5605,15 @@
             (count,surface)=>count+Number(surface.textureTier==="full"),0
           )
         );
+        renderer.domElement.dataset.failedArtworkTextures=String(
+          artworkSurfaces.reduce(
+            (count,surface)=>count+Number(surface.failed),0
+          )
+        );
         renderer.domElement.dataset.textureCacheEntries=
           String(texturePromiseCache.size);
         trimPreviewTexturePool();
-        trimArtworkFrameAssetCache(renderer.xr.isPresenting?80:152);
+        trimArtworkFrameAssetCache(xrPresenting?112:152);
         renderer.domElement.dataset.previewTexturePool=
           String(previewTexturePool.size);
         renderer.domElement.dataset.frameAssetCache=
