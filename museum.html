@@ -5,19 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0000ff">
   <meta name="description" content="An immersive, spatial museum for art and photography.">
-  <meta property="og:title" content="strauh.al / musuem">
+  <meta property="og:title" content="strauh.al / museum">
   <meta property="og:description" content="Enter a blue museum without end.">
   <meta property="og:image" content="https://strauh.al/banner.gif">
-  <title>strauh.al / musuem</title>
+  <title>strauh.al / museum</title>
   <link rel="icon" href="./favicon.ico">
   <style>
     :root { color-scheme: dark; --blue: #00f; --white: #fff; }
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #fff; }
     body { font-family: "Times New Roman", Times, serif; color: var(--white); }
-    canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
-    body.looking canvas { cursor: grabbing; }
-    button, a { color: inherit; font: inherit; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: none; }
+    body.looking canvas { cursor: none; }
+    body.menu-open, body.menu-open canvas { cursor: default; }
+    button, a { color: inherit; font: inherit; } a:hover { background-color: #fff;  }
     button { border-radius: 0; }
 
     #hud {
@@ -85,12 +86,15 @@
       position: absolute;
       right: 0;
       bottom: calc(100% + 8px);
-      width: 178px;
+      width: 224px;
+      max-height: min(66vh, 560px);
       display: grid;
       gap: 6px;
       padding: 7px;
       border: 1px solid #fff;
       background: #00f;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     #shortcut-menu[hidden] { display: none; }
     #shortcut-menu .action {
@@ -98,6 +102,14 @@
       min-height: 38px;
       padding: 0 10px;
       text-align: left;
+    }
+    #shortcut-menu .shortcut-heading {
+      padding: 8px 4px 2px;
+      color: #fff;
+      font: 9px Arial, sans-serif;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      opacity: .76;
     }
     .action {
       appearance: none;
@@ -114,15 +126,6 @@
     }
     .action:hover, .action:focus-visible { color: #00f; background: #fff; outline: none; }
     .action[hidden] { display: none; }
-    #help {
-      position: absolute;
-      left: max(20px, env(safe-area-inset-left));
-      bottom: max(20px, env(safe-area-inset-bottom));
-      max-width: 420px;
-      font: 10px/1.45 Arial, sans-serif;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
     #coordinates {
       position: absolute;
       left: max(20px, env(safe-area-inset-left));
@@ -177,12 +180,10 @@
     }
     @media (pointer: coarse) {
       #touch-stick { display: block; }
-      #help { display: none; }
       #actions { bottom: max(18px, env(safe-area-inset-bottom)); }
     }
     @media (max-width: 640px) {
       #location { top: 18px; right: 18px; left: auto; bottom: auto; text-align: right; }
-      #help { display: none; }
       #actions { flex-direction: column; align-items: stretch; }
     }
   </style>
@@ -200,9 +201,9 @@
     <div id="masthead"><a href="https://strauh.al">strauh.al</a><span class="museum-suffix">/museum</span></div>
     <div id="location">forecourt<br>elevation 0</div>
     <div id="coordinates" aria-label="Current museum coordinates">X +000.0 · Y +000.1 · Z +060.0<br>HDG 000° · PITCH +005°</div>
-    <div id="help">Move mouse to look · W A S D runs · shift sprints · space jumps · click locks view · escape releases</div>
     <div id="touch-stick" aria-label="Movement control"><div id="touch-knob"></div></div>
     <div id="actions">
+      <button class="action" id="fullscreen-toggle" type="button">fullscreen (F)</button>
       <div id="wing-shortcut">
         <button class="action" id="shortcut-toggle" aria-expanded="false" aria-controls="shortcut-menu">elevator (E)</button>
         <div id="shortcut-menu" hidden>
@@ -268,8 +269,68 @@
       color:0xdff5ff, transparent:true, opacity:.34,
       depthWrite:false, side:THREE.DoubleSide
     });
+    const dimensionalFoldUniforms={
+      time:{value:0}
+    };
+    function dimensionalFoldMaterial(sourceMaterial,key) {
+      const material=sourceMaterial.clone();
+      material.onBeforeCompile=shader => {
+        shader.uniforms.dimensionalFoldTime=dimensionalFoldUniforms.time;
+        shader.vertexShader=`
+          attribute float foldStrength;
+          attribute float foldPhase;
+          attribute float foldSpeed;
+          attribute float foldW;
+          attribute vec3 foldAxis;
+          uniform float dimensionalFoldTime;
+        `+shader.vertexShader;
+        shader.vertexShader=shader.vertexShader.replace(
+          "#include <begin_vertex>",
+          `
+            vec3 transformed=vec3(position);
+            if (foldStrength>.001) {
+              vec3 axis=normalize(foldAxis);
+              float phase=
+                dimensionalFoldTime*.18*foldSpeed+foldPhase;
+              float sine=sin(phase);
+              float cosine=cos(phase);
+              float along=dot(transformed,axis);
+              vec3 across=transformed-axis*along;
+
+              // Rotate the local vertex and its paired fourth-dimensional
+              // coordinate, then perspective-project the result. Subtracting
+              // the projected local origin keeps the shard's center fixed
+              // while opposite ends exchange apparent depth.
+              float rotatedAlong=along*cosine-foldW*sine;
+              float rotatedW=along*sine+foldW*cosine;
+              float projection=2.45/(3.05-rotatedW*.78);
+              float centerAlong=-foldW*sine;
+              float centerW=foldW*cosine;
+              float centerProjection=2.45/(3.05-centerW*.78);
+              vec3 projected=
+                (across+axis*rotatedAlong)*projection-
+                axis*(centerAlong*centerProjection);
+
+              // A second, phase-offset hinge makes broad faces invert through
+              // their own volume instead of merely inflating and deflating.
+              vec3 hingeAxis=normalize(
+                abs(axis.y)>.7 ? vec3(1.,0.,1.) : vec3(-axis.z,.45,axis.x)
+              );
+              float hinge=sin(phase*.5+foldPhase*.37);
+              float hingeAlong=dot(projected,hingeAxis);
+              vec3 hinged=
+                projected+
+                hingeAxis*hingeAlong*(hinge*.46);
+              transformed=mix(transformed,hinged,foldStrength);
+            }
+          `
+        );
+      };
+      material.customProgramCacheKey=() => `dimensional-shard-${key}-v3`;
+      material.needsUpdate=true;
+      return material;
+    }
     const whiteLineMaterial = new THREE.LineBasicMaterial({ color: WHITE, linewidth: 1 });
-    const blackMaterial = new THREE.MeshLambertMaterial({ color:0x050514, side:THREE.DoubleSide });
     const exteriorGroundMaterial = new THREE.MeshBasicMaterial({
       color:0xffffff,
       side:THREE.DoubleSide
@@ -284,6 +345,7 @@
     const archiveStairColliders = [];
     const fragments = [];
     const entryFragments = [];
+    const floatingFinials = [];
     const cloudGroups = [];
     const architecturalMeshes = [];
     const collisionBoxes = [];
@@ -480,12 +542,32 @@
       edged(frustumGeometry(radius*.22,0,height*.12,4),blueMaterial,[0,height*.95,0],[0,0,0],group);
       for (let level=0;level<5;level++) {
         const y=height*(.2+level*.12);
-        const recess=edged(new THREE.BoxGeometry(radius*.34,height*.055,.16),blackMaterial,
+        const recess=edged(new THREE.BoxGeometry(radius*.34,height*.055,.16),blueMaterial,
           [0,y,radius*(.72-level*.045)],[0,0,0],group);
         recess.children[0].castShadow=false;
       }
-      edged(new THREE.BoxGeometry(radius*.38,radius*.38,radius*.38),blueMaterial,
-        [0,height*1.09,0],[0,Math.PI/4,Math.PI/4],group);
+      // The faceted cube is a detached, wind-borne finial. A deliberate gap
+      // above the pointed cap makes it read as floating rather than perched.
+      const finialY=height*1.18;
+      const finial=edged(
+        new THREE.BoxGeometry(radius*.38,radius*.38,radius*.38),
+        blueMaterial,
+        [0,finialY,0],
+        [0,Math.PI/4,Math.PI/4],
+        group
+      );
+      const finialIndex=floatingFinials.length;
+      finial.userData={
+        baseX:0,baseY:finialY,baseZ:0,
+        baseRotationX:0,
+        baseRotationY:Math.PI/4,
+        baseRotationZ:Math.PI/4,
+        phase:finialIndex*1.73+Math.abs(x*.037+z*.021),
+        spin:finialIndex*.61,
+        spinSpeed:(finialIndex%2===0?1:-1)*
+          (.34+(finialIndex%3)*.055)
+      };
+      floatingFinials.push(finial);
       parent.add(group);
       return group;
     }
@@ -634,23 +716,53 @@
         [Math.cos(theta)*radius, 5 + (i%9)*1.7, 58 + Math.sin(theta)*5],
         [theta*.3, theta, theta*.17], scene);
       fragment.scale.set(.45 + (i%4)*.36, 1.5 + (i%7)*.42, 1);
-      fragment.userData = { baseY: fragment.position.y, speed: .15 + (i%5)*.025, phase: i };
+      fragment.userData = {
+        baseX:fragment.position.x,
+        baseY:fragment.position.y,
+        baseZ:fragment.position.z,
+        speed:.15+(i%5)*.025,
+        phase:i
+      };
       fragments.push(fragment);
     }
 
     // Computational entry: an exploded, slowly shifting field of portals,
     // cantilevers and folded canopy shards. The central walking corridor stays
     // clear while the architecture performs impossible suspended overlaps.
-    function entryPiece(w,h,d,x,y,z,rotation=[0,0,0],material=blueMaterial,phase=0) {
+    let monumentalEntryFoldIndex=0;
+    function entryPiece(
+      w,h,d,x,y,z,
+      rotation=[0,0,0],
+      material=blueMaterial,
+      phase=0,
+      frontArchIndex=null
+    ) {
       const piece=edged(
         new THREE.BoxGeometry(w,h,d),material,
         [x,y,z],rotation,scene
       );
+      const foldIndex=monumentalEntryFoldIndex++;
+      const foldPair=Math.floor(foldIndex/2);
+      const dominantAxis=w>=h?0:1;
       piece.userData={
+        baseX:x,
         baseY:y,
+        baseZ:z,
+        baseRotationX:rotation[0],
         baseRotationY:rotation[1],
         baseRotationZ:rotation[2],
-        phase
+        phase,
+        frontArchIndex,
+        // Portal uprights and lintels remain a single architectural reading.
+        // Only the independent facade plates receive the impossible fold.
+        dimensionalFrontFold:frontArchIndex===null,
+        // Neighbouring monumental pieces share a temporal cycle but project
+        // through opposite sides of it, producing a paired 4D-like exchange.
+        foldPhase:foldPair*.71,
+        foldSpeed:.46+(foldPair%4)*.045,
+        foldW:foldIndex%2===0?1:-1,
+        foldAxis:foldPair%3===2?1-dominantAxis:dominantAxis,
+        foldStrength:.7+Math.min(.24,Math.max(w,h)*.008)
       };
       entryFragments.push(piece);
       return piece;
@@ -660,9 +772,21 @@
       const span=19+index*2.25;
       const height=11.8+index*.72;
       const skew=(index%2?1:-1)*(.035+index*.007);
-      entryPiece(.72,height,1.05,-span/2,height/2+1.1,z,[0,index*.018,skew],blueMaterial,index);
-      entryPiece(.72,height*.82,1.05,span/2,height*.41+2.1,z,[0,-index*.021,-skew],blueMaterial,index+.5);
-      entryPiece(span,.62,1.15,0,height+1.15,z,[0,index*.012,skew*.65],blueMaterial,index+1);
+      entryPiece(
+        .72,height,1.05,
+        -span/2,height/2+1.1,z,
+        [0,index*.018,skew],blueMaterial,index,index
+      );
+      entryPiece(
+        .72,height*.82,1.05,
+        span/2,height*.41+2.1,z,
+        [0,-index*.021,-skew],blueMaterial,index,index
+      );
+      entryPiece(
+        span,.62,1.15,
+        0,height+1.15,z,
+        [0,index*.012,skew*.65],blueMaterial,index,index
+      );
     }
     const entryPlanes=[
       [-30,8.5,56,10,15,.42,0,.28,.12],
@@ -686,7 +810,9 @@
       geometry.computeVertexNormals();
       const piece=edged(geometry,material,[0,0,0],[0,0,0],scene);
       piece.userData={
-        baseY:0,baseRotationY:0,baseRotationZ:0,phase
+        baseX:0,baseY:0,baseZ:0,
+        baseRotationX:0,baseRotationY:0,baseRotationZ:0,phase,
+        dimensionalFrontFold:false
       };
       entryFragments.push(piece);
     }
@@ -706,14 +832,23 @@
     // carry the blue faces and white wire edges for the whole perimeter.
     const perimeterShardCount=192;
     const perimeterShardGeometry=new THREE.BoxGeometry(1,1,1);
-    const perimeterShardWireMaterial=new THREE.MeshBasicMaterial({
+    const perimeterShardFillMaterial=dimensionalFoldMaterial(
+      blueMaterial,"blue"
+    );
+    const perimeterShardGlassMaterial=dimensionalFoldMaterial(
+      glassMaterial,"glass"
+    );
+    const perimeterShardWireMaterial=dimensionalFoldMaterial(
+      new THREE.MeshBasicMaterial({
       color:WHITE,
       wireframe:true,
       transparent:true,
       opacity:.94
-    });
+      }),
+      "wire"
+    );
     const perimeterShardFill=new THREE.InstancedMesh(
-      perimeterShardGeometry,blueMaterial,perimeterShardCount
+      perimeterShardGeometry,perimeterShardFillMaterial,perimeterShardCount
     );
     const perimeterShardWire=new THREE.InstancedMesh(
       perimeterShardGeometry,perimeterShardWireMaterial,perimeterShardCount
@@ -730,14 +865,49 @@
       const raw=Math.sin(value*12.9898+78.233)*43758.5453;
       return raw-Math.floor(raw);
     };
+    // The occupied archive extends to roughly 57 units from the atrium
+    // center. Shards are sized and rotated after their center is chosen, so a
+    // center-only test lets their long corners cut through gallery walls.
+    // Push every exterior shard beyond the archive by its own conservative
+    // horizontal reach, with enough spare room for the shared wind drift.
+    const galleryShardExclusion={
+      x:0,
+      z:-10,
+      radius:58,
+      windMargin:4.5
+    };
+    function keepShardOutsideGallery(state) {
+      const dx=state.x-galleryShardExclusion.x;
+      const dz=state.z-galleryShardExclusion.z;
+      const distance=Math.hypot(dx,dz);
+      const projectedReach=Math.min(
+        20,
+        Math.hypot(
+          state.scale.x*.5,
+          state.scale.y*.5,
+          state.scale.z*.5
+        )*.58
+      );
+      const minimumDistance=
+        galleryShardExclusion.radius+
+        projectedReach+
+        galleryShardExclusion.windMargin;
+      if (distance>=minimumDistance) return state;
+      const fallbackAngle=state.phase||0;
+      const unitX=distance>.001?dx/distance:Math.cos(fallbackAngle);
+      const unitZ=distance>.001?dz/distance:Math.sin(fallbackAngle);
+      state.x=galleryShardExclusion.x+unitX*minimumDistance;
+      state.z=galleryShardExclusion.z+unitZ*minimumDistance;
+      return state;
+    }
     for (let index=0;index<perimeterShardCount;index++) {
       const angle=
         index/perimeterShardCount*Math.PI*2+
         (shardNoise(index+1)-.5)*.16;
-      const radiusX=89+shardNoise(index+11)*25;
-      const radiusZ=102+shardNoise(index+23)*27;
+      const radiusX=70+shardNoise(index+11)*22;
+      const radiusZ=80+shardNoise(index+23)*23;
       let x=Math.cos(angle)*radiusX;
-      const z=-41+Math.sin(angle)*radiusZ;
+      const z=-34+Math.sin(angle)*radiusZ;
       // Preserve a generous white arrival corridor while keeping dense fields
       // to both sides of the front facade.
       if (z>43 && Math.abs(x)<23) {
@@ -760,12 +930,13 @@
         angle+(shardNoise(index+97)-.5)*1.2,
         (shardNoise(index+109)-.5)*1.55
       );
-      perimeterShardStates.push({
+      const state=keepShardOutsideGallery({
         x,y,z,scale,rotation,
         phase:shardNoise(index+127)*Math.PI*2,
         speed:.17+shardNoise(index+139)*.28
       });
-      perimeterShardDummy.position.set(x,y,z);
+      perimeterShardStates.push(state);
+      perimeterShardDummy.position.set(state.x,state.y,state.z);
       perimeterShardDummy.rotation.copy(rotation);
       perimeterShardDummy.scale.copy(scale);
       perimeterShardDummy.updateMatrix();
@@ -775,8 +946,308 @@
     perimeterShardFill.instanceMatrix.needsUpdate=true;
     perimeterShardWire.instanceMatrix.needsUpdate=true;
 
-    // Gaudí-inspired vertical massing translated entirely into straight, faceted geometry.
-    const sagradaFacade = new THREE.Group();
+    // A second instanced field hugs the Guggenheim mass itself. These are
+    // deliberately monumental, close-range plates—not distant confetti—and
+    // remain split to the two flanks so the arrival axis stays unobstructed.
+    const nearShardCount=56;
+    const nearShardGeometry=perimeterShardGeometry.clone();
+    const nearShardFill=new THREE.InstancedMesh(
+      nearShardGeometry,perimeterShardFillMaterial,nearShardCount
+    );
+    const nearShardWire=new THREE.InstancedMesh(
+      nearShardGeometry,perimeterShardWireMaterial,nearShardCount
+    );
+    nearShardFill.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    nearShardWire.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    nearShardFill.frustumCulled=false;
+    nearShardWire.frustumCulled=false;
+    nearShardWire.renderOrder=4;
+    scene.add(nearShardFill,nearShardWire);
+    const nearShardStates=[];
+    for (let index=0;index<nearShardCount;index++) {
+      const side=index<nearShardCount/2?-1:1;
+      const lane=index%(nearShardCount/2);
+      const laneProgress=lane/(nearShardCount/2-1);
+      const x=side*(48+shardNoise(index+211)*17);
+      const z=-52+laneProgress*111+(shardNoise(index+223)-.5)*9;
+      const y=7+shardNoise(index+239)*39;
+      const scale=new THREE.Vector3(
+        4.8+shardNoise(index+251)*10.8,
+        10+shardNoise(index+263)*23,
+        .65+shardNoise(index+277)*2.45
+      );
+      if (index%3===0) {
+        scale.x*=1.48;
+        scale.y*=.62;
+        scale.z*=1.22;
+      }
+      const rotation=new THREE.Euler(
+        (shardNoise(index+281)-.5)*1.05,
+        side*Math.PI*.5+(shardNoise(index+293)-.5)*1.35,
+        (shardNoise(index+307)-.5)*1.25
+      );
+      const state=keepShardOutsideGallery({
+        x,y,z,scale,rotation,
+        phase:shardNoise(index+311)*Math.PI*2,
+        speed:.1+shardNoise(index+331)*.13
+      });
+      nearShardStates.push(state);
+      perimeterShardDummy.position.set(state.x,state.y,state.z);
+      perimeterShardDummy.rotation.copy(rotation);
+      perimeterShardDummy.scale.copy(scale);
+      perimeterShardDummy.updateMatrix();
+      nearShardFill.setMatrixAt(index,perimeterShardDummy.matrix);
+      nearShardWire.setMatrixAt(index,perimeterShardDummy.matrix);
+    }
+    nearShardFill.instanceMatrix.needsUpdate=true;
+    nearShardWire.instanceMatrix.needsUpdate=true;
+
+    // The rear elevation stays deliberately open so the distant crystal
+    // architecture remains the dominant silhouette. Smaller wreckage fields
+    // gather at the flanks, where they frame rather than obscure that view.
+    const ambientShardFamilies=[];
+    function addInstancedShardFamily(geometry,material,states) {
+      const familyGeometry=geometry.clone();
+      const foldMaterial=
+        material===glassMaterial
+          ?perimeterShardGlassMaterial
+          :perimeterShardFillMaterial;
+      const fill=new THREE.InstancedMesh(
+        familyGeometry,foldMaterial,states.length
+      );
+      const wire=new THREE.InstancedMesh(
+        familyGeometry,perimeterShardWireMaterial,states.length
+      );
+      fill.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      wire.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      fill.frustumCulled=false;
+      wire.frustumCulled=false;
+      wire.renderOrder=5;
+      states.forEach((state,index) => {
+        perimeterShardDummy.position.set(state.x,state.y,state.z);
+        perimeterShardDummy.rotation.copy(state.rotation);
+        perimeterShardDummy.scale.copy(state.scale);
+        perimeterShardDummy.updateMatrix();
+        fill.setMatrixAt(index,perimeterShardDummy.matrix);
+        wire.setMatrixAt(index,perimeterShardDummy.matrix);
+      });
+      fill.instanceMatrix.needsUpdate=true;
+      wire.instanceMatrix.needsUpdate=true;
+      scene.add(fill,wire);
+      const family={fill,wire,states,geometry:familyGeometry};
+      ambientShardFamilies.push(family);
+      return family;
+    }
+
+    const rearGiantShardStates=[];
+    for (let index=0;index<6;index++) {
+      const side=index<3?-1:1;
+      const lane=index%3;
+      const x=side*(73+lane*5+shardNoise(index+401)*4);
+      const z=-45-lane*10-shardNoise(index+419)*5;
+      const y=12+shardNoise(index+433)*31+lane*2;
+      const scale=new THREE.Vector3(
+        4+shardNoise(index+449)*8,
+        9+shardNoise(index+463)*17,
+        .7+shardNoise(index+479)*2.2
+      );
+      if (index%3===0) {
+        scale.x*=1.42;
+        scale.y*=.7;
+      }
+      rearGiantShardStates.push(keepShardOutsideGallery({
+        x,y,z,scale,
+        rotation:new THREE.Euler(
+          (shardNoise(index+487)-.5)*1.25,
+          (shardNoise(index+503)-.5)*Math.PI,
+          (shardNoise(index+521)-.5)*1.5
+        ),
+        phase:shardNoise(index+541)*Math.PI*2,
+        speed:.08+shardNoise(index+557)*.16,
+        drift:1.05
+      }));
+    }
+    addInstancedShardFamily(
+      perimeterShardGeometry,blueMaterial,rearGiantShardStates
+    );
+
+    const glassClusterCenters=[
+      [-62,28],[62,25],[-66,-12],[65,-18]
+    ];
+    const brokenGlassStates=[];
+    for (let index=0;index<36;index++) {
+      const center=glassClusterCenters[index%glassClusterCenters.length];
+      const ring=Math.floor(index/glassClusterCenters.length);
+      const angle=
+        shardNoise(index+571)*Math.PI*2+ring*.63;
+      const radius=4+shardNoise(index+587)*(11+ring*2.4);
+      brokenGlassStates.push(keepShardOutsideGallery({
+        x:center[0]+Math.cos(angle)*radius,
+        y:9+shardNoise(index+601)*43+ring*1.5,
+        z:center[1]+Math.sin(angle)*radius,
+        scale:new THREE.Vector3(
+          2+shardNoise(index+613)*6.5,
+          .22+shardNoise(index+631)*.75,
+          3+shardNoise(index+647)*10
+        ),
+        rotation:new THREE.Euler(
+          (shardNoise(index+659)-.5)*Math.PI,
+          (shardNoise(index+673)-.5)*Math.PI,
+          (shardNoise(index+691)-.5)*Math.PI
+        ),
+        phase:shardNoise(index+709)*Math.PI*2,
+        speed:.11+shardNoise(index+727)*.18,
+        drift:.82
+      }));
+    }
+    addInstancedShardFamily(
+      new THREE.BoxGeometry(1,1,1),
+      glassMaterial,
+      brokenGlassStates
+    );
+
+    const diamondShardStates=[];
+    for (let index=0;index<18;index++) {
+      const center=glassClusterCenters[(index*2+1)%glassClusterCenters.length];
+      const angle=shardNoise(index+743)*Math.PI*2;
+      const radius=8+shardNoise(index+761)*19;
+      diamondShardStates.push(keepShardOutsideGallery({
+        x:center[0]+Math.cos(angle)*radius,
+        y:12+shardNoise(index+773)*39,
+        z:center[1]+Math.sin(angle)*radius,
+        scale:new THREE.Vector3(
+          1.4+shardNoise(index+787)*4.2,
+          3.2+shardNoise(index+809)*8.5,
+          1.1+shardNoise(index+821)*3.1
+        ),
+        rotation:new THREE.Euler(
+          (shardNoise(index+839)-.5)*1.6,
+          (shardNoise(index+853)-.5)*Math.PI,
+          (shardNoise(index+877)-.5)*1.8
+        ),
+        phase:shardNoise(index+887)*Math.PI*2,
+        speed:.09+shardNoise(index+907)*.15,
+        drift:.96
+      }));
+    }
+    addInstancedShardFamily(
+      new THREE.OctahedronGeometry(1,0),
+      blueMaterial,
+      diamondShardStates
+    );
+
+    // Transfer the reference's four-dimensional depth exchange into the
+    // vertices of the existing suspended shard field. Nothing new is drawn:
+    // paired pieces share a phase, but their centers stay anchored while
+    // opposite ends project through and exchange depth. Most perimeter pieces
+    // and every monumental near/rear shard participate, so the effect reads
+    // across the whole building instead of as an occasional accent.
+    const dimensionalFoldCandidates=[
+      ...perimeterShardStates.filter((state,index) => index%4!==0),
+      ...nearShardStates,
+      ...rearGiantShardStates,
+      ...brokenGlassStates.filter((state,index) => index%4!==0),
+      ...diamondShardStates
+    ];
+    const dimensionalFoldGroups=Array.from({length:8},() => []);
+    dimensionalFoldCandidates.forEach(state => {
+      const angle=Math.atan2(state.z+32,state.x);
+      const normalizedAngle=(angle+Math.PI)/(Math.PI*2);
+      const group=Math.min(
+        dimensionalFoldGroups.length-1,
+        Math.floor(normalizedAngle*dimensionalFoldGroups.length)
+      );
+      dimensionalFoldGroups[group].push(state);
+    });
+    const dimensionalFoldAxes=[
+      [1,0,0],
+      [0,1,0],
+      [0,0,1],
+      [.707,.707,0],
+      [-.707,.707,0],
+      [0,.707,.707],
+      [.707,0,.707],
+      [.577,.577,.577]
+    ];
+    dimensionalFoldGroups.forEach((states,group) => {
+      if (!states.length) return;
+      const sharedPhase=group*.86+shardNoise(group+941)*.44;
+      const sharedSpeed=.9+shardNoise(group+953)*.16;
+      states.forEach((state,index) => {
+        const monumentality=Math.max(
+          state.scale.x,state.scale.y,state.scale.z
+        );
+        const pairedPhase=
+          sharedPhase+Math.floor(index/2)*.13+
+          shardNoise(group*73+Math.floor(index/2)+991)*.08;
+        state.dimensionalFold={
+          w:(index%2===0?1:-1)*
+            (.74+shardNoise(group*47+index+967)*.46),
+          phase:pairedPhase,
+          speed:monumentality>14
+            ?sharedSpeed*.72
+            :sharedSpeed,
+          strength:monumentality>20
+            ?.72
+            :monumentality>10
+              ?.79
+              :.84,
+          axis:dimensionalFoldAxes[group]
+        };
+      });
+    });
+
+    function installDimensionalFoldAttributes(geometry,states) {
+      const strength=new Float32Array(states.length);
+      const phase=new Float32Array(states.length);
+      const speed=new Float32Array(states.length);
+      const w=new Float32Array(states.length);
+      const axis=new Float32Array(states.length*3);
+      states.forEach((state,index) => {
+        const fold=state.dimensionalFold;
+        strength[index]=fold?.strength||0;
+        phase[index]=fold?.phase||0;
+        speed[index]=fold?.speed||1;
+        w[index]=fold?.w||1;
+        const vector=fold?.axis||[1,0,0];
+        axis[index*3]=vector[0];
+        axis[index*3+1]=vector[1];
+        axis[index*3+2]=vector[2];
+      });
+      geometry.setAttribute(
+        "foldStrength",
+        new THREE.InstancedBufferAttribute(strength,1)
+      );
+      geometry.setAttribute(
+        "foldPhase",
+        new THREE.InstancedBufferAttribute(phase,1)
+      );
+      geometry.setAttribute(
+        "foldSpeed",
+        new THREE.InstancedBufferAttribute(speed,1)
+      );
+      geometry.setAttribute(
+        "foldW",
+        new THREE.InstancedBufferAttribute(w,1)
+      );
+      geometry.setAttribute(
+        "foldAxis",
+        new THREE.InstancedBufferAttribute(axis,3)
+      );
+    }
+    installDimensionalFoldAttributes(
+      perimeterShardGeometry,perimeterShardStates
+    );
+    installDimensionalFoldAttributes(
+      nearShardGeometry,nearShardStates
+    );
+    ambientShardFamilies.forEach(family => {
+      installDimensionalFoldAttributes(family.geometry,family.states);
+    });
+
+    // Gaudí-inspired vertical massing returns to the front, framing the
+    // fragmented entrance while leaving the Guggenheim spiral legible behind.
+    const sagradaFacade=new THREE.Group();
     scene.add(sagradaFacade);
     cathedralTower(-34,45,42,6.4,-.012,sagradaFacade);
     cathedralTower(-17,43,51,6.7,.008,sagradaFacade);
@@ -788,14 +1259,13 @@
     pointedFrame(0,49.4,25,27,0,.72,1.8);
     pointedFrame(-28,49.7,12,15,0,.7,1.4);
     pointedFrame(28,49.7,12,15,0,.7,1.4);
-    // The central window is a diamond lattice—no circles, arcs, or curved ribs.
+    // The central window is a diamond lattice—no circles or curved ribs.
     beamBetween(0,33,8,25,48.8,.52,.55);
     beamBetween(8,25,0,17,48.8,.52,.55);
     beamBetween(0,17,-8,25,48.8,.52,.55);
     beamBetween(-8,25,0,33,48.8,.52,.55);
     beamBetween(-5.5,19.5,5.5,30.5,48.75,.22,.62);
     beamBetween(5.5,19.5,-5.5,30.5,48.75,.22,.62);
-    // Repeated narrow piers and pointed gables replace the former blank facade planes.
     for (const x of [-60,-48,-40,-12,12,40,48,60]) {
       const h=9+(Math.abs(x)%5);
       box(3.2,h,3,x,h/2,49);
@@ -1111,6 +1581,39 @@
     const spiralRevolutions=Math.ceil(
       targetArtworkCapacity/guaranteedMountsPerRevolution
     );
+    // Collections own complete floors instead of sharing angular slices.
+    // This makes the circulation legible and prevents photography mounts,
+    // signage, and streaming requests from bleeding into fine-art galleries.
+    const photographyFloorCount=Math.max(
+      1,Math.round(
+        spiralRevolutions*archiveInventoryTotals.photo/archiveInventoryTotal
+      )
+    );
+    const afterFloorCount=Math.max(
+      1,Math.round(
+        spiralRevolutions*archiveInventoryTotals.after/archiveInventoryTotal
+      )
+    );
+    const artFloorCount=Math.max(
+      1,spiralRevolutions-photographyFloorCount-afterFloorCount
+    );
+    const collectionFloorBands=Object.freeze({
+      art:Object.freeze({start:0,end:artFloorCount-1}),
+      after:Object.freeze({
+        start:artFloorCount,
+        end:artFloorCount+afterFloorCount-1
+      }),
+      photo:Object.freeze({
+        start:artFloorCount+afterFloorCount,
+        end:spiralRevolutions-1
+      })
+    });
+    document.body.dataset.collectionFloorBands=[
+      `art-before-2000:${collectionFloorBands.art.start+1}-${collectionFloorBands.art.end+1}`,
+      `art-after-2000:${collectionFloorBands.after.start+1}-${collectionFloorBands.after.end+1}`,
+      `photography:${collectionFloorBands.photo.start+1}-${collectionFloorBands.photo.end+1}`
+    ].join("|");
+    document.body.dataset.collectionIsolation="source-tagged-floor-exclusive";
     const startAngle=Math.PI/2-Math.PI/spiralSides;
     const totalSpiralSegments=spiralSides*spiralRevolutions;
     function polygonPoint(radius,angle,y=0) {
@@ -1141,15 +1644,13 @@
       };
     }
     function collectionAt(point,side,level=0) {
-      // Allocation is weighted by certified wall slots, not by equal angles.
-      // Over eleven revolutions this yields 1,164 photography slots, 2,328
-      // post-2000 slots, and 4,032 pre-2000/unclassified slots: 15.47%,
-      // 30.94%, and 53.59%, closely matching the measured archive.
-      const compactPhoto=level===3 || level===7 || level===10;
-      const wideAfter=level===0 || level===2 || level===4 ||
-        level===6 || level===8;
-      if (side===3 || (!compactPhoto && side===2)) return "photo";
-      if ((side>=5 && side<=7) || (wideAfter && side===4)) return "after";
+      // Floor counts remain proportional to the measured archive, but each
+      // floor is now collection-exclusive.
+      const floor=THREE.MathUtils.clamp(
+        Math.floor(level),0,spiralRevolutions-1
+      );
+      if (floor>=collectionFloorBands.photo.start) return "photo";
+      if (floor>=collectionFloorBands.after.start) return "after";
       return "art";
     }
     function queueWallJoint(point,height=wallHeight) {
@@ -1306,11 +1807,43 @@
     const entryOuter={x:6,y:.02,z:51};
     const rampFrontLeft=polygonPoint(outerRadius,startAngle,.38);
     const rampFrontRight=polygonPoint(outerRadius,startAngle+Math.PI*2/spiralSides,.38);
-    const archiveLandingNames=new Map([
-      [3,"PHOTOGRAPHY"],
-      [6,"ART AFTER 2000"],
-      [9,"ART BEFORE 2000"]
-    ]);
+    // Each destination opens onto the first floor owned by that collection.
+    // Keying the landing by both side and level prevents a photography sign or
+    // shortcut from terminating on an art floor.
+    const archiveLandingTargets=[
+      {
+        side:9,
+        level:collectionFloorBands.art.start,
+        name:"ART BEFORE 2000",
+        primary:true
+      },
+      ...Array.from(
+        {
+          length:
+            collectionFloorBands.after.end-
+            collectionFloorBands.after.start+1
+        },
+        (_,offset)=>({
+          side:6,
+          level:collectionFloorBands.after.start+offset,
+          name:"ART AFTER 2000",
+          primary:offset===0
+        })
+      ),
+      ...Array.from(
+        {
+          length:
+            collectionFloorBands.photo.end-
+            collectionFloorBands.photo.start+1
+        },
+        (_,offset)=>({
+          side:3,
+          level:collectionFloorBands.photo.start+offset,
+          name:"PHOTOGRAPHY",
+          primary:offset===0
+        })
+      )
+    ];
     document.body.dataset.archiveSeparation="strict";
     const archiveLandings=[];
     quadSurface([
@@ -1330,17 +1863,22 @@
       const outer1=polygonPoint(outerRadius,angle1,y1);
       queueWallJoint(outer0);
       quadSurface([inner0,outer0,outer1,inner1],blueMaterial,true);
-      const isArchiveLanding=level===0 && archiveLandingNames.has(side);
-      if (isArchiveLanding) {
+      const archiveLandingTarget=archiveLandingTargets.find(
+        target=>target.side===side && target.level===level
+      );
+      if (archiveLandingTarget) {
         const railLeft=segmentPoint(inner0,inner1,.2);
         const railRight=segmentPoint(inner0,inner1,.8);
         addGeneratedRail(inner0,railLeft);
         addGeneratedRail(railRight,inner1);
-        archiveLandings.push({
-          point:segmentPoint(inner0,inner1,.5),
-          name:archiveLandingNames.get(side),
-          side
-        });
+        if (archiveLandingTarget.primary) {
+          archiveLandings.push({
+            point:segmentPoint(inner0,inner1,.5),
+            name:archiveLandingTarget.name,
+            side,
+            level
+          });
+        }
       } else if (index===0) {
         addTaperedEntryRail(inner0,inner1);
       } else {
@@ -1431,117 +1969,320 @@
     );
     scene.add(museumFrontMark);
 
-    function buildArchiveStair(landing,index) {
-      const radial={
-        x:landing.point.x-spiralCenter.x,
-        z:landing.point.z-spiralCenter.z
+    // A twelve-sided departure court anchors a paired helical stair. Art
+    // Before 2000 already begins on the lower gallery floors, so the two
+    // upward routes are reserved for the upper archives: Art After 2000 and
+    // Photography.
+    const archiveDepartureRadius=12.15;
+    const archiveDepartureCourt=edged(
+      new THREE.CylinderGeometry(
+        archiveDepartureRadius,archiveDepartureRadius,.08,12
+      ),
+      BLUE,
+      [spiralCenter.x,.06,spiralCenter.z],
+      [0,startAngle+.5*Math.PI*2/spiralSides,0]
+    );
+    navSurfaces.push(archiveDepartureCourt.children[0]);
+
+    const archiveHelixRadius=14.1;
+    const archiveHelixWidth=4.25;
+    const upperArchiveLandings=archiveLandings
+      .filter(landing=>
+        landing.name==="ART AFTER 2000" ||
+        landing.name==="PHOTOGRAPHY"
+      )
+      .sort((a,b)=>a.point.y-b.point.y);
+
+    function positiveAngle(angle) {
+      const turn=Math.PI*2;
+      return ((angle%turn)+turn)%turn;
+    }
+
+    function archiveRouteEdgePoint(route,routeIndex,side,width) {
+      const point=route[routeIndex];
+      const previous=route[Math.max(0,routeIndex-1)];
+      const next=route[Math.min(route.length-1,routeIndex+1)];
+      const dx=next.x-previous.x;
+      const dz=next.z-previous.z;
+      const length=Math.hypot(dx,dz)||1;
+      return {
+        x:point.x-dz/length*side*width*.5,
+        y:point.y,
+        z:point.z+dx/length*side*width*.5
       };
-      const radialLength=Math.hypot(radial.x,radial.z);
-      radial.x/=radialLength;
-      radial.z/=radialLength;
-      const perpendicular={x:-radial.z,z:radial.x};
-      const bendDirection=index%2===0?1:-1;
-      const start={
-        x:spiralCenter.x+radial.x*7.2,
-        y:.08,
-        z:spiralCenter.z+radial.z*7.2
-      };
-      const end={
-        // Continue beyond the guardrail opening and overlap the spiral floor.
-        // This removes the former unsupported gap and the collision lip at the
-        // top of each stair.
-        x:landing.point.x+radial.x*.9,
-        y:landing.point.y+.05,
-        z:landing.point.z+radial.z*.9
-      };
-      const width=4.4;
-      const stairPoint=(radius,sideOffset,heightProgress) => ({
-        x:spiralCenter.x+radial.x*radius+
-          perpendicular.x*sideOffset*bendDirection,
-        y:THREE.MathUtils.lerp(start.y,end.y,heightProgress),
-        z:spiralCenter.z+radial.z*radius+
-          perpendicular.z*sideOffset*bendDirection
-      });
-      const path=[
-        start,
-        stairPoint(14.2,4.4,.3),
-        stairPoint(21.5,-3.8,.67),
-        end
-      ];
-      for (let segmentIndex=0;segmentIndex<path.length-1;segmentIndex++) {
-        const a=path[segmentIndex];
-        const b=path[segmentIndex+1];
-        const dx=b.x-a.x;
-        const dz=b.z-a.z;
-        const run=Math.hypot(dx,dz);
-        const sideNormal={x:-dz/run,z:dx/run};
-        const leftStart={
-          x:a.x+sideNormal.x*width/2,y:a.y,z:a.z+sideNormal.z*width/2
-        };
-        const rightStart={
-          x:a.x-sideNormal.x*width/2,y:a.y,z:a.z-sideNormal.z*width/2
-        };
-        const leftEnd={
-          x:b.x+sideNormal.x*width/2,y:b.y,z:b.z+sideNormal.z*width/2
-        };
-        const rightEnd={
-          x:b.x-sideNormal.x*width/2,y:b.y,z:b.z-sideNormal.z*width/2
-        };
-        // This analytic corridor is the authoritative stair floor. It spans
-        // the full flight and overlaps the bend capsules, so locomotion never
-        // depends on hitting a triangle edge at the current frame rate.
-        archiveStairColliders.push({
-          a:{x:a.x,y:a.y,z:a.z},
-          b:{x:b.x,y:b.y,z:b.z},
-          width:width+.7,
-          stair:index
-        });
-        quadSurface(
-          [leftStart,rightStart,rightEnd,leftEnd],
-          navOnlyMaterial,true,false
-        );
-        const steps=Math.max(7,Math.ceil(run/.76));
-        const angle=Math.atan2(dx,dz);
-        for (let stepIndex=0;stepIndex<steps;stepIndex++) {
-          const progress=(stepIndex+.5)/steps;
-          const step=box(
-            width,.14,run/steps*1.1,
-            THREE.MathUtils.lerp(a.x,b.x,progress),
-            THREE.MathUtils.lerp(a.y,b.y,progress)-.045,
-            THREE.MathUtils.lerp(a.z,b.z,progress),
-            scene,blueMaterial,false
-          );
-          step.rotation.y=angle;
-          step.userData={
-            baseX:step.position.x,
-            baseY:step.position.y,
-            baseZ:step.position.z,
-            phase:index*2.7+segmentIndex*1.3+stepIndex*.22,
-            direction:bendDirection
-          };
-          animatedSteps.push(step);
-        }
-        if (segmentIndex<path.length-2) {
-          box(
-            width,.12,width,b.x,b.y-.045,b.z,
-            scene,navOnlyMaterial,true,false
+    }
+
+    function registerInvisibleArchiveGuards(
+      route,width,startClearance=0,endClearance=0
+    ) {
+      // The guardrails remain as sparse collision segments, but render no
+      // geometry. This preserves the open Penrose silhouette while keeping a
+      // sprinting visitor safely inside both helix ribbons and every bridge.
+      const firstIndex=Math.min(route.length-1,startClearance);
+      const lastIndex=Math.max(
+        firstIndex,route.length-1-endClearance
+      );
+      for (
+        let routeIndex=firstIndex;
+        routeIndex<lastIndex;
+        routeIndex+=3
+      ) {
+        const endIndex=Math.min(lastIndex,routeIndex+3);
+        for (const side of [-1,1]) {
+          const a=archiveRouteEdgePoint(route,routeIndex,side,width);
+          const b=archiveRouteEdgePoint(route,endIndex,side,width);
+          registerCollisionSegment(
+            {x:a.x,z:a.z},
+            {x:b.x,z:b.z},
+            Math.min(a.y,b.y)-.15,
+            Math.max(a.y,b.y)+1.28,
+            .25
           );
         }
       }
-      const sign=plaque(landing.name,landing.name.length>16?12:9,1.08);
-      sign.position.set(
-        start.x-radial.x*.7,
-        2.35+index*.08,
-        start.z-radial.z*.7
+    }
+
+    function buildArchiveHelix(landing,index) {
+      // The two starts are half a turn apart. Their common radius and winding
+      // direction produce the legible double-helix silhouette while keeping
+      // the walkable ribbons fully separate.
+      const startAngleForRoute=startAngle+Math.PI*.5+index*Math.PI;
+      const landingAngle=Math.atan2(
+        landing.point.z-spiralCenter.z,
+        landing.point.x-spiralCenter.x
       );
-      sign.rotation.y=Math.atan2(-radial.x,-radial.z);
+      const collectionKey=
+        landing.name==="PHOTOGRAPHY"?"photo":"after";
+      const routeBand=collectionFloorBands[collectionKey];
+      const localLandingY=
+        landing.point.y-landing.level*storyHeight;
+      const routeEndY=
+        routeBand.end*storyHeight+localLandingY+.05;
+      // Keep the climb below a comfortable 0.48 rise/run. With the archive's
+      // current data-driven floor allocation, each ribbon continues through
+      // the top floor owned by its archive rather than stopping at its first.
+      const completeTurns=Math.max(
+        index===0?3:4,
+        Math.ceil(
+          (routeEndY-.1)/
+          (Math.PI*2*archiveHelixRadius*.48)
+        )
+      );
+      const angularTravel=
+        completeTurns*Math.PI*2+
+        positiveAngle(landingAngle-startAngleForRoute);
+      const helixSamples=Math.max(
+        116,
+        Math.ceil(angularTravel/(Math.PI*2)*52)
+      );
+      const path=[];
+
+      // Begin on the helix tangent itself. The widened departure court meets
+      // the inner edge of this first tread, so there is no straight radial
+      // throat, abrupt kink, or first-step lip at floor level.
+      path.push({
+        x:spiralCenter.x+Math.cos(startAngleForRoute)*archiveHelixRadius,
+        y:.1,
+        z:spiralCenter.z+Math.sin(startAngleForRoute)*archiveHelixRadius
+      });
+
+      // The climb itself is sampled densely enough that its analytic collision
+      // ribbon has no holes, even while sprinting at a low frame rate.
+      for (let sample=1;sample<=helixSamples;sample++) {
+        const progress=sample/helixSamples;
+        const angle=startAngleForRoute+angularTravel*progress;
+        path.push({
+          x:spiralCenter.x+Math.cos(angle)*archiveHelixRadius,
+          y:THREE.MathUtils.lerp(.1,routeEndY,progress),
+          z:spiralCenter.z+Math.sin(angle)*archiveHelixRadius
+        });
+      }
+
+      // Every archive floor receives its own level bridge. Each bridge begins
+      // at the closest helix sample and overlaps the corresponding opening in
+      // the inner ring, so no route terminates in air or against a guardrail.
+      const landingRadius=Math.hypot(
+        landing.point.x-spiralCenter.x,
+        landing.point.z-spiralCenter.z
+      )+.95;
+      const floorConnections=[];
+      for (
+        let floor=routeBand.start;
+        floor<=routeBand.end;
+        floor++
+      ) {
+        const targetY=
+          landing.point.y+
+          (floor-landing.level)*storyHeight+.05;
+        let pathIndex=0;
+        let bestScore=Infinity;
+        path.forEach((point,candidateIndex) => {
+          const pointAngle=Math.atan2(
+            point.z-spiralCenter.z,
+            point.x-spiralCenter.x
+          );
+          const angularError=Math.abs(Math.atan2(
+            Math.sin(pointAngle-landingAngle),
+            Math.cos(pointAngle-landingAngle)
+          ));
+          const score=angularError*28+Math.abs(point.y-targetY);
+          if (score<bestScore) {
+            bestScore=score;
+            pathIndex=candidateIndex;
+          }
+        });
+        const bridgeStart=path[pathIndex];
+        const bridgeTarget={
+          x:spiralCenter.x+Math.cos(landingAngle)*landingRadius,
+          y:targetY,
+          z:spiralCenter.z+Math.sin(landingAngle)*landingRadius
+        };
+        const bridge=[{...bridgeStart}];
+        for (let bridgeIndex=1;bridgeIndex<=14;bridgeIndex++) {
+          const progress=bridgeIndex/14;
+          bridge.push({
+            x:THREE.MathUtils.lerp(
+              bridgeStart.x,bridgeTarget.x,progress
+            ),
+            y:THREE.MathUtils.lerp(
+              bridgeStart.y,bridgeTarget.y,progress
+            ),
+            z:THREE.MathUtils.lerp(
+              bridgeStart.z,bridgeTarget.z,progress
+            )
+          });
+        }
+        floorConnections.push({floor,path:bridge});
+      }
+
+      const width=archiveHelixWidth;
+      const treadGeometries=[];
+      const treadEdgeGeometries=[];
+      const archiveRoutes=[
+        path,
+        ...floorConnections.map(connection=>connection.path)
+      ];
+      archiveRoutes.forEach((route,routeIndex) => {
+        // Keep the safety boundaries physically present, but leave the first
+        // helix treads and each floor-side bridge mouth clear.
+        registerInvisibleArchiveGuards(
+          route,
+          width+.15,
+          routeIndex===0?3:0,
+          routeIndex>0?3:0
+        );
+        for (
+          let segmentIndex=0;
+          segmentIndex<route.length-1;
+          segmentIndex++
+        ) {
+          const a=route[segmentIndex];
+          const b=route[segmentIndex+1];
+          const dx=b.x-a.x;
+          const dz=b.z-a.z;
+          const run=Math.hypot(dx,dz);
+          if (run<.001) continue;
+          // This analytic corridor is the authoritative stair floor. It spans
+          // the full flight and every floor bridge, so locomotion never
+          // depends on hitting a visible tread triangle at the current frame.
+          archiveStairColliders.push({
+            a:{x:a.x,y:a.y,z:a.z},
+            b:{x:b.x,y:b.y,z:b.z},
+            width:width+.7,
+            stair:index,
+            bridge:routeIndex>0
+          });
+          // The invisible ribbon remains continuous, but the visible treads
+          // retain their open, weightless Penrose rhythm.
+          const steps=Math.max(1,Math.ceil(run/1.35));
+          const angle=Math.atan2(dx,dz);
+          for (let stepIndex=0;stepIndex<steps;stepIndex++) {
+            const progress=(stepIndex+.5)/steps;
+            const treadGeometry=new THREE.BoxGeometry(
+              width,.14,Math.max(.28,run/steps*.56)
+            );
+            const treadMatrix=new THREE.Matrix4().compose(
+              new THREE.Vector3(
+                THREE.MathUtils.lerp(a.x,b.x,progress),
+                THREE.MathUtils.lerp(a.y,b.y,progress)-.045,
+                THREE.MathUtils.lerp(a.z,b.z,progress)
+              ),
+              new THREE.Quaternion().setFromEuler(
+                new THREE.Euler(0,angle,0)
+              ),
+              new THREE.Vector3(1,1,1)
+            );
+            treadGeometry.applyMatrix4(treadMatrix);
+            treadGeometries.push(treadGeometry);
+            treadEdgeGeometries.push(new THREE.EdgesGeometry(treadGeometry));
+          }
+        }
+      });
+      // Hundreds of individual tread objects would make the atrium stutter.
+      // Merge each helix into one blue mesh and one white LineSegments mesh:
+      // two draw calls per route, with the same visible 1 px edge language.
+      const stairGroup=new THREE.Group();
+      const mergedTreads=mergeGeometries(treadGeometries,false);
+      const mergedTreadEdges=mergeGeometries(treadEdgeGeometries,false);
+      if (mergedTreads) {
+        const treadMesh=new THREE.Mesh(mergedTreads,blueMaterial);
+        treadMesh.castShadow=false;
+        treadMesh.receiveShadow=true;
+        stairGroup.add(treadMesh);
+      }
+      if (mergedTreadEdges) {
+        const treadEdges=new THREE.LineSegments(
+          mergedTreadEdges,whiteLineMaterial
+        );
+        treadEdges.renderOrder=5;
+        stairGroup.add(treadEdges);
+      }
+      treadGeometries.forEach(geometry=>geometry.dispose());
+      treadEdgeGeometries.forEach(geometry=>geometry.dispose());
+      stairGroup.userData={
+        baseX:0,baseY:0,baseZ:0,
+        breathCenterX:spiralCenter.x,
+        breathCenterZ:spiralCenter.z,
+        phase:index*2.7,
+        direction:index%2===0?1:-1,
+        helix:true,
+        destination:landing.name,
+        revolutions:completeTurns,
+        floorConnections:floorConnections.map(
+          connection=>connection.floor+1
+        )
+      };
+      scene.add(stairGroup);
+      animatedSteps.push(stairGroup);
+      const sign=plaque(landing.name,landing.name.length>16?12:9,1.08);
+      const departureDirection={
+        x:path[2].x-path[0].x,
+        z:path[2].z-path[0].z
+      };
+      const departureLength=Math.hypot(
+        departureDirection.x,departureDirection.z
+      )||1;
+      departureDirection.x/=departureLength;
+      departureDirection.z/=departureLength;
+      sign.position.set(
+        path[0].x-departureDirection.x*.7,
+        2.35+index*.08,
+        path[0].z-departureDirection.z*.7
+      );
+      sign.rotation.y=Math.atan2(
+        -departureDirection.x,-departureDirection.z
+      );
       scene.add(sign);
     }
-    archiveLandings
-      .sort((a,b)=>a.side-b.side)
-      .forEach(buildArchiveStair);
-    document.body.dataset.archiveStaircases=String(archiveLandings.length);
-    document.body.dataset.penroseCount=String(archiveLandings.length);
+    upperArchiveLandings.forEach(buildArchiveHelix);
+    document.body.dataset.archiveStaircases=String(upperArchiveLandings.length);
+    document.body.dataset.archiveStairType="double-helix";
+    document.body.dataset.archiveStairRails="invisible-collision";
+    document.body.dataset.archiveLandingBridges=String(
+      archiveLandingTargets.filter(target=>target.name!=="ART BEFORE 2000").length
+    );
+    document.body.dataset.archiveTreadSpacing="open";
+    document.body.dataset.penroseCount=String(upperArchiveLandings.length);
     document.body.dataset.archiveStairColliders=String(archiveStairColliders.length);
 
     // Twelve full-height Corinthian columns define the atrium without
@@ -1555,8 +2296,8 @@
         position.x,(roofY-.5)/2,position.z,.25);
     }
 
-    // Legacy groups remain empty; the three labeled, animated archive stairs
-    // above are now the museum's functional Penrose circulation.
+    // Legacy groups remain empty; the paired labeled helix above is now the
+    // museum's functional Penrose circulation.
     const penrose=new THREE.Group();
     scene.add(penrose);
     const rearPenrose=new THREE.Group();
@@ -1709,41 +2450,33 @@
         centralSpireParts.push(normalizedSpireGeometry(geometry));
       }
     }
-    // The low plinth keeps the original outer silhouette, but it is assembled
-    // from rings and separated ribs. The negative space between them opens
-    // directly onto the roof oculus.
-    // The transition is inset inside the museum crown and uses shallow,
-    // blade-thin facets. It still grows directly out of the roof, but leaves
-    // a clean perimeter reveal instead of spilling over the crown's edge.
+    // A compact two-stage root now grows inside the Guggenheim crown. Keeping
+    // its radii close to the belfry removes the oversized skirt and makes the
+    // vertical ribs feel continuous with the museum's stepped roof.
     addSpireFacetedShell(
-      13.9,16.35,roofY-.16,roofY+1.06,
-      12,startAngle,.028
+      8.2,9.8,roofY+.05,roofY+1.18,
+      12,startAngle,.12
     );
     addSpireFacetedShell(
-      11.6,13.9,roofY+1.06,roofY+2.62,
-      12,startAngle,.034
+      6.65,8.2,roofY+1.18,roofY+2.72,
+      12,startAngle,.14
     );
-    addSpireFacetedShell(
-      9.6,11.6,roofY+2.62,roofY+4.42,
-      12,startAngle,.04
-    );
-    addSpireRing(16.35,roofY-.14,.28,.3);
-    addSpireRing(13.9,roofY+1.06,.25,.28);
-    addSpireRing(11.6,roofY+2.62,.23,.25);
-    addSpireRing(9.6,roofY+4.42,.21,.23);
+    addSpireRing(9.8,roofY+.08,.18,.2);
+    addSpireRing(8.2,roofY+1.18,.16,.18);
+    addSpireRing(6.65,roofY+2.72,.14,.16);
     for (let side=0;side<spiralSides;side++) {
       const angle=startAngle+side*Math.PI*2/spiralSides;
       const outer=[
-        spiralCenter.x+Math.cos(angle)*9.6,
-        roofY+4.42,
-        spiralCenter.z+Math.sin(angle)*9.6
-      ];
-      const inner=[
         spiralCenter.x+Math.cos(angle)*6.65,
-        roofY+11.8,
+        roofY+2.72,
         spiralCenter.z+Math.sin(angle)*6.65
       ];
-      addSpireBeam(outer,inner,.44,.5);
+      const inner=[
+        spiralCenter.x+Math.cos(angle)*6.48,
+        roofY+4.35,
+        spiralCenter.z+Math.sin(angle)*6.48
+      ];
+      addSpireBeam(outer,inner,.24,.28);
     }
     // Open belfry: paired piers and pointed lancet heads retain sacred
     // verticality, while omitting literal medieval pinnacles and ornament.
@@ -1881,7 +2614,7 @@
       spiralCenter.x,0,spiralCenter.z
     );
     scene.add(spireDaylight);
-    document.body.dataset.centralSpire="inset-sharp-fleche-v7";
+    document.body.dataset.centralSpire="integrated-sharp-fleche-v8";
 
     window.museumExpansionPlan={
       grammar:"faceted-spiral",
@@ -1889,6 +2622,8 @@
       archiveInventory,
       archiveInventoryTotals,
       archiveInventoryTotal,
+      collectionFloorBands,
+      collectionIsolation:"source-tagged-floor-exclusive",
       guaranteedMountsPerRevolution,
       sides:spiralSides,
       revolutions:spiralRevolutions,
@@ -1946,6 +2681,11 @@
     ];
 
     const texturePromiseCache = new Map();
+    // Preview bitmaps live in a bounded LRU cache independently of the meshes
+    // currently on screen. Looking away can therefore retire draw calls
+    // without throwing away the small image that will be needed on the return
+    // glance.
+    const previewTexturePool = new Map();
     const textureQueue = [];
     const textureJobsByURL = new Map();
     const visibleAnimatedTextures = new Set();
@@ -1958,7 +2698,13 @@
       `${effectiveTextureTier(url,tier)}:${url}`;
     function previewImageURL(url) {
       if (isAnimatedImageURL(url)) return url;
-      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=192&h=192&fit=inside&q=48&output=webp`;
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=160&h=160&fit=inside&q=44&output=webp`;
+    }
+    function touchPreviewTexture(texture) {
+      if (!texture || texture.userData.tier!=="preview" ||
+          texture.userData.evicted) return;
+      texture.userData.lastUsed=performance.now();
+      previewTexturePool.set(texture.userData.cacheKey,texture);
     }
     function disposeTextureResource(texture) {
       if (!texture) return;
@@ -1970,7 +2716,7 @@
       }
     }
     function pumpTextureQueue() {
-      const limit=1;
+      const limit=renderer.xr.isPresenting?1:2;
       textureQueue.sort((a,b) => b.priority-a.priority);
       while (activeTextureJobs < limit && textureQueue.length) {
         const job = textureQueue.shift();
@@ -1983,11 +2729,16 @@
     function optimizedTexture(url, priority = 0, requestedTier="preview") {
       const tier=effectiveTextureTier(url,requestedTier);
       const key=textureCacheKey(url,tier);
-      if (texturePromiseCache.has(key)) return texturePromiseCache.get(key);
+      if (texturePromiseCache.has(key)) {
+        const cached=texturePromiseCache.get(key);
+        cached.then(touchPreviewTexture).catch(()=>{});
+        return cached;
+      }
       const promise = new Promise((resolve,reject) => {
         const controller = new AbortController();
         const job = {
           url,key,tier,priority,controller,cancelled:false,running:false,
+          queuedAt:performance.now(),
           cancel() {
             if (this.cancelled) return;
             this.cancelled = true;
@@ -2029,7 +2780,7 @@
               // ImageBitmap bypasses Texture.flipY in WebGL, so orient at decode time.
               const source = await createImageBitmap(blob,{ imageOrientation:"flipY" });
               const maxTextureDimension=tier==="preview"
-                ? 192
+                ? 160
                 : Math.min(renderer.capabilities.maxTextureSize,4096);
               const scale = Math.min(1,maxTextureDimension/Math.max(source.width,source.height));
               let bitmap = source;
@@ -2048,6 +2799,8 @@
             texture.anisotropy = 1;
             texture.userData.tier=tier;
             texture.userData.cacheKey=key;
+            texture.userData.evicted=false;
+            touchPreviewTexture(texture);
             resolve(texture);
           } catch (error) {
             reject(error);
@@ -2220,7 +2973,8 @@
           ornamentGeometry.dispose();
         }
         artworkFrameAssets.set(key,{
-          key,shellGeometry,detailGeometry,refCount:0
+          key,shellGeometry,detailGeometry,refCount:0,
+          lastUsed:performance.now()
         });
       }
       return artworkFrameAssets.get(key);
@@ -2228,16 +2982,27 @@
     function retainArtworkFrameAssets(width,height,variant,style) {
       const assets=artworkFrameAssetsFor(width,height,variant,style);
       assets.refCount++;
+      assets.lastUsed=performance.now();
       return assets;
     }
     function releaseArtworkFrameAssets(key) {
       const assets=artworkFrameAssets.get(key);
       if (!assets) return;
       assets.refCount=Math.max(0,assets.refCount-1);
-      if (assets.refCount===0) {
+      assets.lastUsed=performance.now();
+    }
+    function trimArtworkFrameAssetCache(limit=144) {
+      if (artworkFrameAssets.size<=limit) return;
+      const unused=[...artworkFrameAssets.values()]
+        .filter(assets=>assets.refCount===0)
+        .sort((a,b)=>a.lastUsed-b.lastUsed);
+      const removeCount=Math.min(
+        artworkFrameAssets.size-limit,unused.length
+      );
+      for (const assets of unused.slice(0,removeCount)) {
         assets.shellGeometry.dispose();
         assets.detailGeometry.dispose();
-        artworkFrameAssets.delete(key);
+        artworkFrameAssets.delete(assets.key);
       }
     }
     function createArtworkFrame(width,height,variant,parent,style) {
@@ -2388,8 +3153,9 @@
         worldNormal:new THREE.Vector3(Math.sin(rotationY),0,Math.cos(rotationY)),
         renderWidth:maxW,renderHeight:maxH,titleLabel:null,
         loading:false,loadingTier:null,requestedTier:"none",
-        textureTier:"none",requestSerial:0,
-        loaded:false,failed:false,lastWantedAt:-Infinity,lastFullWantedAt:-Infinity
+        textureTier:"none",previewTexture:null,requestSerial:0,
+        loaded:false,failed:false,lastWantedAt:-Infinity,
+        lastFullWantedAt:-Infinity,lastDrawnAt:-Infinity
       };
       artworkSurfaces.push(surface);
       addArtworkProxy(surface);
@@ -2409,8 +3175,14 @@
       const requestSerial=++surface.requestSerial;
       optimizedTexture(surface.item[1],priority,tier).then(texture => {
         if (requestSerial!==surface.requestSerial || !surface.group) {
-          texturePromiseCache.delete(texture.userData.cacheKey);
-          disposeTextureResource(texture);
+          // A superseded preview is still useful to the next nearby wall.
+          // Full originals are too expensive to retain without an owner.
+          if (texture.userData.tier==="preview") {
+            touchPreviewTexture(texture);
+          } else {
+            texturePromiseCache.delete(texture.userData.cacheKey);
+            disposeTextureResource(texture);
+          }
           return;
         }
         const aspect = texture.image.width / texture.image.height;
@@ -2428,13 +3200,22 @@
         });
         surface.texture=texture;
         surface.textureTier=texture.userData.tier||tier;
+        if (surface.textureTier==="preview") {
+          surface.previewTexture=texture;
+          touchPreviewTexture(texture);
+        }
         surface.loading = false;
         surface.loadingTier=null;
         surface.loaded = true;
         surface.failed = false;
         if (previousTexture && previousTexture!==texture) {
-          texturePromiseCache.delete(previousTexture.userData.cacheKey);
-          disposeTextureResource(previousTexture);
+          if (previousTexture.userData.tier==="preview") {
+            surface.previewTexture=previousTexture;
+            touchPreviewTexture(previousTexture);
+          } else {
+            texturePromiseCache.delete(previousTexture.userData.cacheKey);
+            disposeTextureResource(previousTexture);
+          }
         }
         if (surface.titleLabel) {
           sizeArtworkLabel(surface,w,h);
@@ -2461,8 +3242,29 @@
       if (!surface.loaded || !surface.texture) return;
       surface.requestSerial++;
       const texture=surface.texture;
-      texturePromiseCache.delete(texture.userData.cacheKey);
-      disposeTextureResource(texture);
+      const preview=surface.previewTexture;
+      if (texture.userData.tier==="full") {
+        texturePromiseCache.delete(texture.userData.cacheKey);
+        disposeTextureResource(texture);
+        if (preview && !preview.userData.evicted) {
+          surface.imageMesh.material.dispose();
+          surface.imageMesh.material=new THREE.MeshBasicMaterial({
+            map:preview,toneMapped:false,side:THREE.DoubleSide
+          });
+          touchPreviewTexture(preview);
+          surface.texture=preview;
+          surface.textureTier="preview";
+          surface.requestedTier="preview";
+          surface.loading=false;
+          surface.loadingTier=null;
+          surface.loaded=true;
+          surface.failed=false;
+          return;
+        }
+      } else {
+        surface.previewTexture=texture;
+        touchPreviewTexture(texture);
+      }
       surface.imageMesh.material.dispose();
       const fallback=artFallbackMaterial.clone();
       fallback.side=THREE.DoubleSide;
@@ -2476,9 +3278,34 @@
       surface.failed=false;
     }
 
+    function trimPreviewTexturePool() {
+      const limit=renderer.xr.isPresenting?52:104;
+      if (previewTexturePool.size<=limit) return;
+      const attached=new Set(
+        artworkSurfaces
+          .filter(surface=>surface.texture)
+          .map(surface=>surface.texture)
+      );
+      const disposable=[...previewTexturePool.entries()]
+        .filter(([,texture])=>!attached.has(texture))
+        .sort((a,b)=>
+          (a[1].userData.lastUsed||0)-(b[1].userData.lastUsed||0)
+        );
+      const removeCount=Math.min(
+        previewTexturePool.size-limit,disposable.length
+      );
+      for (const [key,texture] of disposable.slice(0,removeCount)) {
+        previewTexturePool.delete(key);
+        texturePromiseCache.delete(key);
+        texture.userData.evicted=true;
+        disposeTextureResource(texture);
+      }
+    }
+
     let catalogIndexedCount = 0;
     let catalogMountedCount = 0;
     let catalogGifMountedCount = 0;
+    let catalogCollectionMismatchCount = 0;
     function showCollectionCount(visible, pending) {
       const indexed = catalogIndexedCount ? ` · ${catalogIndexedCount.toLocaleString()} indexed` : "";
       document.getElementById("location").dataset.collection = pending
@@ -2488,7 +3315,14 @@
 
     const centuries = ["1100s","1200s","1300s","1400s","1500s","1600s","1700s","1800s","1900s"];
     const centuryZ = new Map(centuries.map((century,i) => [century,30-i*19]));
+    function catalogCollection(item) {
+      if (item[2]) return item[2];
+      if (/\/photography\//i.test(item[1])) return "photography";
+      if (/\/2000s\//i.test(item[1])) return "after";
+      return "art";
+    }
     function inferCentury(item) {
+      if (catalogCollection(item)==="photography") return "photography";
       const collectionPath=item[1].match(
         /\/(photography|unsorted|unnamed)\//
       )?.[1];
@@ -2507,7 +3341,7 @@
     function centuryForWall(set,z) {
       if (set===mountSets.after) return "2000s";
       if (set===mountSets.photo || set===mountSets.balconyPhoto) {
-        return "1900s";
+        return "photography";
       }
       return centuries.reduce((best,century) =>
         Math.abs(z-centuryZ.get(century))<Math.abs(z-centuryZ.get(best)) ? century : best
@@ -2518,12 +3352,16 @@
       for (const item of entries) if (!byURL.has(item[1])) byURL.set(item[1],item);
       return [...byURL.values()];
     }
-    async function fetchCollection(path) {
+    async function fetchCollection(path,collection) {
       const response=await fetch(path,{mode:"cors"});
       if (!response.ok) throw new Error(`catalog ${response.status}`);
       const doc=new DOMParser().parseFromString(await response.text(),"text/html");
       return uniqueEntries([...doc.querySelectorAll("a[href]")]
-        .map(a => [a.textContent.trim() || "Untitled",a.href])
+        .map(a => [
+          a.textContent.trim() || "Untitled",
+          a.href,
+          collection
+        ])
         .filter(([,url]) => /\.(?:jpe?g|png|webp|gif)(?:$|\?)/i.test(url)));
     }
     const mountSets={art:[],photo:[],after:[],balconyArt:[],balconyPhoto:[]};
@@ -2674,6 +3512,152 @@
         plan,allocationByBucket,capacityByBucket,totalCapacity
       };
     }
+    const decadeHeaderPlacements=[];
+    const decadeHeaderCursor={
+      art:new Map(),
+      after:0
+    };
+    function decadeHeaderForWall(collection,century) {
+      if (collection==="after") {
+        const decade=[2000,2010,2020][decadeHeaderCursor.after%3];
+        decadeHeaderCursor.after++;
+        return `${decade}s`;
+      }
+      if (collection==="photo") {
+        // Photography is its own archive, not an art-historical decade.
+        return "PHOTOGRAPHY";
+      }
+      const match=/^(\d{4})s$/.exec(century);
+      if (!match) return "UNDATED";
+      const base=Number(match[1]);
+      const cursor=decadeHeaderCursor.art.get(century)||0;
+      decadeHeaderCursor.art.set(century,cursor+1);
+      return `${base+(cursor%10)*10}s`;
+    }
+    function queueDecadeHeader(wall,text) {
+      const midpoint=segmentPoint(wall.a,wall.b,.5);
+      const rotationY=Math.atan2(wall.normal.x,wall.normal.z);
+      decadeHeaderPlacements.push({
+        text,
+        level:wall.level,
+        collection:wall.collection,
+        position:new THREE.Vector3(
+          midpoint.x+wall.normal.x*.285,
+          midpoint.y+7.66,
+          midpoint.z+wall.normal.z*.285
+        ),
+        rotationY
+      });
+    }
+    function decadeSortValue(text) {
+      const match=/^(\d{4})s$/.exec(text);
+      return match?Number(match[1]):Number.MAX_SAFE_INTEGER;
+    }
+    function populateElevatorMenu() {
+      const menu=document.getElementById("shortcut-menu");
+      menu.querySelectorAll("[data-generated-shortcut]")
+        .forEach(node=>node.remove());
+      const sections=[
+        ["art","art before 2000 · decades"],
+        ["after","art after 2000 · decades"]
+      ];
+      for (const [collection,headingText] of sections) {
+        const placements=decadeHeaderPlacements
+          .filter(placement=>placement.collection===collection)
+          .sort((a,b)=>
+            decadeSortValue(a.text)-decadeSortValue(b.text) ||
+            a.level-b.level
+          );
+        const representativeByDecade=new Map();
+        for (const placement of placements) {
+          if (!representativeByDecade.has(placement.text)) {
+            representativeByDecade.set(placement.text,placement);
+          }
+        }
+        if (!representativeByDecade.size) continue;
+        const heading=document.createElement("div");
+        heading.className="shortcut-heading";
+        heading.dataset.generatedShortcut="";
+        heading.textContent=headingText;
+        menu.appendChild(heading);
+        for (const [text,placement] of representativeByDecade) {
+          const angle=Math.atan2(
+            placement.position.z-spiralCenter.z,
+            placement.position.x-spiralCenter.x
+          );
+          const destinationRadius=(innerRadius+outerRadius)*.5;
+          const button=document.createElement("button");
+          button.className="action";
+          button.dataset.generatedShortcut="";
+          button.dataset.floor=String(placement.level);
+          button.dataset.destinationX=String(
+            spiralCenter.x+Math.cos(angle)*destinationRadius
+          );
+          // Decade plaques sit 7.66 metres over their wall base. Put the
+          // visitor just above that floor, facing the matching gallery wall.
+          button.dataset.destinationY=String(
+            placement.position.y-7.54
+          );
+          button.dataset.destinationZ=String(
+            spiralCenter.z+Math.sin(angle)*destinationRadius
+          );
+          button.textContent=
+            `${text.toLowerCase()} · floor ${placement.level+1}`;
+          menu.appendChild(button);
+        }
+      }
+      document.body.dataset.elevatorDecades=String(
+        menu.querySelectorAll("[data-floor]").length
+      );
+    }
+    function buildDecadeHeaders() {
+      const placementsByText=new Map();
+      for (const placement of decadeHeaderPlacements) {
+        if (!placementsByText.has(placement.text)) {
+          placementsByText.set(placement.text,[]);
+        }
+        placementsByText.get(placement.text).push(placement);
+      }
+      const quaternion=new THREE.Quaternion();
+      const scale=new THREE.Vector3(1,1,1);
+      const matrix=new THREE.Matrix4();
+      for (const [text,placements] of placementsByText) {
+        // One instanced draw call per decade keeps headers present throughout
+        // the archive without reintroducing the old per-sign performance hit.
+        const template=plaque(text,4.8,.72);
+        const headers=new THREE.InstancedMesh(
+          template.geometry,template.material,placements.length
+        );
+        headers.renderOrder=5;
+        headers.frustumCulled=true;
+        placements.forEach((placement,index) => {
+          quaternion.setFromAxisAngle(
+            new THREE.Vector3(0,1,0),placement.rotationY
+          );
+          matrix.compose(placement.position,quaternion,scale);
+          headers.setMatrixAt(index,matrix);
+        });
+        headers.instanceMatrix.needsUpdate=true;
+        scene.add(headers);
+      }
+      const coveredFloors=[...new Set(
+        decadeHeaderPlacements.map(placement=>placement.level+1)
+      )].sort((a,b)=>a-b);
+      document.body.dataset.decadeHeaders=String(
+        decadeHeaderPlacements.length
+      );
+      document.body.dataset.decadeHeaderFloors=coveredFloors.join(",");
+      window.museumExpansionPlan.decadeHeaders={
+        total:decadeHeaderPlacements.length,
+        floors:coveredFloors,
+        labels:Object.fromEntries(
+          [...placementsByText].map(([text,placements])=>[
+            text,placements.length
+          ])
+        )
+      };
+      populateElevatorMenu();
+    }
     function buildMuseumMounts() {
       // Three interleaved salon bands carry the same capacity as the old
       // four-row grid, but no two bands share a column line or a fixed
@@ -2712,6 +3696,9 @@
           : wall.collection==="photo"
             ? "photography"
             : artWallPlan.plan.get(wall.id)||"unclassified";
+        queueDecadeHeader(
+          wall,decadeHeaderForWall(wall.collection,targetCentury)
+        );
         for (let row=0;row<rows.length;row++) {
           for (let columnIndex=0;columnIndex<columns;columnIndex++) {
             const distance=columns===1
@@ -2763,6 +3750,7 @@
       // walls and reintroduce unexplained blank areas.
     }
     buildMuseumMounts();
+    buildDecadeHeaders();
     const generatedMountCapacity=Object.values(mountSets)
       .reduce((total,mounts)=>total+mounts.length,0);
     const proxyCanvas=document.createElement("canvas");
@@ -2811,12 +3799,29 @@
 
     const mountedCenturyByWall=new Map();
     async function mountUniqueCollection(entries,mounts,usedURLs,matchCentury=false) {
+      if (!mounts.length) return;
+      const targetCollection=mounts[0]?.collection;
+      const eligibleEntries=entries.filter(item => {
+        const sourceCollection=catalogCollection(item);
+        const inferred=inferCentury(item);
+        if (targetCollection==="photography") {
+          return sourceCollection==="photography";
+        }
+        if (targetCollection==="after") {
+          return sourceCollection!=="photography" && inferred==="2000s";
+        }
+        return sourceCollection!=="photography" && inferred!=="2000s";
+      });
+      catalogCollectionMismatchCount+=entries.length-eligibleEntries.length;
+      document.body.dataset.collectionMismatchesBlocked=String(
+        catalogCollectionMismatchCount
+      );
       let cursor=0;
       const buckets=new Map();
       const bucketCursors=new Map();
       const wallMountCounts=new Map();
       if (matchCentury) {
-        for (const item of entries) {
+        for (const item of eligibleEntries) {
           const century=inferCentury(item);
           if (!buckets.has(century)) buckets.set(century,[]);
           buckets.get(century).push(item);
@@ -2877,7 +3882,7 @@
           }
           if (!item) continue;
         } else {
-          item=nextUnused(entries,"all");
+          item=nextUnused(eligibleEntries,"all");
         }
         if (!item) break;
         usedURLs.add(item[1]);
@@ -2901,9 +3906,15 @@
     }
     async function buildFullCollection() {
       const usedURLs=new Set();
-      const seedArt=uniqueEntries(artItems);
-      const seedPhotography=uniqueEntries(photoItems);
-      const seedAfter=uniqueEntries(after2000Items);
+      const seedArt=uniqueEntries(
+        artItems.map(item=>[...item,"art"])
+      );
+      const seedPhotography=uniqueEntries(
+        photoItems.map(item=>[...item,"photography"])
+      );
+      const seedAfter=uniqueEntries(
+        after2000Items.map(item=>[...item,"after"])
+      );
       catalogIndexedCount=
         seedArt.length+seedPhotography.length+seedAfter.length;
       // Put a real, local-known selection onto the first approach walls before
@@ -2916,8 +3927,8 @@
       ]);
       try {
         const [allArt,allPhotography]=await Promise.all([
-          fetchCollection("https://strauh.al/art"),
-          fetchCollection("https://strauh.al/photography")
+          fetchCollection("https://strauh.al/art","art"),
+          fetchCollection("https://strauh.al/photography","photography")
         ]);
         catalogIndexedCount=uniqueEntries(
           [...allArt,...allPhotography]
@@ -3212,10 +4223,10 @@
     let pitch = .08;
     let pointerLocked = false;
     let grounded = true, verticalVelocity = 0;
+    let flying=false;
+    let lastSpaceTapAt=-Infinity;
     let touchMove = new THREE.Vector2();
     let lookPointer = null, lookLastX = 0, lookLastY = 0;
-    let hoverLookReady = false;
-    let edgeLookX = 0, edgeLookY = 0;
     const baseFov=68;
     const clock = new THREE.Clock();
     // The facade approach ends at Z 73, but the intended entrance viewpoint
@@ -3232,18 +4243,60 @@
     renderer.domElement.dataset.position = `${rig.position.x},${rig.position.y},${rig.position.z}`;
     renderer.domElement.dataset.camera = `${yaw},${pitch}`;
     const coordinateReadout=document.getElementById("coordinates");
+    const statusElement=document.getElementById("status");
+    const fullscreenToggle=document.getElementById("fullscreen-toggle");
+    let statusTimer=null;
+    function flashStatus(message,duration=1800) {
+      clearTimeout(statusTimer);
+      statusElement.textContent=message;
+      statusElement.classList.add("visible");
+      statusTimer=setTimeout(
+        ()=>statusElement.classList.remove("visible"),duration
+      );
+    }
+    const fullscreenElement=()=>(
+      document.fullscreenElement||document.webkitFullscreenElement
+    );
+    async function toggleFullscreen() {
+      try {
+        if (fullscreenElement()) {
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          } else {
+            document.webkitExitFullscreen?.();
+          }
+        } else if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else {
+          document.documentElement.webkitRequestFullscreen?.();
+        }
+      } catch (error) {
+        flashStatus("fullscreen unavailable");
+      }
+    }
+    function updateFullscreenLabel() {
+      fullscreenToggle.textContent=fullscreenElement()
+        ?"exit fullscreen (F)"
+        :"fullscreen (F)";
+    }
+    fullscreenToggle.addEventListener("click",toggleFullscreen);
+    document.addEventListener("fullscreenchange",updateFullscreenLabel);
+    document.addEventListener(
+      "webkitfullscreenchange",updateFullscreenLabel
+    );
     const signed=value => `${value>=0?"+":""}${value.toFixed(1).padStart(6,"0")}`;
     function updateCoordinateReadout() {
       const heading=((THREE.MathUtils.radToDeg(-yaw)%360)+360)%360;
       const pitchDegrees=THREE.MathUtils.radToDeg(pitch);
       coordinateReadout.innerHTML =
         `X ${signed(rig.position.x)} · Y ${signed(rig.position.y)} · Z ${signed(rig.position.z)}<br>`+
-        `HDG ${String(Math.round(heading)).padStart(3,"0")}° · PITCH ${signed(pitchDegrees)}° · LENS ${Math.round(camera.fov)}°`;
+        `HDG ${String(Math.round(heading)).padStart(3,"0")}° · PITCH ${signed(pitchDegrees)}° · LENS ${Math.round(camera.fov)}°${flying?" · FLY":""}`;
     }
 
     function resetPosition() {
       rig.position.copy(entranceSpawn);
       yaw = 0; pitch = .08;
+      flying=false;
       grounded = true; verticalVelocity = 0;
       hasSafeUpperPosition=false;
       camera.rotation.set(pitch,yaw,0,"YXZ");
@@ -3256,6 +4309,7 @@
     function closeWingShortcut() {
       shortcutMenu.hidden=true;
       shortcutToggle.setAttribute("aria-expanded","false");
+      document.body.classList.remove("menu-open");
     }
     shortcutToggle.addEventListener("click",event => {
       event.stopPropagation();
@@ -3263,47 +4317,100 @@
       shortcutToggle.setAttribute(
         "aria-expanded",String(!shortcutMenu.hidden)
       );
+      document.body.classList.toggle("menu-open",!shortcutMenu.hidden);
     });
     shortcutMenu.addEventListener("click",event => {
-      const button=event.target.closest("[data-wing]");
+      const button=event.target.closest("[data-wing],[data-floor]");
       if (!button) return;
-      const landing=archiveLandings.find(
-        item=>item.name===button.dataset.wing
-      );
-      if (!landing) return;
-      rig.position.set(
-        landing.point.x,
-        landing.point.y+.08,
-        landing.point.z
-      );
+      let destination=null;
+      let destinationLevel=0;
+      let destinationLabel="";
+      if (button.hasAttribute("data-floor")) {
+        destination=new THREE.Vector3(
+          Number(button.dataset.destinationX),
+          Number(button.dataset.destinationY),
+          Number(button.dataset.destinationZ)
+        );
+        destinationLevel=Number(button.dataset.floor);
+        destinationLabel=button.textContent
+          .split("·")[0]
+          .trim()
+          .toUpperCase();
+      } else {
+        const landing=archiveLandings.find(
+          item=>item.name===button.dataset.wing
+        );
+        if (!landing) return;
+        destination=landing.point.clone();
+        destination.y+=.08;
+        destinationLevel=landing.level;
+        destinationLabel=landing.name;
+      }
+      if (
+        !destination||
+        ![destination.x,destination.y,destination.z,destinationLevel]
+          .every(Number.isFinite)
+      ) return;
+      rig.position.copy(destination);
       const inwardYaw=Math.atan2(
-        landing.point.x-spiralCenter.x,
-        landing.point.z-spiralCenter.z
+        destination.x-spiralCenter.x,
+        destination.z-spiralCenter.z
       );
       yaw=inwardYaw;
       pitch=.04;
+      flying=false;
       grounded=true;
       verticalVelocity=0;
       lastSafeUpperPosition.copy(rig.position);
       hasSafeUpperPosition=true;
       camera.rotation.set(pitch,yaw,0,"YXZ");
+      document.getElementById("location").innerHTML=
+        `${destinationLabel}<br>floor ${destinationLevel+1} · `+
+        `elevation ${Math.round(destination.y)}`;
       closeWingShortcut();
       updateCoordinateReadout();
     });
     document.addEventListener("pointerdown",event => {
       if (!event.target.closest("#wing-shortcut")) closeWingShortcut();
     });
+    const pointerLockElement=()=>(
+      document.pointerLockElement||document.webkitPointerLockElement
+    );
+    function releasePointerLock() {
+      if (document.exitPointerLock) {
+        document.exitPointerLock();
+      } else {
+        document.webkitExitPointerLock?.();
+      }
+    }
+    function requestMuseumPointerLock() {
+      if (renderer.xr.isPresenting || !shortcutMenu.hidden) return;
+      if (pointerLockElement()===renderer.domElement) return;
+      const request=
+        renderer.domElement.requestPointerLock||
+        renderer.domElement.webkitRequestPointerLock;
+      if (!request) {
+        return;
+      }
+      try {
+        const result=request.call(renderer.domElement);
+        result?.catch?.(()=>{});
+      } catch (error) {}
+    }
     renderer.domElement.addEventListener("click", () => {
       renderer.domElement.focus();
-      if (!renderer.xr.isPresenting && document.pointerLockElement !== renderer.domElement) {
-        renderer.domElement.requestPointerLock?.();
-      }
+      requestMuseumPointerLock();
     });
-    document.addEventListener("pointerlockchange", () => {
-      pointerLocked = document.pointerLockElement === renderer.domElement;
-      if (pointerLocked) edgeLookX=edgeLookY=0;
+    function updatePointerLockState() {
+      pointerLocked=pointerLockElement()===renderer.domElement;
       document.body.classList.toggle("looking",pointerLocked);
-    });
+    }
+    document.addEventListener(
+      "pointerlockchange",updatePointerLockState
+    );
+    document.addEventListener(
+      "webkitpointerlockchange",updatePointerLockState
+    );
     document.addEventListener("mousemove",e => {
       if (!pointerLocked || renderer.xr.isPresenting) return;
       lastMovementAt=performance.now();
@@ -3315,15 +4422,19 @@
       keys.add(e.code);
       if (e.code==="KeyE" && !e.repeat) {
         e.preventDefault();
-        document.exitPointerLock?.();
+        releasePointerLock();
         pointerLocked=false;
-        edgeLookX=edgeLookY=0;
         lookPointer=null;
         document.body.classList.remove("looking");
         shortcutMenu.hidden=!shortcutMenu.hidden;
         shortcutToggle.setAttribute(
           "aria-expanded",String(!shortcutMenu.hidden)
         );
+        document.body.classList.toggle("menu-open",!shortcutMenu.hidden);
+      }
+      if (e.code==="KeyF" && !e.repeat) {
+        e.preventDefault();
+        toggleFullscreen();
       }
       if (e.code==="KeyR" && !e.repeat) {
         e.preventDefault();
@@ -3331,9 +4442,26 @@
       }
       if (e.code === "Space") {
         e.preventDefault();
-        if (grounded && !e.repeat && !renderer.xr.isPresenting) {
-          verticalVelocity = 6.3;
-          grounded = false;
+        if (!e.repeat && !renderer.xr.isPresenting) {
+          const now=performance.now();
+          if (now-lastSpaceTapAt<330) {
+            flying=!flying;
+            grounded=false;
+            verticalVelocity=0;
+            lastSpaceTapAt=-Infinity;
+            flashStatus(
+              flying
+                ?"flight on · space rises · shift descends"
+                :"flight off"
+            );
+            updateCoordinateReadout();
+          } else {
+            lastSpaceTapAt=now;
+            if (!flying && grounded) {
+              verticalVelocity = 6.3;
+              grounded = false;
+            }
+          }
         }
       }
     });
@@ -3348,12 +4476,6 @@
 
     const stick = document.getElementById("touch-stick");
     const knob = document.getElementById("touch-knob");
-    function updateEdgeLook(e) {
-      const nx=e.clientX/innerWidth*2-1;
-      const ny=e.clientY/innerHeight*2-1;
-      edgeLookX=Math.abs(nx)>.84 ? Math.sign(nx)*(Math.abs(nx)-.84)/.16 : 0;
-      edgeLookY=Math.abs(ny)>.84 ? Math.sign(ny)*(Math.abs(ny)-.84)/.16 : 0;
-    }
     function updateStick(e) {
       const rect = stick.getBoundingClientRect();
       const x = e.clientX - (rect.left+rect.width/2);
@@ -3366,16 +4488,6 @@
     stick.addEventListener("pointerdown", e => { stick.setPointerCapture(e.pointerId); updateStick(e); });
     stick.addEventListener("pointermove", e => { if(stick.hasPointerCapture(e.pointerId)) updateStick(e); });
     stick.addEventListener("pointerup", () => { touchMove.set(0,0); knob.style.transform="translate(-50%,-50%)"; });
-    renderer.domElement.addEventListener("pointerenter", e => {
-      if (e.pointerType==="touch") return;
-      lookLastX=e.clientX;
-      lookLastY=e.clientY;
-      updateEdgeLook(e);
-      hoverLookReady=true;
-    });
-    renderer.domElement.addEventListener("pointerleave", () => {
-      if (!pointerLocked && lookPointer===null) hoverLookReady=false;
-    });
     renderer.domElement.addEventListener("pointerdown", e => {
       renderer.domElement.focus();
       if (pointerLocked) return;
@@ -3392,10 +4504,6 @@
         if (e.pointerId !== lookPointer) return;
         yaw -= (e.clientX-lookLastX)*.005;
         pitch = THREE.MathUtils.clamp(pitch-(e.clientY-lookLastY)*.005,-1.2,1.2);
-      } else if (hoverLookReady) {
-        yaw -= (e.clientX-lookLastX)*.00235;
-        pitch = THREE.MathUtils.clamp(pitch-(e.clientY-lookLastY)*.0021,-1.2,1.2);
-        updateEdgeLook(e);
       }
       lookLastX=e.clientX; lookLastY=e.clientY;
     });
@@ -3455,21 +4563,18 @@
 
     function updateWalk(dt) {
       if (renderer.xr.isPresenting) return;
-      if (!pointerLocked) {
-        yaw-=edgeLookX*dt*1.35;
-        pitch=THREE.MathUtils.clamp(pitch-edgeLookY*dt*1.05,-1.2,1.2);
-      }
       camera.rotation.set(pitch,yaw,0,"YXZ");
       const forward = Number(keys.has("KeyW")||keys.has("ArrowUp")) - Number(keys.has("KeyS")||keys.has("ArrowDown")) - touchMove.y;
       const side = Number(keys.has("KeyD")||keys.has("ArrowRight")) - Number(keys.has("KeyA")||keys.has("ArrowLeft")) + touchMove.x;
-      const sprinting=keys.has("ShiftLeft")||keys.has("ShiftRight");
+      const shiftHeld=keys.has("ShiftLeft")||keys.has("ShiftRight");
+      const sprinting=shiftHeld && !flying;
       const targetFov=sprinting?84:baseFov;
       const nextFov=THREE.MathUtils.damp(camera.fov,targetFov,sprinting?8:11,dt);
       if (Math.abs(nextFov-camera.fov)>.01) {
         camera.fov=nextFov;
         camera.updateProjectionMatrix();
       }
-      const speed = (sprinting ? 12.5 : 7.5) * dt;
+      const speed = (flying ? 10.5 : (sprinting ? 12.5 : 7.5)) * dt;
       const forwardVector = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
       forwardVector.y = 0;
       forwardVector.normalize();
@@ -3487,43 +4592,71 @@
         if (!blockedAt(nextX,rig.position.z)) rig.position.x=nextX;
         if (!blockedAt(rig.position.x,nextZ)) rig.position.z=nextZ;
       }
-      if (!grounded) {
-        verticalVelocity -= 15.5*dt;
-        rig.position.y += verticalVelocity*dt;
-      }
-      // Grounded movement follows continuous stair ramps beneath the decorative
-      // treads; airborne movement lands only while descending.
-      groundRaycaster.set(new THREE.Vector3(rig.position.x,rig.position.y+.8,rig.position.z),down);
-      groundRaycaster.far = 2.15;
-      const floorHits = groundRaycaster.intersectObjects(navSurfaces,false);
-      const stairFloor=archiveStairFloorAt(
-        rig.position.x,rig.position.z,rig.position.y
-      );
-      let floorY=floorHits.length?floorHits[0].point.y+.02:null;
-      if (stairFloor && (
-        floorY===null ||
-        Math.abs(stairFloor.y-rig.position.y)<
-          Math.abs(floorY-rig.position.y)+.08
-      )) {
-        floorY=stairFloor.y;
-      }
-      if (floorY!==null) {
-        const delta = floorY-rig.position.y;
-        if (grounded && delta <= .62 && delta >= -1.3) {
-          // Lock exactly to the analytic stair rather than damping behind its
-          // incline; the latter could put the ray origin below the next flight
-          // during a sprint or a low-frame-rate frame.
-          rig.position.y = stairFloor
-            ? floorY
-            : THREE.MathUtils.damp(rig.position.y,floorY,20,dt);
-        } else if (!grounded && verticalVelocity <= 0 && delta >= -.12 && delta <= .72) {
-          rig.position.y = floorY;
-          verticalVelocity = 0;
-          grounded = true;
-        } else if (grounded && delta < -1.3) {
-          if (hasSafeUpperPosition &&
-              lastSafeUpperPosition.y>1 &&
-              floorY<lastSafeUpperPosition.y-1.8) {
+      if (flying) {
+        const verticalInput=Number(keys.has("Space"))-Number(shiftHeld);
+        if (verticalInput) lastMovementAt=performance.now();
+        rig.position.y=THREE.MathUtils.clamp(
+          rig.position.y+verticalInput*9.5*dt,
+          .08,roofY+72
+        );
+        verticalVelocity=0;
+        grounded=false;
+      } else {
+        if (!grounded) {
+          verticalVelocity -= 15.5*dt;
+          rig.position.y += verticalVelocity*dt;
+        }
+        // Grounded movement follows continuous stair ramps beneath the decorative
+        // treads; airborne movement lands only while descending.
+        groundRaycaster.set(new THREE.Vector3(rig.position.x,rig.position.y+.8,rig.position.z),down);
+        groundRaycaster.far = 2.15;
+        const floorHits = groundRaycaster.intersectObjects(navSurfaces,false);
+        const stairFloor=archiveStairFloorAt(
+          rig.position.x,rig.position.z,rig.position.y
+        );
+        let floorY=floorHits.length?floorHits[0].point.y+.02:null;
+        if (stairFloor && (
+          floorY===null ||
+          Math.abs(stairFloor.y-rig.position.y)<
+            Math.abs(floorY-rig.position.y)+.08
+        )) {
+          floorY=stairFloor.y;
+        }
+        if (floorY!==null) {
+          const delta = floorY-rig.position.y;
+          if (grounded && delta <= .62 && delta >= -1.3) {
+            // Lock exactly to the analytic stair rather than damping behind its
+            // incline; the latter could put the ray origin below the next flight
+            // during a sprint or a low-frame-rate frame.
+            rig.position.y = stairFloor
+              ? floorY
+              : THREE.MathUtils.damp(rig.position.y,floorY,20,dt);
+          } else if (!grounded && verticalVelocity <= 0 && delta >= -.12 && delta <= .72) {
+            rig.position.y = floorY;
+            verticalVelocity = 0;
+            grounded = true;
+          } else if (grounded && delta < -1.3) {
+            if (hasSafeUpperPosition &&
+                lastSafeUpperPosition.y>1 &&
+                floorY<lastSafeUpperPosition.y-1.8) {
+              rig.position.copy(lastSafeUpperPosition);
+              verticalVelocity=0;
+              grounded=true;
+            } else {
+              grounded = false;
+            }
+          }
+          const wouldDiscardUpperRecovery=
+            hasSafeUpperPosition &&
+            lastSafeUpperPosition.y>1 &&
+            floorY<lastSafeUpperPosition.y-1.8;
+          if (floorY>=0 && grounded && Math.abs(delta)<.72 &&
+              !wouldDiscardUpperRecovery) {
+            lastSafeUpperPosition.set(rig.position.x,floorY,rig.position.z);
+            hasSafeUpperPosition=true;
+          }
+        } else if (grounded) {
+          if (rig.position.y>5 && hasSafeUpperPosition) {
             rig.position.copy(lastSafeUpperPosition);
             verticalVelocity=0;
             grounded=true;
@@ -3531,33 +4664,16 @@
             grounded = false;
           }
         }
-        const wouldDiscardUpperRecovery=
-          hasSafeUpperPosition &&
-          lastSafeUpperPosition.y>1 &&
-          floorY<lastSafeUpperPosition.y-1.8;
-        if (floorY>=0 && grounded && Math.abs(delta)<.72 &&
-            !wouldDiscardUpperRecovery) {
-          lastSafeUpperPosition.set(rig.position.x,floorY,rig.position.z);
-          hasSafeUpperPosition=true;
-        }
-      } else if (grounded) {
-        if (rig.position.y>5 && hasSafeUpperPosition) {
+        // Exterior ground can sit below an upper museum floor and used to catch
+        // a falling visitor before the no-hit recovery branch ran. Restore the
+        // last certified museum surface as soon as a multi-storey drop begins.
+        if (hasSafeUpperPosition &&
+            lastSafeUpperPosition.y>1 &&
+            rig.position.y<lastSafeUpperPosition.y-2.2) {
           rig.position.copy(lastSafeUpperPosition);
           verticalVelocity=0;
           grounded=true;
-        } else {
-          grounded = false;
         }
-      }
-      // Exterior ground can sit below an upper museum floor and used to catch
-      // a falling visitor before the no-hit recovery branch ran. Restore the
-      // last certified museum surface as soon as a multi-storey drop begins.
-      if (hasSafeUpperPosition &&
-          lastSafeUpperPosition.y>1 &&
-          rig.position.y<lastSafeUpperPosition.y-2.2) {
-        rig.position.copy(lastSafeUpperPosition);
-        verticalVelocity=0;
-        grounded=true;
       }
       const radialDistance=Math.hypot(
         rig.position.x-spiralCenter.x,rig.position.z-spiralCenter.z
@@ -3582,7 +4698,11 @@
       const level=zeroBasedLevel+1;
       document.getElementById("location").innerHTML =
         `${zone}<br>floor ${level} · elevation ${Math.round(rig.position.y)}`;
-      window.museumState = { initialized:true,x:rig.position.x,y:rig.position.y,z:rig.position.z,yaw,pitch,forward,side,pointerLocked,frames:(window.museumState.frames||0)+1 };
+      window.museumState = {
+        initialized:true,x:rig.position.x,y:rig.position.y,z:rig.position.z,
+        yaw,pitch,forward,side,pointerLocked,flying,
+        frames:(window.museumState.frames||0)+1
+      };
       renderer.domElement.dataset.position = `${rig.position.x.toFixed(3)},${rig.position.y.toFixed(3)},${rig.position.z.toFixed(3)}`;
       renderer.domElement.dataset.camera = `${yaw.toFixed(4)},${pitch.toFixed(4)}`;
       renderer.domElement.dataset.frames = String(window.museumState.frames);
@@ -3723,7 +4843,11 @@
           THREE.MathUtils.degToRad(viewCamera.fov||baseFov);
         const candidate={
           surface,distance,alignment,verticalCoverage,
-          score:distance-alignment*9
+          // A short recency bias keeps the same nearby salon stable while the
+          // visitor turns, instead of swapping the last few frames at every
+          // streaming tick.
+          score:distance-alignment*9-
+            (time-surface.lastDrawnAt<1500?5:0)
         };
         if (shouldDraw) drawCandidates.push(candidate);
         else if (shouldStream) preloadCandidates.push(candidate);
@@ -3732,15 +4856,15 @@
       preloadCandidates.sort((a,b)=>a.score-b.score);
       const drawLimit=renderer.xr.isPresenting?20:(movingRecently?24:36);
       const selected=drawCandidates.slice(0,drawLimit);
-      const preload=movingRecently
-        ? []
-        : preloadCandidates.slice(0,renderer.xr.isPresenting?1:2);
+      const preload=preloadCandidates.slice(
+        0,renderer.xr.isPresenting?2:(movingRecently?4:7)
+      );
       const fullResolutionLimit=renderer.xr.isPresenting?1:2;
       const fullResolutionSurfaces=new Set(
         selected
           .filter(candidate=>
-            candidate.distance<12 &&
-            candidate.verticalCoverage>.22 &&
+            candidate.distance<17 &&
+            candidate.verticalCoverage>.14 &&
             candidate.alignment>.28
           )
           .sort((a,b)=>b.verticalCoverage-a.verticalCoverage)
@@ -3754,6 +4878,7 @@
         artworkProxyHidden.add(surface);
         if (distance<5.5 && alignment>.18) ensureArtworkLabel(surface);
         surface.lastWantedAt=time;
+        surface.lastDrawnAt=time;
         const desiredTier=fullResolutionSurfaces.has(surface) &&
           !isAnimatedImageURL(surface.item[1])
           ? "full"
@@ -3792,7 +4917,7 @@
         if (surface.loadingTier) {
           wantedTextureKeys.add(textureCacheKey(surface.item[1],surface.loadingTier));
         }
-        if (!movingRecently && surface.textureTier==="none" && !surface.loading) {
+        if (surface.textureTier==="none" && !surface.loading) {
           streamArtwork(surface,alignment*8-distance*.08,"preview");
         }
       }
@@ -3800,7 +4925,13 @@
         artworkProxyMesh.instanceMatrix.needsUpdate=true;
       }
       for (const [key,job] of textureJobsByURL) {
-        if (!wantedTextureKeys.has(key)) job.cancel();
+        // Finish tiny preview requests even if the camera moves on: they are
+        // cheap, bounded by the LRU and likely to be needed on the next turn.
+        // Large originals remain aggressively cancellable.
+        if (!wantedTextureKeys.has(key) && (
+          job.tier==="full" ||
+          (!job.running && time-job.queuedAt>1100)
+        )) job.cancel();
       }
       if (time-lastTextureTrim>1000) {
         lastTextureTrim=time;
@@ -3818,16 +4949,16 @@
         resident
           .filter(surface=>
             surface.textureTier==="preview" &&
-            time-surface.lastWantedAt>2400
+            time-surface.lastWantedAt>12000
           )
           .forEach(releaseArtworkTexture);
         const previewResident=artworkSurfaces.filter(surface=>
           surface.loaded && surface.textureTier==="preview"
         );
-        const previewResidentLimit=renderer.xr.isPresenting?22:40;
+        const previewResidentLimit=renderer.xr.isPresenting?36:68;
         if (previewResident.length>previewResidentLimit) {
           previewResident
-            .filter(surface=>time-surface.lastWantedAt>650)
+            .filter(surface=>time-surface.lastWantedAt>4500)
             .sort((a,b)=>a.lastWantedAt-b.lastWantedAt)
             .slice(0,previewResident.length-previewResidentLimit)
             .forEach(releaseArtworkTexture);
@@ -3847,10 +4978,16 @@
         );
         renderer.domElement.dataset.textureCacheEntries=
           String(texturePromiseCache.size);
+        trimPreviewTexturePool();
+        trimArtworkFrameAssetCache(renderer.xr.isPresenting?80:152);
+        renderer.domElement.dataset.previewTexturePool=
+          String(previewTexturePool.size);
+        renderer.domElement.dataset.frameAssetCache=
+          String(artworkFrameAssets.size);
         artworkSurfaces
           .filter(surface=>
             surface.group && !surface.loaded && !surface.loading &&
-            time-surface.lastWantedAt>3600
+            time-surface.lastWantedAt>15000
           )
           .forEach(dematerializeArtwork);
       }
@@ -3870,36 +5007,132 @@
 
     function animate(time) {
       const dt = Math.min(clock.getDelta(), .05);
+      dimensionalFoldUniforms.time.value=time*.001;
       animatedSteps.forEach(step => {
-        // The visible treads move above stable invisible ramps, preserving the
-        // Penrose wave without ever opening a collision gap under the visitor.
+        // The visible double-helix expands radially and rises as one slow
+        // breath above a broad, stable invisible ramp. The collision ribbon's
+        // extra width keeps the more legible motion fully walkable.
         const wave=Math.sin(time*.00115+step.userData.phase);
-        step.position.y=step.userData.baseY+wave*.18;
-        step.position.x=step.userData.baseX+Math.cos(time*.00082+step.userData.phase)*.035*step.userData.direction;
-        step.position.z=step.userData.baseZ+Math.sin(time*.00067+step.userData.phase)*.025;
-        step.rotation.z=wave*.014;
+        const amplitude=step.userData.helix?.14:.18;
+        const breathScale=step.userData.helix?1+wave*.012:1;
+        step.scale.set(breathScale,1,breathScale);
+        step.position.y=step.userData.baseY+wave*amplitude;
+        step.position.x=step.userData.baseX+
+          (step.userData.breathCenterX||0)*(1-breathScale)+
+          Math.cos(time*.00082+step.userData.phase)*.025*
+          step.userData.direction;
+        step.position.z=step.userData.baseZ+
+          (step.userData.breathCenterZ||0)*(1-breathScale)+
+          Math.sin(time*.00067+step.userData.phase)*.02;
+        step.rotation.z=wave*(step.userData.helix?.006:.014);
       });
       penrose.updateMatrixWorld(true);
       rearPenrose.updateMatrixWorld(true);
       updateWalk(dt);
       updateArtworkStreaming(time);
+      // Every suspended object shares one low-frequency wind field. Small
+      // secondary waves keep pieces from moving in mechanical lockstep.
+      const breezeTime=time*.00011;
+      const breezeX=
+        Math.sin(breezeTime)*.58+
+        Math.sin(breezeTime*.43+1.7)*.22;
+      const breezeZ=
+        Math.cos(breezeTime*.71+.8)*.46+
+        Math.sin(breezeTime*.29)*.18;
       fragments.forEach((fragment, i) => {
-        fragment.position.y = fragment.userData.baseY + Math.sin(time*.001*fragment.userData.speed + fragment.userData.phase)*1.2;
+        const localPhase=
+          time*.001*fragment.userData.speed+
+          fragment.userData.phase;
+        fragment.position.x=
+          fragment.userData.baseX+breezeX*.44+
+          Math.sin(localPhase*.37)*.12;
+        fragment.position.y=
+          fragment.userData.baseY+Math.sin(localPhase)*1.2;
+        fragment.position.z=
+          fragment.userData.baseZ+breezeZ*.4+
+          Math.cos(localPhase*.31)*.1;
         fragment.rotation.y += dt*(.05+(i%4)*.018);
         fragment.rotation.x += dt*.025;
       });
       entryFragments.forEach((piece,index) => {
-        const phase=time*.00024+piece.userData.phase;
-        piece.position.y=piece.userData.baseY+Math.sin(phase)*.18;
-        piece.rotation.y=piece.userData.baseRotationY+Math.sin(phase*.73)*.018;
-        piece.rotation.z=piece.userData.baseRotationZ+Math.cos(phase*.61)*.012;
+        const data=piece.userData;
+        const isArch=data.frontArchIndex!==null &&
+          data.frontArchIndex!==undefined;
+        const phase=time*.00024+
+          (isArch?data.frontArchIndex*.83:data.phase);
+        const floatScale=isArch ? .52 : 1;
+        piece.position.x=
+          data.baseX+breezeX*.3+
+          Math.sin(phase*.37)*.09*floatScale;
+        piece.position.y=
+          data.baseY+Math.sin(phase)*.18*floatScale;
+        piece.position.z=
+          data.baseZ+breezeZ*.27+
+          Math.cos(phase*.31)*.08*floatScale;
+        piece.rotation.x=
+          data.baseRotationX+
+          (isArch?0:Math.sin(phase*.49)*.006);
+        piece.rotation.y=
+          data.baseRotationY+
+          (isArch?0:Math.sin(phase*.73)*.012);
+        piece.rotation.z=
+          data.baseRotationZ+
+          (isArch?0:Math.cos(phase*.61)*.009);
+        if (data.dimensionalFrontFold) {
+          // A signed local scale makes the broad face compress through a
+          // plane, reverse, and reopen on the other side. Its origin remains
+          // fixed, so this reads as dimensional folding instead of bobbing.
+          const foldPhase=
+            time*.000115*data.foldSpeed+data.foldPhase;
+          const foldCos=Math.cos(foldPhase);
+          const foldSin=Math.sin(foldPhase);
+          const projected=
+            2.35/(2.95-data.foldW*foldCos*.72);
+          const throughPlane=.28+foldCos*.9;
+          const crossDepth=.62+Math.abs(foldSin)*.58;
+          const strength=data.foldStrength;
+          const primary=THREE.MathUtils.lerp(1,throughPlane,strength);
+          const secondary=THREE.MathUtils.lerp(1,crossDepth,strength*.72);
+          const projection=THREE.MathUtils.lerp(1,projected,strength*.58);
+          if (data.foldAxis===0) {
+            piece.scale.set(primary,projection,secondary);
+          } else {
+            piece.scale.set(projection,primary,secondary);
+          }
+        } else {
+          piece.scale.set(1,1,1);
+        }
+      });
+      floatingFinials.forEach((finial,index) => {
+        const data=finial.userData;
+        const phase=breezeTime+data.phase;
+        data.spin+=dt*data.spinSpeed;
+        finial.position.x=
+          data.baseX+breezeX*.32+Math.sin(phase*.63)*.12;
+        finial.position.y=
+          data.baseY+.44+Math.sin(phase*.82)*.38;
+        finial.position.z=
+          data.baseZ+breezeZ*.3+Math.cos(phase*.57)*.1;
+        finial.rotation.x=
+          data.baseRotationX+
+          data.spin*.43+
+          Math.sin(phase*.41)*.055;
+        finial.rotation.y=
+          data.baseRotationY+
+          data.spin+
+          Math.sin(phase*.33)*.07;
+        finial.rotation.z=
+          data.baseRotationZ+
+          data.spin*.61+
+          Math.cos(phase*.47)*.06;
       });
       perimeterShardStates.forEach((state,index) => {
-        const phase=time*.00018*state.speed+state.phase;
+        const phase=
+          time*.00012*(.85+state.speed)+state.phase;
         perimeterShardDummy.position.set(
-          state.x+Math.sin(phase*.41)*.32,
+          state.x+breezeX*.52+Math.sin(phase*.41)*.32,
           state.y+Math.sin(phase)*.72,
-          state.z+Math.cos(phase*.37)*.28
+          state.z+breezeZ*.48+Math.cos(phase*.37)*.28
         );
         perimeterShardDummy.rotation.set(
           state.rotation.x+Math.sin(phase*.53)*.09,
@@ -3913,6 +5146,54 @@
       });
       perimeterShardFill.instanceMatrix.needsUpdate=true;
       perimeterShardWire.instanceMatrix.needsUpdate=true;
+      nearShardStates.forEach((state,index) => {
+        const phase=
+          time*.000105*(.9+state.speed)+state.phase;
+        perimeterShardDummy.position.set(
+          state.x+breezeX*.92+Math.sin(phase*.37)*.5,
+          state.y+Math.sin(phase)*.82,
+          state.z+breezeZ*.86+Math.cos(phase*.31)*.46
+        );
+        perimeterShardDummy.rotation.set(
+          state.rotation.x+Math.sin(phase*.43)*.035,
+          state.rotation.y+Math.sin(phase*.29)*.055,
+          state.rotation.z+Math.cos(phase*.41)*.04
+        );
+        perimeterShardDummy.scale.copy(state.scale);
+        perimeterShardDummy.updateMatrix();
+        nearShardFill.setMatrixAt(index,perimeterShardDummy.matrix);
+        nearShardWire.setMatrixAt(index,perimeterShardDummy.matrix);
+      });
+      nearShardFill.instanceMatrix.needsUpdate=true;
+      nearShardWire.instanceMatrix.needsUpdate=true;
+      ambientShardFamilies.forEach((family,familyIndex) => {
+        family.states.forEach((state,index) => {
+          const phase=
+            time*.000095*(.9+state.speed)+
+            state.phase+familyIndex*.73;
+          const drift=state.drift||1;
+          perimeterShardDummy.position.set(
+            state.x+breezeX*drift+
+              Math.sin(phase*.39)*.38*drift,
+            state.y+Math.sin(phase)*.68*drift,
+            state.z+breezeZ*drift+
+              Math.cos(phase*.33)*.34*drift
+          );
+          perimeterShardDummy.rotation.set(
+            state.rotation.x+Math.sin(phase*.41)*.055,
+            state.rotation.y+
+              Math.sin(phase*.27)*.075+
+              time*.000006*(index%2===0?1:-1),
+            state.rotation.z+Math.cos(phase*.37)*.05
+          );
+          perimeterShardDummy.scale.copy(state.scale);
+          perimeterShardDummy.updateMatrix();
+          family.fill.setMatrixAt(index,perimeterShardDummy.matrix);
+          family.wire.setMatrixAt(index,perimeterShardDummy.matrix);
+        });
+        family.fill.instanceMatrix.needsUpdate=true;
+        family.wire.instanceMatrix.needsUpdate=true;
+      });
       cloudGroups.forEach(cloud => {
         cloud.position.x+=dt*cloud.userData.speed;
         if (cloud.position.x>185) cloud.position.x-=370;
