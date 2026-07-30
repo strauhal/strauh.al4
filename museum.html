@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0000ff">
   <meta name="description" content="An immersive, spatial museum for art and photography.">
-  <meta property="og:title" content="strauh.al / museum">
-  <meta property="og:description" content="Enter a blue museum without end.">
+  <meta property="og:title" content="strauh.al/museum">
+  <meta property="og:description" content="museum.">
   <meta property="og:image" content="https://strauh.al/banner.gif">
-  <title>strauh.al / museum</title>
+  <title>strauh.al/museum</title>
   <link rel="icon" href="./favicon.ico">
   <style>
     :root { color-scheme: dark; --blue: #00f; --white: #fff; }
@@ -129,7 +129,7 @@
     #coordinates {
       position: absolute;
       left: max(20px, env(safe-area-inset-left));
-      bottom: max(58px, calc(env(safe-area-inset-bottom) + 58px));
+      bottom: max(20px, env(safe-area-inset-bottom));
       padding: 7px 9px;
       border: 1px solid rgba(255,255,255,.72);
       background: rgba(0,0,255,.68);
@@ -259,6 +259,7 @@
     renderer.toneMapping = THREE.LinearToneMapping;
     renderer.toneMappingExposure = .92;
     renderer.xr.enabled = true;
+    renderer.xr.setReferenceSpaceType("local-floor");
     renderer.xr.setFramebufferScaleFactor(1);
     renderer.domElement.tabIndex = 0;
     renderer.domElement.setAttribute("aria-label","Interactive museum viewport");
@@ -452,10 +453,13 @@
       return geometry;
     }
 
-    function column(x,z,height=14,parent=scene) {
+    function column(x,z,height=14,parent=scene,radialScale=1) {
       const group=new THREE.Group();
       group.position.set(x,0,z);
-      if (parent===scene) columnObstructions.push({x,z,half:2.15});
+      group.scale.set(radialScale,1,radialScale);
+      if (parent===scene) {
+        columnObstructions.push({x,z,half:2.15*radialScale});
+      }
 
       // A straight-line Corinthian order: stepped plinth, octagonal shaft,
       // flutes, two angular acanthus tiers, corner volutes, and layered abacus.
@@ -816,16 +820,38 @@
       };
       entryFragments.push(piece);
     }
-    for (let index=0;index<12;index++) {
-      const x=-40+index*7.1;
-      const z=54+(index%4)*5.7;
+    const frontCanopyTriangleCount=5;
+    const rearSideTriangleCount=7;
+    for (let index=0;index<frontCanopyTriangleCount;index++) {
+      const x=-32+index*16;
+      const z=57+(index%3)*6.2;
       const y=16+(index%3)*2.25;
       entryCanopyTriangle([
         [x,y,z],
-        [x+13+(index%2)*4,y+1.8+(index%3),z+3.5],
-        [x+4.5,y-.65+(index%2)*1.4,z+14]
+        [x+12+(index%2)*3,y+1.8+(index%3),z+3.5],
+        [x+4.5,y-.65+(index%2)*1.4,z+13]
       ],index%3===0?glassMaterial:blueMaterial,30+index);
     }
+    // Move the excess front triangles to staggered rear-side clusters. They
+    // now frame the back elevation without crowding the arrival facade.
+    for (let index=0;index<rearSideTriangleCount;index++) {
+      const side=index%2===0?-1:1;
+      const lane=Math.floor(index/2);
+      const x=side*(64+lane*7.5);
+      const z=-51-lane*9;
+      const y=14+(index%3)*5+lane*2;
+      entryCanopyTriangle([
+        [x,y,z],
+        [x+side*(10+(index%2)*3),y+2.4,z-4],
+        [x+side*3.5,y-.8,z-13]
+      ],index%4===0?glassMaterial:blueMaterial,40+index);
+    }
+    document.body.dataset.frontCanopyTriangles=String(
+      frontCanopyTriangleCount
+    );
+    document.body.dataset.rearSideTriangles=String(
+      rearSideTriangleCount
+    );
 
     // A dense, instanced shard field wraps the entire museum rather than
     // concentrating every floating object at the entrance. Two draw calls
@@ -1106,9 +1132,17 @@
       brokenGlassStates
     );
 
+    const frontDiamondShardCount=4;
+    const rearDiamondCenters=[
+      [-68,-42],[68,-46],[-76,-66],[76,-70]
+    ];
     const diamondShardStates=[];
     for (let index=0;index<18;index++) {
-      const center=glassClusterCenters[(index*2+1)%glassClusterCenters.length];
+      const center=index<frontDiamondShardCount
+        ?glassClusterCenters[index%2]
+        :rearDiamondCenters[
+          (index-frontDiamondShardCount)%rearDiamondCenters.length
+        ];
       const angle=shardNoise(index+743)*Math.PI*2;
       const radius=8+shardNoise(index+761)*19;
       diamondShardStates.push(keepShardOutsideGallery({
@@ -1134,6 +1168,12 @@
       new THREE.OctahedronGeometry(1,0),
       blueMaterial,
       diamondShardStates
+    );
+    document.body.dataset.frontDiamondShards=String(
+      frontDiamondShardCount
+    );
+    document.body.dataset.rearDiamondShards=String(
+      diamondShardStates.length-frontDiamondShardCount
     );
 
     // Transfer the reference's four-dimensional depth exchange into the
@@ -1807,43 +1847,29 @@
     const entryOuter={x:6,y:.02,z:51};
     const rampFrontLeft=polygonPoint(outerRadius,startAngle,.38);
     const rampFrontRight=polygonPoint(outerRadius,startAngle+Math.PI*2/spiralSides,.38);
-    // Each destination opens onto the first floor owned by that collection.
-    // Keying the landing by both side and level prevents a photography sign or
-    // shortcut from terminating on an art floor.
-    const archiveLandingTargets=[
-      {
-        side:9,
-        level:collectionFloorBands.art.start,
-        name:"ART BEFORE 2000",
-        primary:true
-      },
-      ...Array.from(
-        {
-          length:
-            collectionFloorBands.after.end-
-            collectionFloorBands.after.start+1
-        },
-        (_,offset)=>({
-          side:6,
-          level:collectionFloorBands.after.start+offset,
-          name:"ART AFTER 2000",
-          primary:offset===0
-        })
-      ),
-      ...Array.from(
-        {
-          length:
-            collectionFloorBands.photo.end-
-            collectionFloorBands.photo.start+1
-        },
-        (_,offset)=>({
-          side:3,
-          level:collectionFloorBands.photo.start+offset,
-          name:"PHOTOGRAPHY",
-          primary:offset===0
-        })
-      )
-    ];
+    // Opposite openings on every level receive the two stair bridges. One
+    // opening on each collection's first floor also remains the elevator
+    // destination, so circulation and shortcuts share the same real landing.
+    function archiveNameForLevel(level) {
+      if (level>=collectionFloorBands.photo.start) return "PHOTOGRAPHY";
+      if (level>=collectionFloorBands.after.start) return "ART AFTER 2000";
+      return "ART BEFORE 2000";
+    }
+    const archiveLandingTargets=Array.from(
+      {length:spiralRevolutions},
+      (_,level)=>[3,9].map((side,stair) => ({
+        side,
+        level,
+        stair,
+        name:archiveNameForLevel(level),
+        primary:
+          side===3 && (
+            level===collectionFloorBands.art.start ||
+            level===collectionFloorBands.after.start ||
+            level===collectionFloorBands.photo.start
+          )
+      }))
+    ).flat();
     document.body.dataset.archiveSeparation="strict";
     const archiveLandings=[];
     quadSurface([
@@ -1969,10 +1995,8 @@
     );
     scene.add(museumFrontMark);
 
-    // A twelve-sided departure court anchors a paired helical stair. Art
-    // Before 2000 already begins on the lower gallery floors, so the two
-    // upward routes are reserved for the upper archives: Art After 2000 and
-    // Photography.
+    // A twelve-sided departure court anchors a true double-helix stair. Both
+    // strands climb the full museum and connect independently to every floor.
     const archiveDepartureRadius=12.15;
     const archiveDepartureCourt=edged(
       new THREE.CylinderGeometry(
@@ -1984,19 +2008,37 @@
     );
     navSurfaces.push(archiveDepartureCourt.children[0]);
 
+    // The strands share one axis and one pitch but remain exactly half a turn
+    // apart. A full story per revolution leaves 4.6 vertical metres between
+    // their nearest coincident plan positions, so they weave without phasing.
     const archiveHelixRadius=14.1;
-    const archiveHelixWidth=4.25;
-    const upperArchiveLandings=archiveLandings
-      .filter(landing=>
-        landing.name==="ART AFTER 2000" ||
-        landing.name==="PHOTOGRAPHY"
-      )
-      .sort((a,b)=>a.point.y-b.point.y);
-
-    function positiveAngle(angle) {
-      const turn=Math.PI*2;
-      return ((angle%turn)+turn)%turn;
-    }
+    const archiveHelixWidth=3.8;
+    const archiveCompleteTurns=spiralRevolutions;
+    const archiveRouteEndY=.1+archiveCompleteTurns*storyHeight;
+    const archiveBridgeReference=archiveLandings.find(
+      landing=>landing.side===3 &&
+        landing.level===collectionFloorBands.art.start
+    );
+    const archiveBridgeAngle=Math.atan2(
+      archiveBridgeReference.point.z-spiralCenter.z,
+      archiveBridgeReference.point.x-spiralCenter.x
+    );
+    const archiveBridgeStartY=archiveBridgeReference.point.y+.05;
+    const archiveFirstStartAngle=
+      archiveBridgeAngle-
+      (archiveBridgeStartY-.1)/storyHeight*Math.PI*2;
+    const archiveStairPlans=[
+      {
+        landingSide:3,
+        startAngle:archiveFirstStartAngle,
+        label:"ALL FLOORS · WEST"
+      },
+      {
+        landingSide:9,
+        startAngle:archiveFirstStartAngle+Math.PI,
+        label:"ALL FLOORS · EAST"
+      }
+    ];
 
     function archiveRouteEdgePoint(route,routeIndex,side,width) {
       const point=route[routeIndex];
@@ -2013,7 +2055,8 @@
     }
 
     function registerInvisibleArchiveGuards(
-      route,width,startClearance=0,endClearance=0
+      route,width,startClearance=0,endClearance=0,
+      clearanceIndices=[]
     ) {
       // The guardrails remain as sparse collision segments, but render no
       // geometry. This preserves the open Penrose silhouette while keeping a
@@ -2028,6 +2071,12 @@
         routeIndex+=3
       ) {
         const endIndex=Math.min(lastIndex,routeIndex+3);
+        // Leave a real opening in the helix rails wherever a floor bridge
+        // joins. Previously the visible path was clear but an invisible guard
+        // continued across the mouth and trapped the visitor on the stairs.
+        if (clearanceIndices.some(index=>
+          routeIndex<=index+2 && endIndex>=index-2
+        )) continue;
         for (const side of [-1,1]) {
           const a=archiveRouteEdgePoint(route,routeIndex,side,width);
           const b=archiveRouteEdgePoint(route,endIndex,side,width);
@@ -2042,35 +2091,12 @@
       }
     }
 
-    function buildArchiveHelix(landing,index) {
-      // The two starts are half a turn apart. Their common radius and winding
-      // direction produce the legible double-helix silhouette while keeping
-      // the walkable ribbons fully separate.
-      const startAngleForRoute=startAngle+Math.PI*.5+index*Math.PI;
-      const landingAngle=Math.atan2(
-        landing.point.z-spiralCenter.z,
-        landing.point.x-spiralCenter.x
-      );
-      const collectionKey=
-        landing.name==="PHOTOGRAPHY"?"photo":"after";
-      const routeBand=collectionFloorBands[collectionKey];
-      const localLandingY=
-        landing.point.y-landing.level*storyHeight;
-      const routeEndY=
-        routeBand.end*storyHeight+localLandingY+.05;
-      // Keep the climb below a comfortable 0.48 rise/run. With the archive's
-      // current data-driven floor allocation, each ribbon continues through
-      // the top floor owned by its archive rather than stopping at its first.
-      const completeTurns=Math.max(
-        index===0?3:4,
-        Math.ceil(
-          (routeEndY-.1)/
-          (Math.PI*2*archiveHelixRadius*.48)
-        )
-      );
-      const angularTravel=
-        completeTurns*Math.PI*2+
-        positiveAngle(landingAngle-startAngleForRoute);
+    function buildArchiveHelix(stairPlan,index) {
+      // Identical pitch and a fixed π phase offset make these two strands a
+      // mathematically exact double helix rather than intersecting animations.
+      const startAngleForRoute=stairPlan.startAngle;
+      const completeTurns=archiveCompleteTurns;
+      const angularTravel=completeTurns*Math.PI*2;
       const helixSamples=Math.max(
         116,
         Math.ceil(angularTravel/(Math.PI*2)*52)
@@ -2093,49 +2119,60 @@
         const angle=startAngleForRoute+angularTravel*progress;
         path.push({
           x:spiralCenter.x+Math.cos(angle)*archiveHelixRadius,
-          y:THREE.MathUtils.lerp(.1,routeEndY,progress),
+          y:THREE.MathUtils.lerp(.1,archiveRouteEndY,progress),
           z:spiralCenter.z+Math.sin(angle)*archiveHelixRadius
         });
       }
 
-      // Every archive floor receives its own level bridge. Each bridge begins
-      // at the closest helix sample and overlaps the corresponding opening in
-      // the inner ring, so no route terminates in air or against a guardrail.
-      const landingRadius=Math.hypot(
-        landing.point.x-spiralCenter.x,
-        landing.point.z-spiralCenter.z
-      )+.95;
+      // Both stairs get a bridge on all eleven levels. Opposite radial bridge
+      // axes keep the two walkway systems disjoint; the east bridges rise by
+      // half a story to meet the continuously climbing gallery spiral.
       const floorConnections=[];
-      for (
-        let floor=routeBand.start;
-        floor<=routeBand.end;
-        floor++
-      ) {
-        const targetY=
-          landing.point.y+
-          (floor-landing.level)*storyHeight+.05;
-        let pathIndex=0;
-        let bestScore=Infinity;
-        path.forEach((point,candidateIndex) => {
-          const pointAngle=Math.atan2(
-            point.z-spiralCenter.z,
-            point.x-spiralCenter.x
-          );
-          const angularError=Math.abs(Math.atan2(
-            Math.sin(pointAngle-landingAngle),
-            Math.cos(pointAngle-landingAngle)
-          ));
-          const score=angularError*28+Math.abs(point.y-targetY);
-          if (score<bestScore) {
-            bestScore=score;
-            pathIndex=candidateIndex;
-          }
-        });
-        const bridgeStart=path[pathIndex];
+      for (let floor=0;floor<spiralRevolutions;floor++) {
+        const landing=archiveLandingTargets.find(target=>
+          target.stair===index &&
+          target.side===stairPlan.landingSide &&
+          target.level===floor
+        );
+        const landingPoint=segmentPoint(
+          polygonPoint(
+            innerRadius,
+            startAngle+
+              (floor*spiralSides+landing.side)*Math.PI*2/spiralSides,
+            (floor+landing.side/spiralSides)*storyHeight
+          ),
+          polygonPoint(
+            innerRadius,
+            startAngle+
+              (floor*spiralSides+landing.side+1)*Math.PI*2/spiralSides,
+            (floor+(landing.side+1)/spiralSides)*storyHeight
+          ),
+          .5
+        );
+        const bridgeY=archiveBridgeStartY+floor*storyHeight;
+        const bridgeProgress=(bridgeY-.1)/(archiveRouteEndY-.1);
+        const pathIndex=Math.round(bridgeProgress*helixSamples);
+        const bridgeAngle=
+          startAngleForRoute+angularTravel*bridgeProgress;
+        const bridgeStart={
+          x:spiralCenter.x+Math.cos(bridgeAngle)*archiveHelixRadius,
+          y:bridgeY,
+          z:spiralCenter.z+Math.sin(bridgeAngle)*archiveHelixRadius
+        };
+        const landingDirection={
+          x:landingPoint.x-spiralCenter.x,
+          z:landingPoint.z-spiralCenter.z
+        };
+        const landingDistance=Math.hypot(
+          landingDirection.x,landingDirection.z
+        )||1;
+        const landingRadius=landingDistance+.95;
         const bridgeTarget={
-          x:spiralCenter.x+Math.cos(landingAngle)*landingRadius,
-          y:targetY,
-          z:spiralCenter.z+Math.sin(landingAngle)*landingRadius
+          x:spiralCenter.x+
+            landingDirection.x/landingDistance*landingRadius,
+          y:landingPoint.y+.05,
+          z:spiralCenter.z+
+            landingDirection.z/landingDistance*landingRadius
         };
         const bridge=[{...bridgeStart}];
         for (let bridgeIndex=1;bridgeIndex<=14;bridgeIndex++) {
@@ -2152,12 +2189,14 @@
             )
           });
         }
-        floorConnections.push({floor,path:bridge});
+        floorConnections.push({floor,path:bridge,pathIndex});
       }
 
       const width=archiveHelixWidth;
       const treadGeometries=[];
       const treadEdgeGeometries=[];
+      const bridgeGeometries=[];
+      const bridgeEdgeGeometries=[];
       const archiveRoutes=[
         path,
         ...floorConnections.map(connection=>connection.path)
@@ -2169,7 +2208,10 @@
           route,
           width+.15,
           routeIndex===0?3:0,
-          routeIndex>0?3:0
+          routeIndex>0?3:0,
+          routeIndex===0
+            ?floorConnections.map(connection=>connection.pathIndex)
+            :[]
         );
         for (
           let segmentIndex=0;
@@ -2196,10 +2238,19 @@
           // retain their open, weightless Penrose rhythm.
           const steps=Math.max(1,Math.ceil(run/1.35));
           const angle=Math.atan2(dx,dz);
+          const geometryTarget=routeIndex===0
+            ?treadGeometries
+            :bridgeGeometries;
+          const edgeTarget=routeIndex===0
+            ?treadEdgeGeometries
+            :bridgeEdgeGeometries;
           for (let stepIndex=0;stepIndex<steps;stepIndex++) {
             const progress=(stepIndex+.5)/steps;
             const treadGeometry=new THREE.BoxGeometry(
-              width,.14,Math.max(.28,run/steps*.56)
+              width,.14,Math.max(
+                .28,
+                run/steps*(routeIndex===0?.56:1.06)
+              )
             );
             const treadMatrix=new THREE.Matrix4().compose(
               new THREE.Vector3(
@@ -2213,8 +2264,8 @@
               new THREE.Vector3(1,1,1)
             );
             treadGeometry.applyMatrix4(treadMatrix);
-            treadGeometries.push(treadGeometry);
-            treadEdgeGeometries.push(new THREE.EdgesGeometry(treadGeometry));
+            geometryTarget.push(treadGeometry);
+            edgeTarget.push(new THREE.EdgesGeometry(treadGeometry));
           }
         }
       });
@@ -2239,14 +2290,43 @@
       }
       treadGeometries.forEach(geometry=>geometry.dispose());
       treadEdgeGeometries.forEach(geometry=>geometry.dispose());
+      // Bridges remain fixed on their authoritative collision routes while
+      // the helix breathes. Their overlapping tread depth forms a continuous
+      // walking deck with no visible or navigational gaps.
+      const bridgeGroup=new THREE.Group();
+      const mergedBridges=mergeGeometries(bridgeGeometries,false);
+      const mergedBridgeEdges=mergeGeometries(
+        bridgeEdgeGeometries,false
+      );
+      if (mergedBridges) {
+        const bridgeMesh=new THREE.Mesh(mergedBridges,blueMaterial);
+        bridgeMesh.receiveShadow=true;
+        bridgeGroup.add(bridgeMesh);
+        navSurfaces.push(bridgeMesh);
+      }
+      if (mergedBridgeEdges) {
+        const bridgeEdges=new THREE.LineSegments(
+          mergedBridgeEdges,whiteLineMaterial
+        );
+        bridgeEdges.renderOrder=5;
+        bridgeGroup.add(bridgeEdges);
+      }
+      bridgeGeometries.forEach(geometry=>geometry.dispose());
+      bridgeEdgeGeometries.forEach(geometry=>geometry.dispose());
+      bridgeGroup.userData={
+        fixedWalkways:true,
+        stair:index,
+        floors:floorConnections.map(connection=>connection.floor+1)
+      };
+      scene.add(bridgeGroup);
       stairGroup.userData={
         baseX:0,baseY:0,baseZ:0,
         breathCenterX:spiralCenter.x,
         breathCenterZ:spiralCenter.z,
-        phase:index*2.7,
-        direction:index%2===0?1:-1,
+        phase:0,
+        direction:index===0?-1:1,
         helix:true,
-        destination:landing.name,
+        destination:stairPlan.label,
         revolutions:completeTurns,
         floorConnections:floorConnections.map(
           connection=>connection.floor+1
@@ -2254,7 +2334,7 @@
       };
       scene.add(stairGroup);
       animatedSteps.push(stairGroup);
-      const sign=plaque(landing.name,landing.name.length>16?12:9,1.08);
+      const sign=plaque(stairPlan.label,11,1.08);
       const departureDirection={
         x:path[2].x-path[0].x,
         z:path[2].z-path[0].z
@@ -2274,27 +2354,43 @@
       );
       scene.add(sign);
     }
-    upperArchiveLandings.forEach(buildArchiveHelix);
-    document.body.dataset.archiveStaircases=String(upperArchiveLandings.length);
-    document.body.dataset.archiveStairType="double-helix";
+    archiveStairPlans.forEach(buildArchiveHelix);
+    document.body.dataset.archiveStaircases=String(archiveStairPlans.length);
+    document.body.dataset.archiveStairType="clearance-double-helix";
+    document.body.dataset.archiveStairSymmetry="half-turn-phase";
+    document.body.dataset.archiveStairOverlap="vertical-clearance";
     document.body.dataset.archiveStairRails="invisible-collision";
     document.body.dataset.archiveLandingBridges=String(
-      archiveLandingTargets.filter(target=>target.name!=="ART BEFORE 2000").length
+      archiveStairPlans.length*spiralRevolutions
+    );
+    document.body.dataset.archiveStairFloorConnections=
+      archiveStairPlans.map(()=>spiralRevolutions).join(",");
+    document.body.dataset.archiveStairBreath="reciprocal-radial-0.024";
+    document.body.dataset.archiveWalkways="fixed-continuous";
+    document.body.dataset.archiveRailOpenings=String(
+      archiveStairPlans.length*spiralRevolutions
     );
     document.body.dataset.archiveTreadSpacing="open";
-    document.body.dataset.penroseCount=String(upperArchiveLandings.length);
+    document.body.dataset.penroseCount=String(archiveStairPlans.length);
     document.body.dataset.archiveStairColliders=String(archiveStairColliders.length);
 
-    // Twelve full-height Corinthian columns define the atrium without
-    // occupying any artwork wall or walkway.
+    // Twelve slimmed Corinthian columns define the atrium. Pulling their axis
+    // inward and reducing the capital footprint keeps structure out of the
+    // gallery threshold and the bridge approaches.
     const roofY=spiralRevolutions*storyHeight+4.4;
+    const atriumColumnRadius=innerRadius-6.5;
+    const atriumColumnScale=.72;
     for (let side=0;side<spiralSides;side++) {
       const angle=startAngle+side*Math.PI*2/spiralSides;
-      const position=polygonPoint(innerRadius-5,angle,0);
-      column(position.x,position.z,roofY-.5);
-      registerCollisionBox(3.9,roofY-.5,3.9,
+      const position=polygonPoint(atriumColumnRadius,angle,0);
+      column(
+        position.x,position.z,roofY-.5,scene,atriumColumnScale
+      );
+      registerCollisionBox(2.8,roofY-.5,2.8,
         position.x,(roofY-.5)/2,position.z,.25);
     }
+    document.body.dataset.atriumColumnRadius=String(atriumColumnRadius);
+    document.body.dataset.atriumColumnScale=String(atriumColumnScale);
 
     // Legacy groups remain empty; the paired labeled helix above is now the
     // museum's functional Penrose circulation.
@@ -3306,6 +3402,7 @@
     let catalogMountedCount = 0;
     let catalogGifMountedCount = 0;
     let catalogCollectionMismatchCount = 0;
+    let catalogDecadeMismatchCount = 0;
     function showCollectionCount(visible, pending) {
       const indexed = catalogIndexedCount ? ` · ${catalogIndexedCount.toLocaleString()} indexed` : "";
       document.getElementById("location").dataset.collection = pending
@@ -3337,6 +3434,12 @@
       }
       if (pathMatch) return pathMatch[1];
       return yearMatch ? `${Math.floor(Number(yearMatch[1])/100)*100}s` : "1900s";
+    }
+    function inferDecade(item) {
+      if (catalogCollection(item)==="photography") return "photography";
+      const yearMatch=item[0].match(/\b((?:1[1-9]|20)\d{2})\b/);
+      if (!yearMatch) return "undated";
+      return `${Math.floor(Number(yearMatch[1])/10)*10}s`;
     }
     function centuryForWall(set,z) {
       if (set===mountSets.after) return "2000s";
@@ -3601,8 +3704,7 @@
           button.dataset.destinationZ=String(
             spiralCenter.z+Math.sin(angle)*destinationRadius
           );
-          button.textContent=
-            `${text.toLowerCase()} · floor ${placement.level+1}`;
+          button.textContent=text.toLowerCase();
           menu.appendChild(button);
         }
       }
@@ -3696,11 +3798,28 @@
           : wall.collection==="photo"
             ? "photography"
             : artWallPlan.plan.get(wall.id)||"unclassified";
-        queueDecadeHeader(
-          wall,decadeHeaderForWall(wall.collection,targetCentury)
+        const wallDecade=decadeHeaderForWall(
+          wall.collection,targetCentury
         );
-        for (let row=0;row<rows.length;row++) {
-          for (let columnIndex=0;columnIndex<columns;columnIndex++) {
+        queueDecadeHeader(wall,wallDecade);
+        // Sparse decades occupy the center band across the whole wall first.
+        // Additional works then alternate below and above that band, keeping
+        // partial collections visually centered instead of bottom-heavy.
+        const slotPlan=[];
+        for (let columnIndex=0;columnIndex<columns;columnIndex++) {
+          slotPlan.push({row:1,columnIndex});
+        }
+        for (let columnIndex=0;columnIndex<columns;columnIndex++) {
+          slotPlan.push({
+            row:columnIndex%2===0?0:2,columnIndex
+          });
+        }
+        for (let columnIndex=0;columnIndex<columns;columnIndex++) {
+          slotPlan.push({
+            row:columnIndex%2===0?2:0,columnIndex
+          });
+        }
+        for (const {row,columnIndex} of slotPlan) {
             const distance=columns===1
               ? length/2
               : margin+columnIndex*(usable/(columns-1));
@@ -3730,12 +3849,13 @@
               rotationY,maxW,maxH,{
                 wallId:wall.id,
                 labelY:base.y+7.7,
-                century:targetCentury
+                century:targetCentury,
+                decade:wallDecade.toLowerCase()
               }
             );
-            plannedMountAllocation[wall.collection][targetCentury]=
-              (plannedMountAllocation[wall.collection][targetCentury]||0)+1;
-          }
+            const allocationKey=wallDecade.toLowerCase();
+            plannedMountAllocation[wall.collection][allocationKey]=
+              (plannedMountAllocation[wall.collection][allocationKey]||0)+1;
         }
       });
       window.museumExpansionPlan.artWallAllocation=
@@ -3750,6 +3870,8 @@
       // walls and reintroduce unexplained blank areas.
     }
     buildMuseumMounts();
+    document.body.dataset.sparseWallAlignment="center-out";
+    window.museumExpansionPlan.sparseWallAlignment="center-out";
     buildDecadeHeaders();
     const generatedMountCapacity=Object.values(mountSets)
       .reduce((total,mounts)=>total+mounts.length,0);
@@ -3797,7 +3919,6 @@
       object.matrixAutoUpdate=false;
     }
 
-    const mountedCenturyByWall=new Map();
     async function mountUniqueCollection(entries,mounts,usedURLs,matchCentury=false) {
       if (!mounts.length) return;
       const targetCollection=mounts[0]?.collection;
@@ -3819,18 +3940,13 @@
       let cursor=0;
       const buckets=new Map();
       const bucketCursors=new Map();
-      const wallMountCounts=new Map();
       if (matchCentury) {
         for (const item of eligibleEntries) {
-          const century=inferCentury(item);
-          if (!buckets.has(century)) buckets.set(century,[]);
-          buckets.get(century).push(item);
-        }
-        for (const descriptor of mounts) {
-          if (descriptor.occupied) continue;
-          wallMountCounts.set(
-            descriptor.wallId,(wallMountCounts.get(descriptor.wallId)||0)+1
-          );
+          const bucket=mounts[0]?.decade
+            ?inferDecade(item)
+            :inferCentury(item);
+          if (!buckets.has(bucket)) buckets.set(bucket,[]);
+          buckets.get(bucket).push(item);
         }
       }
       const nextUnused=(items,key) => {
@@ -3844,42 +3960,10 @@
         if (descriptor.occupied) continue;
         let item;
         if (matchCentury) {
-          const targetCentury=Number(descriptor.century.slice(0,4));
-          if (!mountedCenturyByWall.has(descriptor.wallId)) {
-            const needed=wallMountCounts.get(descriptor.wallId)||1;
-            const choices=[...buckets.keys()].map(century => {
-              const items=buckets.get(century);
-              const start=bucketCursors.get(century)||0;
-              let available=0;
-              for (let index=start;index<items.length;index++) {
-                if (!usedURLs.has(items[index][1])) available++;
-              }
-              return {
-                century,available,
-                distance:Math.abs(Number(century.slice(0,4))-targetCentury)
-              };
-            }).filter(choice=>choice.available>0);
-            const sufficient=choices
-              .filter(choice=>choice.available>=needed)
-              .sort((a,b)=>a.distance-b.distance);
-            const fallback=choices.sort((a,b)=>
-              b.available-a.available || a.distance-b.distance
-            );
-            const exact=choices.find(choice=>
-              choice.century===descriptor.century &&
-              choice.available>=needed
-            );
-            const selectedCentury=(
-              exact||sufficient[0]||fallback[0]
-            )?.century;
-            if (selectedCentury) {
-              mountedCenturyByWall.set(descriptor.wallId,selectedCentury);
-            }
-          }
-          const chosenCentury=mountedCenturyByWall.get(descriptor.wallId);
-          if (chosenCentury) {
-            item=nextUnused(buckets.get(chosenCentury),chosenCentury);
-          }
+          // A dated wall accepts only its exact bucket. The old nearest-bucket
+          // fallback is what put 1932 works beneath a 1990s plaque.
+          const targetBucket=descriptor.decade||descriptor.century;
+          item=nextUnused(buckets.get(targetBucket)||[],targetBucket);
           if (!item) continue;
         } else {
           item=nextUnused(eligibleEntries,"all");
@@ -3888,6 +3972,16 @@
         usedURLs.add(item[1]);
         descriptor.occupied=true;
         descriptor.mountedCentury=inferCentury(item);
+        descriptor.mountedDecade=inferDecade(item);
+        if (
+          descriptor.decade &&
+          descriptor.mountedDecade!==descriptor.decade
+        ) {
+          catalogDecadeMismatchCount++;
+        }
+        document.body.dataset.decadeMismatchesMounted=String(
+          catalogDecadeMismatchCount
+        );
         artwork(
           item,descriptor.x,descriptor.y,descriptor.z,descriptor.rotationY,
           descriptor.maxW,descriptor.maxH,descriptor.collection
@@ -3923,7 +4017,7 @@
       await Promise.all([
         mountUniqueCollection(seedArt,mountSets.art,usedURLs,true),
         mountUniqueCollection(seedPhotography,mountSets.photo,usedURLs,false),
-        mountUniqueCollection(seedAfter,mountSets.after,usedURLs,false)
+        mountUniqueCollection(seedAfter,mountSets.after,usedURLs,true)
       ]);
       try {
         const [allArt,allPhotography]=await Promise.all([
@@ -3940,7 +4034,7 @@
         await Promise.all([
           mountUniqueCollection(historical,mountSets.art,usedURLs,true),
           mountUniqueCollection(allPhotography,mountSets.photo,usedURLs,false),
-          mountUniqueCollection(after,mountSets.after,usedURLs,false)
+          mountUniqueCollection(after,mountSets.after,usedURLs,true)
         ]);
         await mountUniqueCollection(historical,mountSets.balconyArt,usedURLs,true);
         await mountUniqueCollection(allPhotography,mountSets.balconyPhoto,usedURLs,false);
@@ -4306,18 +4400,17 @@
     document.getElementById("reset").addEventListener("click", resetPosition);
     const shortcutToggle=document.getElementById("shortcut-toggle");
     const shortcutMenu=document.getElementById("shortcut-menu");
+    function setWingShortcutOpen(open) {
+      shortcutMenu.hidden=!open;
+      shortcutToggle.setAttribute("aria-expanded",String(open));
+      document.body.classList.toggle("menu-open",open);
+    }
     function closeWingShortcut() {
-      shortcutMenu.hidden=true;
-      shortcutToggle.setAttribute("aria-expanded","false");
-      document.body.classList.remove("menu-open");
+      setWingShortcutOpen(false);
     }
     shortcutToggle.addEventListener("click",event => {
       event.stopPropagation();
-      shortcutMenu.hidden=!shortcutMenu.hidden;
-      shortcutToggle.setAttribute(
-        "aria-expanded",String(!shortcutMenu.hidden)
-      );
-      document.body.classList.toggle("menu-open",!shortcutMenu.hidden);
+      setWingShortcutOpen(shortcutMenu.hidden);
     });
     shortcutMenu.addEventListener("click",event => {
       const button=event.target.closest("[data-wing],[data-floor]");
@@ -4341,7 +4434,11 @@
           item=>item.name===button.dataset.wing
         );
         if (!landing) return;
-        destination=landing.point.clone();
+        destination=new THREE.Vector3(
+          landing.point.x,
+          landing.point.y,
+          landing.point.z
+        );
         destination.y+=.08;
         destinationLevel=landing.level;
         destinationLabel=landing.name;
@@ -4426,11 +4523,14 @@
         pointerLocked=false;
         lookPointer=null;
         document.body.classList.remove("looking");
-        shortcutMenu.hidden=!shortcutMenu.hidden;
-        shortcutToggle.setAttribute(
-          "aria-expanded",String(!shortcutMenu.hidden)
-        );
-        document.body.classList.toggle("menu-open",!shortcutMenu.hidden);
+        setWingShortcutOpen(shortcutMenu.hidden);
+      }
+      if (e.code==="Escape" && !shortcutMenu.hidden) {
+        // Escape closes only the open overlay. It does not immediately request
+        // pointer lock again, so the visitor can choose when to resume looking.
+        e.preventDefault();
+        e.stopPropagation();
+        closeWingShortcut();
       }
       if (e.code==="KeyF" && !e.repeat) {
         e.preventDefault();
@@ -4709,19 +4809,275 @@
       updateCoordinateReadout();
     }
 
-    // WebXR: a single standards-based immersive-vr path for Meta Quest and visionOS Safari.
+    // WebXR: one browser-native immersive path for Meta Quest and visionOS.
+    // A file:// preview can only be presented as a flat browser surface;
+    // WebXR deliberately requires a secure browsing context.
     const xrButton = document.getElementById("xr");
+    const xrStatus = document.getElementById("status");
+    const xrInteractive=[];
+    const xrControllers=[];
+    const xrHands=[];
+    const xrStickState={
+      move:new THREE.Vector2(),
+      look:new THREE.Vector2(),
+      active:new Map()
+    };
+    const xrControlDeck=new THREE.Group();
+    const xrElevatorChoices=new THREE.Group();
+    const xrDeckPosition=new THREE.Vector3();
+    const xrDeckQuaternion=new THREE.Quaternion();
+    const xrDeckForward=new THREE.Vector3();
+    const xrDeckUp=new THREE.Vector3();
+    const xrRayPlane=new THREE.Plane();
+    const xrRayPoint=new THREE.Vector3();
+    const xrRayNormal=new THREE.Vector3();
+    const xrRayOrigin=new THREE.Vector3();
+    const xrRayDirection=new THREE.Vector3();
+    const xrMoveForward=new THREE.Vector3();
+    const xrMoveRight=new THREE.Vector3();
+    const xrMoveVector=new THREE.Vector3();
+    const xrStickRadius=.13;
+    let lastXRPinchAt=-Infinity;
+    let pendingXRTeleport=null;
+    let xrDeckInitialized=false;
+    let xrRunState=false;
+
+    function xrLabelTexture(label) {
+      const canvas=document.createElement("canvas");
+      canvas.width=512;
+      canvas.height=128;
+      const context=canvas.getContext("2d");
+      context.fillStyle="#0000ff";
+      context.fillRect(0,0,canvas.width,canvas.height);
+      context.strokeStyle="#ffffff";
+      context.lineWidth=5;
+      context.strokeRect(3,3,canvas.width-6,canvas.height-6);
+      context.fillStyle="#ffffff";
+      context.font="600 30px Arial";
+      context.textAlign="center";
+      context.textBaseline="middle";
+      context.fillText(label.toUpperCase(),canvas.width/2,canvas.height/2);
+      const texture=new THREE.CanvasTexture(canvas);
+      texture.colorSpace=THREE.SRGBColorSpace;
+      return texture;
+    }
+    function xrPanelButton(label,x,y,width,action,parent=xrControlDeck) {
+      const material=new THREE.MeshBasicMaterial({
+        map:xrLabelTexture(label),
+        transparent:true,
+        side:THREE.DoubleSide
+      });
+      const button=new THREE.Mesh(
+        new THREE.PlaneGeometry(width,.11),
+        material
+      );
+      button.position.set(x,y,.018);
+      button.userData={xrControl:"button",action,label};
+      parent.add(button);
+      xrInteractive.push(button);
+      return button;
+    }
+    function xrJoystick(label,x,type) {
+      const group=new THREE.Group();
+      group.position.set(x,.07,.02);
+      const pad=new THREE.Mesh(
+        new THREE.CircleGeometry(xrStickRadius,40),
+        new THREE.MeshBasicMaterial({
+          color:BLUE,
+          transparent:true,
+          opacity:.74,
+          side:THREE.DoubleSide
+        })
+      );
+      const outline=new THREE.LineSegments(
+        new THREE.EdgesGeometry(pad.geometry),
+        new THREE.LineBasicMaterial({color:WHITE})
+      );
+      const knob=new THREE.Mesh(
+        new THREE.CircleGeometry(.042,32),
+        new THREE.MeshBasicMaterial({
+          color:0x587ac8,
+          side:THREE.DoubleSide
+        })
+      );
+      knob.position.z=.008;
+      pad.userData={xrControl:"stick",type,knob};
+      group.add(pad,outline,knob);
+      const caption=xrPanelButton(
+        label,0,-.175,.28,()=>{},group
+      );
+      caption.userData.xrControl="caption";
+      xrInteractive.splice(xrInteractive.indexOf(caption),1);
+      xrControlDeck.add(group);
+      xrInteractive.push(pad);
+      return pad;
+    }
+    const xrDeckBack=new THREE.Mesh(
+      new THREE.PlaneGeometry(1.36,.66),
+      new THREE.MeshBasicMaterial({
+        color:BLUE,
+        transparent:true,
+        opacity:.42,
+        side:THREE.DoubleSide,
+        depthWrite:false
+      })
+    );
+    xrDeckBack.position.z=-.012;
+    xrControlDeck.add(xrDeckBack);
+    const xrMoveStick=xrJoystick("move · push to run",-.39,"move");
+    const xrLookStick=xrJoystick("look · fly height",.39,"look");
+    xrPanelButton("exit XR",-.45,-.245,.28,async()=>{
+      await renderer.xr.getSession()?.end();
+    });
+    xrPanelButton("elevator",-.15,-.245,.28,()=>{
+      xrElevatorChoices.visible=!xrElevatorChoices.visible;
+    });
+    xrPanelButton("entrance",.15,-.245,.28,()=>resetPosition());
+    xrPanelButton("flight",.45,-.245,.28,()=>toggleXRFlight());
+    xrElevatorChoices.position.set(0,.315,.012);
+    xrPanelButton("before 2000",-.38,0,.34,()=>xrTravelToWing("ART BEFORE 2000"),xrElevatorChoices);
+    xrPanelButton("after 2000",0,0,.34,()=>xrTravelToWing("ART AFTER 2000"),xrElevatorChoices);
+    xrPanelButton("photography",.38,0,.34,()=>xrTravelToWing("PHOTOGRAPHY"),xrElevatorChoices);
+    xrElevatorChoices.visible=false;
+    xrControlDeck.add(xrElevatorChoices);
+    xrControlDeck.visible=false;
+    xrControlDeck.renderOrder=90;
+    xrControlDeck.traverse(child=>{
+      if (child.material) {
+        child.material.depthTest=false;
+        child.renderOrder=90;
+      }
+    });
+    scene.add(xrControlDeck);
+    document.body.dataset.xrControls=
+      "gaze-pinch-buttons|dual-hand-sticks|double-pinch-flight";
+
+    function toggleXRFlight() {
+      flying=!flying;
+      grounded=!flying;
+      verticalVelocity=0;
+      document.body.dataset.xrFlight=String(flying);
+      updateCoordinateReadout();
+    }
+    function xrTravelToWing(name) {
+      const landing=archiveLandings.find(item=>item.name===name);
+      if (!landing) return;
+      rig.position.set(landing.point.x,landing.point.y+.08,landing.point.z);
+      flying=false;
+      grounded=true;
+      verticalVelocity=0;
+      lastSafeUpperPosition.copy(rig.position);
+      hasSafeUpperPosition=true;
+      xrElevatorChoices.visible=false;
+      document.getElementById("location").innerHTML=
+        `${landing.name}<br>floor ${landing.level+1} · `+
+        `elevation ${Math.round(rig.position.y)}`;
+      updateCoordinateReadout();
+    }
+    function setXRControllerRay(controller) {
+      tempMatrix.identity().extractRotation(controller.matrixWorld);
+      raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+      raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
+    }
+    function xrControlHit(controller) {
+      setXRControllerRay(controller);
+      return raycaster.intersectObjects(xrInteractive,false)[0]||null;
+    }
+    function updateXRStick(controller,stick) {
+      setXRControllerRay(controller);
+      stick.getWorldPosition(xrRayPoint);
+      stick.getWorldQuaternion(xrDeckQuaternion);
+      xrRayNormal.set(0,0,1).applyQuaternion(xrDeckQuaternion);
+      xrRayPlane.setFromNormalAndCoplanarPoint(xrRayNormal,xrRayPoint);
+      if (!raycaster.ray.intersectPlane(xrRayPlane,xrRayPoint)) return;
+      stick.worldToLocal(xrRayPoint);
+      const value=xrStickState[stick.userData.type];
+      value.set(xrRayPoint.x/xrStickRadius,xrRayPoint.y/xrStickRadius);
+      if (value.length()>1) value.normalize();
+      stick.userData.knob.position.set(
+        value.x*xrStickRadius,
+        value.y*xrStickRadius,
+        .008
+      );
+    }
+    function releaseXRStick(index) {
+      const stick=xrStickState.active.get(index);
+      if (!stick) return;
+      xrStickState[stick.userData.type].set(0,0);
+      stick.userData.knob.position.set(0,0,.008);
+      xrStickState.active.delete(index);
+    }
+    function performXRTeleport(origin,direction) {
+      raycaster.ray.origin.copy(origin);
+      raycaster.ray.direction.copy(direction);
+      const hit=raycaster.intersectObjects(navSurfaces,false)[0];
+      if (!hit) return;
+      rig.position.x=THREE.MathUtils.clamp(
+        hit.point.x,bounds.minX,bounds.maxX
+      );
+      rig.position.z=THREE.MathUtils.clamp(
+        hit.point.z,bounds.minZ,bounds.maxZ
+      );
+      rig.position.y=Math.max(0,hit.point.y);
+      grounded=true;
+      verticalVelocity=0;
+    }
+    let xrAvailability = "checking";
+    function showXRStatus(message,duration=4400) {
+      xrStatus.textContent=message;
+      xrStatus.classList.add("visible");
+      clearTimeout(showXRStatus.timer);
+      showXRStatus.timer=setTimeout(
+        ()=>xrStatus.classList.remove("visible"),duration
+      );
+    }
     async function detectXR() {
-      if (!navigator.xr || !window.isSecureContext) return;
+      xrButton.hidden=true;
+      xrButton.disabled=false;
+      if (!window.isSecureContext) {
+        xrAvailability="insecure";
+        xrButton.hidden=false;
+        xrButton.textContent="XR needs HTTPS";
+        xrButton.title="Immersive WebXR cannot start from a file:// preview";
+        document.body.dataset.xrSupport="needs-https";
+        return;
+      }
+      if (!navigator.xr) {
+        xrAvailability="unavailable";
+        document.body.dataset.xrSupport="unavailable";
+        return;
+      }
       try {
         if (await navigator.xr.isSessionSupported("immersive-vr")) {
+          xrAvailability="ready";
           xrButton.hidden = false;
-          xrButton.textContent = /Vision|Apple/i.test(navigator.userAgent) ? "enter spatial museum" : "enter immersive";
+          xrButton.textContent = /Vision|visionOS/i.test(navigator.userAgent)
+            ? "enter spatial museum"
+            : "enter immersive XR";
+          xrButton.title="Enter the museum as an immersive WebXR session";
+          document.body.dataset.xrSupport="immersive-vr";
+        } else {
+          xrAvailability="unavailable";
+          document.body.dataset.xrSupport="unavailable";
         }
-      } catch (_) {}
+      } catch (_) {
+        xrAvailability="unavailable";
+        document.body.dataset.xrSupport="unavailable";
+      }
     }
     detectXR();
+    navigator.xr?.addEventListener("devicechange",detectXR);
     xrButton.addEventListener("click", async () => {
+      if (xrAvailability==="insecure") {
+        showXRStatus(
+          "Immersive XR needs an HTTPS URL — file previews stay flat."
+        );
+        return;
+      }
+      if (xrAvailability!=="ready" && !renderer.xr.isPresenting) {
+        showXRStatus("This browser has no immersive WebXR session available.");
+        return;
+      }
       try {
         if (renderer.xr.isPresenting) {
           await renderer.xr.getSession().end();
@@ -4732,37 +5088,225 @@
           optionalFeatures: ["bounded-floor", "hand-tracking", "layers"]
         });
         await renderer.xr.setSession(session);
-        xrButton.textContent = "leave immersive";
-        session.addEventListener("end", () => xrButton.textContent = "enter immersive", { once:true });
+        session.updateRenderState({
+          depthNear:camera.near,
+          depthFar:camera.far
+        });
+        document.body.classList.add("xr-presenting");
+        document.body.dataset.xrSession="immersive-vr";
+        document.body.dataset.xrFeatures=[
+          ...(session.enabledFeatures||[])
+        ].join(",");
+        xrControlDeck.visible=true;
+        xrDeckInitialized=false;
+        rig.rotation.y=yaw;
+        camera.rotation.set(0,0,0);
+        xrButton.hidden=false;
+        xrButton.textContent="leave immersive XR";
+        session.addEventListener("end", () => {
+          xrControlDeck.visible=false;
+          xrElevatorChoices.visible=false;
+          xrStickState.active.forEach((_,index)=>releaseXRStick(index));
+          clearTimeout(pendingXRTeleport);
+          pendingXRTeleport=null;
+          yaw=rig.rotation.y;
+          rig.rotation.set(0,0,0);
+          camera.rotation.set(pitch,yaw,0,"YXZ");
+          document.body.classList.remove("xr-presenting");
+          delete document.body.dataset.xrSession;
+          delete document.body.dataset.xrFeatures;
+          detectXR();
+        }, { once:true });
       } catch (error) {
-        const status = document.getElementById("status");
-        status.textContent = "immersive mode needs HTTPS and headset permission";
-        status.classList.add("visible");
-        setTimeout(()=>status.classList.remove("visible"), 3600);
+        showXRStatus(
+          "Could not start immersive XR. Allow headset tracking and reload the HTTPS page."
+        );
       }
     });
 
     function addXRPointer(index) {
       const controller = renderer.xr.getController(index);
+      controller.userData.xrIndex=index;
       const lineGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-1)]);
       const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: WHITE }));
       line.scale.z = 18;
+      line.visible=false;
       controller.add(line);
-      controller.addEventListener("select", () => {
-        tempMatrix.identity().extractRotation(controller.matrixWorld);
-        raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-        raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
-        const hits = raycaster.intersectObjects(navSurfaces, false);
-        if (hits.length) {
-          const point = hits[0].point;
-          rig.position.x = THREE.MathUtils.clamp(point.x,bounds.minX,bounds.maxX);
-          rig.position.z = THREE.MathUtils.clamp(point.z,bounds.minZ,bounds.maxZ);
-          rig.position.y = Math.max(0, point.y);
+      controller.addEventListener("connected",event => {
+        line.visible=event.data.targetRayMode!=="gaze";
+        controller.userData.targetRayMode=event.data.targetRayMode;
+      });
+      controller.addEventListener("disconnected",()=>line.visible=false);
+      controller.addEventListener("selectstart",()=>{
+        const hit=xrControlHit(controller);
+        controller.userData.usedXRControl=Boolean(hit);
+        if (hit?.object.userData.xrControl==="stick") {
+          xrStickState.active.set(index,hit.object);
+          updateXRStick(controller,hit.object);
         }
       });
+      controller.addEventListener("selectend",()=>releaseXRStick(index));
+      controller.addEventListener("select", () => {
+        const hit=xrControlHit(controller);
+        if (hit?.object.userData.xrControl==="button") {
+          hit.object.userData.action();
+          controller.userData.usedXRControl=false;
+          return;
+        }
+        if (controller.userData.usedXRControl) {
+          controller.userData.usedXRControl=false;
+          return;
+        }
+        setXRControllerRay(controller);
+        const origin=raycaster.ray.origin.clone();
+        const direction=raycaster.ray.direction.clone();
+        const now=performance.now();
+        if (now-lastXRPinchAt<360) {
+          clearTimeout(pendingXRTeleport);
+          pendingXRTeleport=null;
+          lastXRPinchAt=-Infinity;
+          toggleXRFlight();
+          return;
+        }
+        lastXRPinchAt=now;
+        clearTimeout(pendingXRTeleport);
+        pendingXRTeleport=setTimeout(()=>{
+          performXRTeleport(origin,direction);
+          pendingXRTeleport=null;
+        },370);
+      });
       rig.add(controller);
+      // Empty hand roots let browsers expose articulated hand input while
+      // select events continue to cover Vision Pro gaze/pinch and Quest hands.
+      const hand=renderer.xr.getHand(index);
+      rig.add(hand);
+      xrControllers[index]=controller;
+      xrHands[index]=hand;
     }
     addXRPointer(0); addXRPointer(1);
+
+    function updateXRControls(dt) {
+      if (!renderer.xr.isPresenting) return;
+      const xrCamera=renderer.xr.getCamera(camera);
+      const viewCamera=xrCamera.isArrayCamera
+        ?xrCamera.cameras[0]
+        :xrCamera;
+      viewCamera.getWorldPosition(xrDeckPosition);
+      viewCamera.getWorldQuaternion(xrDeckQuaternion);
+      xrDeckForward.set(0,0,-1).applyQuaternion(xrDeckQuaternion);
+      xrDeckUp.set(0,1,0).applyQuaternion(xrDeckQuaternion);
+      xrDeckPosition
+        .addScaledVector(xrDeckForward,1.22)
+        .addScaledVector(xrDeckUp,-.36);
+      const follow=1-Math.exp(-dt*12);
+      if (!xrDeckInitialized) {
+        xrControlDeck.position.copy(xrDeckPosition);
+        xrControlDeck.quaternion.copy(xrDeckQuaternion);
+        xrDeckInitialized=true;
+      } else {
+        xrControlDeck.position.lerp(xrDeckPosition,follow);
+        xrControlDeck.quaternion.slerp(xrDeckQuaternion,follow);
+      }
+      xrControlDeck.updateMatrixWorld(true);
+      xrStickState.active.forEach((stick,index)=>{
+        const controller=xrControllers[index];
+        if (controller) updateXRStick(controller,stick);
+      });
+
+      // The headset target ray is gaze+pinch on Vision Pro and a controller
+      // ray on Quest. Tinting the current target gives both modes the same
+      // predictable focus feedback without requiring DOM overlays.
+      xrInteractive.forEach(object=>{
+        if (!object.userData.baseXRColor) {
+          object.userData.baseXRColor=object.material.color.clone();
+        }
+        object.material.color.copy(object.userData.baseXRColor);
+      });
+      xrControllers.forEach(controller=>{
+        if (!controller?.visible) return;
+        const hit=xrControlHit(controller);
+        if (hit) hit.object.material.color.setHex(0x8cadff);
+      });
+
+      const moveInput=xrStickState.move;
+      const moveMagnitude=moveInput.length();
+      const running=moveMagnitude>.78;
+      if (running!==xrRunState) {
+        xrRunState=running;
+        document.body.dataset.xrPace=running?"run":"walk";
+      }
+      if (moveMagnitude>.12) {
+        viewCamera.getWorldDirection(xrMoveForward);
+        xrMoveForward.y=0;
+        if (xrMoveForward.lengthSq()<.001) xrMoveForward.set(0,0,-1);
+        xrMoveForward.normalize();
+        xrMoveRight.crossVectors(
+          xrMoveForward,new THREE.Vector3(0,1,0)
+        ).normalize();
+        xrMoveVector.set(0,0,0)
+          .addScaledVector(xrMoveForward,moveInput.y)
+          .addScaledVector(xrMoveRight,moveInput.x);
+        if (xrMoveVector.lengthSq()) {
+          xrMoveVector.normalize().multiplyScalar(
+            (running?9.2:4.6)*dt
+          );
+          const nextX=THREE.MathUtils.clamp(
+            rig.position.x+xrMoveVector.x,bounds.minX,bounds.maxX
+          );
+          const nextZ=THREE.MathUtils.clamp(
+            rig.position.z+xrMoveVector.z,bounds.minZ,bounds.maxZ
+          );
+          if (!blockedAt(nextX,rig.position.z)) rig.position.x=nextX;
+          if (!blockedAt(rig.position.x,nextZ)) rig.position.z=nextZ;
+          lastMovementAt=performance.now();
+        }
+      }
+
+      const lookInput=xrStickState.look;
+      if (Math.abs(lookInput.x)>.1) {
+        rig.rotation.y-=lookInput.x*1.35*dt;
+      }
+      if (flying) {
+        if (Math.abs(lookInput.y)>.1) {
+          rig.position.y=THREE.MathUtils.clamp(
+            rig.position.y+lookInput.y*7.4*dt,.08,roofY+72
+          );
+        }
+      } else if (Math.abs(lookInput.y)>.1) {
+        rig.rotation.x=THREE.MathUtils.clamp(
+          rig.rotation.x+lookInput.y*.62*dt,-.38,.38
+        );
+      }
+      yaw=rig.rotation.y;
+      pitch=rig.rotation.x;
+
+      if (!flying && moveMagnitude>.12) {
+        groundRaycaster.set(
+          new THREE.Vector3(
+            rig.position.x,rig.position.y+.85,rig.position.z
+          ),
+          down
+        );
+        groundRaycaster.far=2.2;
+        const floorHit=groundRaycaster.intersectObjects(
+          navSurfaces,false
+        )[0];
+        const stairFloor=archiveStairFloorAt(
+          rig.position.x,rig.position.z,rig.position.y
+        );
+        let floorY=floorHit?floorHit.point.y+.02:null;
+        if (stairFloor && (
+          floorY===null||
+          Math.abs(stairFloor.y-rig.position.y)<
+            Math.abs(floorY-rig.position.y)+.08
+        )) floorY=stairFloor.y;
+        if (floorY!==null && Math.abs(floorY-rig.position.y)<1.25) {
+          rig.position.y=floorY;
+        }
+      }
+      document.body.dataset.xrInput=
+        "left-stick-move|right-stick-look|gaze-pinch-select";
+    }
 
     const artworkFrustum = new THREE.Frustum();
     const artworkViewProjection = new THREE.Matrix4();
@@ -5000,6 +5544,9 @@
       if (animatedSteps[0]) {
         const step=animatedSteps[0].position;
         renderer.domElement.dataset.penrose=`${step.x.toFixed(3)},${step.y.toFixed(3)},${step.z.toFixed(3)}`;
+        renderer.domElement.dataset.stairBreath=animatedSteps
+          .map(stair=>stair.scale.x.toFixed(4))
+          .join(",");
       }
       renderer.domElement.dataset.colliders=String(collisionBoxes.length);
       renderer.domElement.dataset.animatedGifs=String(visibleAnimatedTextures.size);
@@ -5009,26 +5556,31 @@
       const dt = Math.min(clock.getDelta(), .05);
       dimensionalFoldUniforms.time.value=time*.001;
       animatedSteps.forEach(step => {
-        // The visible double-helix expands radially and rises as one slow
-        // breath above a broad, stable invisible ramp. The collision ribbon's
-        // extra width keeps the more legible motion fully walkable.
+        // The two helix strands breathe reciprocally: while one expands, the
+        // other contracts. Their vertical wave stays synchronized, preserving
+        // the half-story clearance verified by the static circulation ribbon.
         const wave=Math.sin(time*.00115+step.userData.phase);
-        const amplitude=step.userData.helix?.14:.18;
-        const breathScale=step.userData.helix?1+wave*.012:1;
+        const amplitude=step.userData.helix?.26:.18;
+        const breathScale=step.userData.helix
+          ?1+wave*.024*step.userData.direction
+          :1;
         step.scale.set(breathScale,1,breathScale);
         step.position.y=step.userData.baseY+wave*amplitude;
         step.position.x=step.userData.baseX+
           (step.userData.breathCenterX||0)*(1-breathScale)+
-          Math.cos(time*.00082+step.userData.phase)*.025*
+          Math.cos(time*.00082+step.userData.phase)*.06*
           step.userData.direction;
         step.position.z=step.userData.baseZ+
           (step.userData.breathCenterZ||0)*(1-breathScale)+
-          Math.sin(time*.00067+step.userData.phase)*.02;
-        step.rotation.z=wave*(step.userData.helix?.006:.014);
+          Math.sin(time*.00067+step.userData.phase)*.035;
+        step.rotation.z=step.userData.helix
+          ?0
+          :wave*.014;
       });
       penrose.updateMatrixWorld(true);
       rearPenrose.updateMatrixWorld(true);
       updateWalk(dt);
+      updateXRControls(dt);
       updateArtworkStreaming(time);
       // Every suspended object shares one low-frequency wind field. Small
       // secondary waves keep pieces from moving in mechanical lockstep.
