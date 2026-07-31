@@ -8,7 +8,7 @@
   <meta property="og:title" content="strauh.al / museum">
   <meta property="og:description" content="Enter a blue museum without end.">
   <meta property="og:image" content="https://strauh.al/banner.gif">
-  <title>strauh.al / museum</title>
+  <title>strauh.al/museum</title>
   <link rel="icon" href="./favicon.ico">
   <style>
     :root { color-scheme: dark; --blue: #00f; --white: #fff; }
@@ -178,13 +178,46 @@
       background: rgba(0,0,255,.75);
       transform: translate(-50%, -50%);
     }
+    #mobile-movement-actions {
+      display: none;
+      position: absolute;
+      right: max(24px, env(safe-area-inset-right));
+      bottom: max(82px, calc(env(safe-area-inset-bottom) + 70px));
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .mobile-movement-action {
+      width: 66px;
+      height: 66px;
+      padding: 0;
+      border-radius: 50%;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .mobile-movement-action.active {
+      color: #00f;
+      background: #fff;
+    }
     @media (pointer: coarse) {
       #touch-stick { display: block; }
+      #mobile-movement-actions { display: flex; }
       #actions { bottom: max(18px, env(safe-area-inset-bottom)); }
     }
     @media (max-width: 640px) {
       #location { top: 18px; right: 18px; left: auto; bottom: auto; text-align: right; }
+      #coordinates {
+        width: 132px;
+        overflow: hidden;
+        white-space: nowrap;
+        font-size: 8px;
+        letter-spacing: .035em;
+      }
       #actions { flex-direction: column; align-items: stretch; }
+      #mobile-movement-actions {
+        display: flex;
+        bottom: max(174px, calc(env(safe-area-inset-bottom) + 162px));
+      }
     }
   </style>
   <script type="importmap">
@@ -202,6 +235,10 @@
     <div id="location">forecourt<br>elevation 0</div>
     <div id="coordinates" aria-label="Current museum coordinates">X +000.0 · Y +000.1 · Z +060.0<br>HDG 000° · PITCH +005°</div>
     <div id="touch-stick" aria-label="Movement control"><div id="touch-knob"></div></div>
+    <div id="mobile-movement-actions" aria-label="Mobile movement controls">
+      <button class="action mobile-movement-action" id="mobile-run" type="button" aria-pressed="false">run</button>
+      <button class="action mobile-movement-action" id="mobile-jump" type="button">jump</button>
+    </div>
     <div id="actions">
       <button class="action" id="fullscreen-toggle" type="button">fullscreen (F)</button>
       <div id="wing-shortcut">
@@ -990,7 +1027,8 @@
     nearShardFill.frustumCulled=false;
     nearShardWire.frustumCulled=false;
     nearShardWire.renderOrder=4;
-    scene.add(nearShardFill,nearShardWire);
+    // Removed at the user's marked locations: this close-facade field was the
+    // tall, visually noisy structure separating the trees from the museum.
     const nearShardStates=[];
     for (let index=0;index<nearShardCount;index++) {
       const side=index<nearShardCount/2?-1:1;
@@ -1029,6 +1067,7 @@
     }
     nearShardFill.instanceMatrix.needsUpdate=true;
     nearShardWire.instanceMatrix.needsUpdate=true;
+    document.body.dataset.nearFacadeShardField="removed";
 
     // The rear elevation stays deliberately open so the distant crystal
     // architecture remains the dominant silhouette. Smaller wreckage fields
@@ -1297,30 +1336,23 @@
     cathedralTower(34,45,45,6.4,.012,sagradaFacade);
     cathedralTower(-54,40,31,5.3,-.018,sagradaFacade);
     cathedralTower(54,40,34,5.3,.018,sagradaFacade);
-    pointedFrame(0,50.2,18,22,0,1.1,2.6);
-    pointedFrame(0,49.4,25,27,0,.72,1.8);
+    // Keep the front threshold visually open: the former nested central
+    // pointed frames and crossed diamond lattice obscured this approach.
+    document.body.dataset.frontCentralFlourish="removed";
     pointedFrame(-28,49.7,12,15,0,.7,1.4);
     pointedFrame(28,49.7,12,15,0,.7,1.4);
-    // The central window is a diamond lattice—no circles or curved ribs.
-    beamBetween(0,33,8,25,48.8,.52,.55);
-    beamBetween(8,25,0,17,48.8,.52,.55);
-    beamBetween(0,17,-8,25,48.8,.52,.55);
-    beamBetween(-8,25,0,33,48.8,.52,.55);
-    beamBetween(-5.5,19.5,5.5,30.5,48.75,.22,.62);
-    beamBetween(5.5,19.5,-5.5,30.5,48.75,.22,.62);
     for (const x of [-60,-48,-40,-12,12,40,48,60]) {
       const h=9+(Math.abs(x)%5);
       box(3.2,h,3,x,h/2,49);
       pointedFrame(x,49.2,8,h+5,0,.36,.8);
     }
-    for (const z of [30,4,-22,-48]) {
-      branchingButtress(-79,z,23+(Math.abs(z)%4),-1);
-      branchingButtress(79,z,23+(Math.abs(z)%4),1);
-    }
+    // The eight branching side buttresses occupied the tree-to-museum
+    // corridor marked for removal. Primary facade towers remain intact.
+    document.body.dataset.branchingSideButtresses="removed";
 
-    // A distant arc of Moebius-like crystal architecture rises behind the
-    // archive. Long, nearly vertical shafts and abrupt asymmetric crowns keep
-    // the silhouette crystalline; nothing swells or pinches like a mountain.
+    // A distant arc of crystalline mountain architecture rises behind the
+    // archive. Broad overlapping core masses provide real volume from every
+    // viewpoint; needle spires and asymmetric crowns remain secondary accents.
     const distantMassifMaterial=new THREE.MeshBasicMaterial({
       color:BLUE,
       side:THREE.DoubleSide
@@ -1402,7 +1434,7 @@
       geometry.computeVertexNormals();
       return geometry;
     }
-    const crystalClusterSpecs=[
+    const primaryCrystalClusterSpecs=[
       // One dominant citadel and irregular satellites replace the former
       // evenly spaced row of similarly proportioned crystal pencils.
       {x:-296,z:-145,height:58,radius:27,count:3,seed:32},
@@ -1412,7 +1444,41 @@
       {x:211,z:-214,height:78,radius:34,count:4,seed:27},
       {x:298,z:-146,height:48,radius:25,count:2,seed:38}
     ];
-    const distantCrystalGeometries=[];
+    // Low saddle formations and dense talus occupy every gap in the rear arc,
+    // making the dominant peaks read as one geological family rather than
+    // unrelated sculptures. Connectors stay smaller than both neighbours.
+    const crystalClusterSpecs=[];
+    let distantConnectorMassCount=0;
+    for (
+      let index=0;
+      index<primaryCrystalClusterSpecs.length;
+      index++
+    ) {
+      const cluster=primaryCrystalClusterSpecs[index];
+      crystalClusterSpecs.push(cluster);
+      const next=primaryCrystalClusterSpecs[index+1];
+      if (!next) continue;
+      distantConnectorMassCount++;
+      crystalClusterSpecs.push({
+        x:THREE.MathUtils.lerp(cluster.x,next.x,.5),
+        z:THREE.MathUtils.lerp(cluster.z,next.z,.5),
+        height:Math.min(cluster.height,next.height)*(
+          .38+shardNoise(index+1201)*.12
+        ),
+        radius:THREE.MathUtils.lerp(
+          cluster.radius,next.radius,.5
+        )*(.5+shardNoise(index+1213)*.12),
+        count:2,
+        seed:67+index*17,
+        connector:true
+      });
+    }
+    const distantCrystalFoldGeometries=crystalClusterSpecs.map(
+      () => [[],[]]
+    );
+    const distantCrystalFoldPieces=[];
+    let distantFloatingPrismCount=0;
+    let distantMountainCoreCount=0;
     const distantRubbleGeometries=[];
     function crystalMergeGeometry(geometry) {
       const normalized=geometry.index
@@ -1426,6 +1492,52 @@
       return normalized;
     }
     crystalClusterSpecs.forEach((cluster,clusterIndex) => {
+      const mountainCoreCount=cluster.connector
+        ?1
+        :cluster.count<=2?2:3;
+      distantMountainCoreCount+=mountainCoreCount;
+      for (let core=0;core<mountainCoreCount;core++) {
+        const angle=
+          shardNoise(cluster.seed*359+core*103)*Math.PI*2;
+        const offset=cluster.radius*(
+          .05+shardNoise(cluster.seed*367+core*107)*.22
+        );
+        const coreWidth=cluster.radius*(
+          1.42+shardNoise(cluster.seed*373+core*109)*.66
+        );
+        const coreDepth=cluster.radius*(
+          1.34+shardNoise(cluster.seed*379+core*113)*.7
+        );
+        const coreHeight=cluster.height*(
+          .58+shardNoise(cluster.seed*383+core*127)*.34
+        );
+        const geometry=crystalSpireGeometry(
+          coreWidth,coreDepth,coreHeight,
+          cluster.seed*389+core*131
+        );
+        geometry.applyMatrix4(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(
+              Math.cos(angle)*offset,
+              0,
+              Math.sin(angle)*offset
+            ),
+            new THREE.Quaternion().setFromEuler(
+              new THREE.Euler(
+                (shardNoise(cluster.seed*397+core*137)-.5)*.12,
+                angle+(shardNoise(
+                  cluster.seed*401+core*139
+                )-.5)*.7,
+                (shardNoise(cluster.seed*409+core*149)-.5)*.14
+              )
+            ),
+            new THREE.Vector3(1,1,1)
+          )
+        );
+        distantCrystalFoldGeometries[clusterIndex][core%2].push(
+          crystalMergeGeometry(geometry)
+        );
+      }
       for (let spire=0;spire<cluster.count;spire++) {
         const central=spire===0;
         const angle=
@@ -1442,20 +1554,20 @@
           )*.68);
         const spireWidth=cluster.radius*(
           central
-            ? .58+shardNoise(cluster.seed*61)*.25
-            : .12+shardNoise(cluster.seed*67+spire*13)*.4
+            ? 1.02+shardNoise(cluster.seed*61)*.38
+            : .24+shardNoise(cluster.seed*67+spire*13)*.54
         );
         const spireDepth=spireWidth*(
-          .42+shardNoise(cluster.seed*71+spire*19)*.74
+          .74+shardNoise(cluster.seed*71+spire*19)*.88
         );
         const geometry=crystalSpireGeometry(
           spireWidth,spireDepth,spireHeight,
           cluster.seed*101+spire*7
         );
         const position=new THREE.Vector3(
-          cluster.x+Math.cos(angle)*radius,
+          Math.cos(angle)*radius,
           0,
-          cluster.z+Math.sin(angle)*radius
+          Math.sin(angle)*radius
         );
         const rotation=new THREE.Quaternion().setFromEuler(
           new THREE.Euler(
@@ -1471,11 +1583,15 @@
             position,rotation,new THREE.Vector3(1,1,1)
           )
         );
-        distantCrystalGeometries.push(crystalMergeGeometry(geometry));
+        distantCrystalFoldGeometries[clusterIndex][spire%2].push(
+          crystalMergeGeometry(geometry)
+        );
       }
       // Diagonal splinters break the vertical rhythm and make each group read
       // as one fractured object rather than a collection of planted columns.
-      const splinterCount=2+(clusterIndex*3)%4;
+      const splinterCount=cluster.connector
+        ?1
+        :2+(clusterIndex*3)%4;
       for (let splinter=0;splinter<splinterCount;splinter++) {
         const angle=
           shardNoise(cluster.seed*233+splinter*47)*Math.PI*2;
@@ -1487,18 +1603,18 @@
         );
         const geometry=crystalSpireGeometry(
           splinterWidth,
-          splinterWidth*(.32+shardNoise(
+          splinterWidth*(.62+shardNoise(
             cluster.seed*251+splinter*41
-          )*.45),
+          )*.72),
           splinterHeight,
           cluster.seed*257+splinter*17
         );
         geometry.applyMatrix4(
           new THREE.Matrix4().compose(
             new THREE.Vector3(
-              cluster.x+Math.cos(angle)*cluster.radius*.5,
+              Math.cos(angle)*cluster.radius*.5,
               5+shardNoise(cluster.seed*263+splinter*43)*7,
-              cluster.z+Math.sin(angle)*cluster.radius*.5
+              Math.sin(angle)*cluster.radius*.5
             ),
             new THREE.Quaternion().setFromEuler(
               new THREE.Euler(
@@ -1510,10 +1626,67 @@
             new THREE.Vector3(1,1,1)
           )
         );
-        distantCrystalGeometries.push(crystalMergeGeometry(geometry));
+        distantCrystalFoldGeometries[clusterIndex][(splinter+1)%2].push(
+          crystalMergeGeometry(geometry)
+        );
       }
-      const rubbleCount=10+(clusterIndex*5)%9;
+      // Sparse triangular prisms orbit the distant massifs rather than the
+      // already-busy entrance. Because they are merged into the same +W/-W
+      // layers as their host cluster, they undergo the identical tesseract
+      // projection instead of behaving like an unrelated particle effect.
+      const floatingPrismCount=cluster.connector
+        ?1
+        :2+clusterIndex%3;
+      distantFloatingPrismCount+=floatingPrismCount;
+      for (let prism=0;prism<floatingPrismCount;prism++) {
+        const angle=
+          shardNoise(cluster.seed*307+prism*61)*Math.PI*2;
+        const radius=cluster.radius*(
+          .86+shardNoise(cluster.seed*311+prism*67)*.62
+        );
+        const prismWidth=cluster.radius*(
+          .11+shardNoise(cluster.seed*313+prism*71)*.17
+        );
+        const prismHeight=cluster.height*(
+          .055+shardNoise(cluster.seed*317+prism*73)*.095
+        );
+        const prismDepth=prismWidth*(
+          .48+shardNoise(cluster.seed*331+prism*79)*.72
+        );
+        const geometry=new THREE.CylinderGeometry(1,1,1,3,1,false);
+        geometry.applyMatrix4(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(
+              Math.cos(angle)*radius,
+              cluster.height*(
+                .22+shardNoise(cluster.seed*337+prism*83)*.52
+              ),
+              Math.sin(angle)*radius
+            ),
+            new THREE.Quaternion().setFromEuler(
+              new THREE.Euler(
+                (shardNoise(cluster.seed*347+prism*89)-.5)*1.8,
+                angle+(shardNoise(cluster.seed*349+prism*97)-.5)*1.2,
+                (shardNoise(cluster.seed*353+prism*101)-.5)*1.9
+              )
+            ),
+            new THREE.Vector3(
+              prismWidth,prismHeight,prismDepth
+            )
+          )
+        );
+        distantCrystalFoldGeometries[
+          clusterIndex
+        ][prism%2].push(crystalMergeGeometry(geometry));
+      }
+      const rubbleCount=cluster.connector
+        ?9
+        :10+(clusterIndex*5)%9;
       for (let rubble=0;rubble<rubbleCount;rubble++) {
+        // This low, center-horizon tetrahedron intersected the ground plane
+        // (about X -11.5, Z -359.5), producing movement-dependent z-fighting.
+        // Remove only that unstable fragment; the rest of the formation stays.
+        if (cluster.seed===4 && rubble===1) continue;
         const angle=
           shardNoise(cluster.seed*97+rubble*29)*Math.PI*2;
         const radialDistance=cluster.radius*(
@@ -1528,37 +1701,840 @@
           .16+shardNoise(cluster.seed*113+rubble*43)*.35
         );
         const geometry=new THREE.TetrahedronGeometry(1,0);
+        const worldX=
+          cluster.x+Math.cos(angle)*radialDistance;
+        const worldZ=
+          cluster.z+Math.sin(angle)*radialDistance;
+        const rotation=new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(
+            shardNoise(cluster.seed*127+rubble*47)*.72,
+            angle,
+            (shardNoise(cluster.seed*131+rubble*53)-.5)*.8
+          )
+        );
+        // Rotate and scale first, then seat the fragment using its real
+        // transformed bounds. A center-height estimate allowed tilted corners
+        // to slice through the ground and flicker as the camera moved.
         geometry.applyMatrix4(
           new THREE.Matrix4().compose(
-            new THREE.Vector3(
-              cluster.x+Math.cos(angle)*radialDistance,
-              height*.36,
-              cluster.z+Math.sin(angle)*radialDistance
-            ),
-            new THREE.Quaternion().setFromEuler(
-              new THREE.Euler(
-                shardNoise(cluster.seed*127+rubble*47)*.72,
-                angle,
-                (shardNoise(cluster.seed*131+rubble*53)-.5)*.8
-              )
-            ),
+            new THREE.Vector3(),
+            rotation,
             new THREE.Vector3(width,height,depth)
           )
+        );
+        geometry.computeBoundingBox();
+        geometry.translate(
+          worldX,
+          .12-geometry.boundingBox.min.y,
+          worldZ
         );
         distantRubbleGeometries.push(crystalMergeGeometry(geometry));
       }
     });
-    const distantCrystalField=mergeGeometries(
-      distantCrystalGeometries.concat(distantRubbleGeometries),false
+    distantCrystalFoldGeometries.forEach((halves,clusterIndex) => {
+      halves.forEach((geometries,halfIndex) => {
+        const geometry=mergeGeometries(geometries,false);
+        if (!geometry) return;
+        geometry.computeVertexNormals();
+        const cluster=crystalClusterSpecs[clusterIndex];
+        const piece=edged(
+          geometry,distantMassifMaterial,
+          [cluster.x,0,cluster.z],[0,0,0],scene,true
+        );
+        const morphLayers=[];
+        piece.traverse(object => {
+          const position=object.geometry?.getAttribute?.("position");
+          if (!position) return;
+          position.setUsage(THREE.DynamicDrawUsage);
+          morphLayers.push({
+            position,
+            base:new Float32Array(position.array)
+          });
+          object.frustumCulled=false;
+        });
+        piece.userData={
+          baseX:cluster.x,
+          baseZ:cluster.z,
+          clusterIndex,
+          direction:halfIndex===0?1:-1,
+          phase:clusterIndex*.19,
+          xExtent:Math.max(24,cluster.radius*2.45),
+          zExtent:Math.max(24,cluster.radius*2.45),
+          wLayer:(halfIndex===0?1:-1)*.3,
+          morphLayers
+        };
+        distantCrystalFoldPieces.push(piece);
+      });
+    });
+    const distantRubbleField=mergeGeometries(
+      distantRubbleGeometries,false
     );
-    if (distantCrystalField) {
-      distantCrystalField.computeVertexNormals();
+    if (distantRubbleField) {
+      distantRubbleField.computeVertexNormals();
       edged(
-        distantCrystalField,distantMassifMaterial,
+        distantRubbleField,distantMassifMaterial,
         [0,0,0],[0,0,0],scene,true
       );
     }
-    document.body.dataset.distantFormation="crystal-arc-v2";
+    document.body.dataset.distantFormation="crystal-arc-v3-folding";
+    document.body.dataset.distantFormationFoldPieces=String(
+      distantCrystalFoldPieces.length
+    );
+    document.body.dataset.distantFormationMotion=
+      "4d-xw-zw-perspective-projection";
+    document.body.dataset.distantFormationTempo="slow-9-minute-cycle";
+    document.body.dataset.distantFormationVolume="persistent-deep-mass";
+    document.body.dataset.distantMountainCores=String(
+      distantMountainCoreCount
+    );
+    document.body.dataset.distantConnectorMasses=String(
+      distantConnectorMassCount
+    );
+    document.body.dataset.distantFloatingPrisms=String(
+      distantFloatingPrismCount
+    );
+    document.body.dataset.unstableDistantRubble="removed";
+    document.body.dataset.distantRubbleGroundClearance="0.12";
+
+    // Polygonal American-elm groves frame both sides and the rear approach.
+    // Thousands of individual faceted leaves grow from a visible hierarchy of
+    // tapering trunks, primary limbs and secondary forks—never a canopy blob
+    // balanced on a pole. Instancing keeps the detailed silhouettes practical
+    // in desktop and XR rendering.
+    const treePlacements=[];
+    [-30,-42,-54,-66,-78,-90,-102].forEach((z,index) => {
+      for (const side of [-1,1]) {
+        treePlacements.push({
+          x:side*(82+shardNoise(index*17+(side>0?3:9))*11),
+          z,
+          seed:1301+index*29+(side>0?11:0),
+          scale:.78+shardNoise(index+1319)*.48
+        });
+      }
+    });
+    [-46,-60,-74,-88,-102].forEach((z,index) => {
+      for (const side of [-1,1]) {
+        treePlacements.push({
+          x:side*(104+shardNoise(index*19+(side>0?5:13))*14),
+          z,
+          seed:1409+index*31+(side>0?17:0),
+          scale:.7+shardNoise(index+1423)*.46
+        });
+      }
+    });
+    [-120,-96,-72,-48,48,72,96,120].forEach((x,index) => {
+      treePlacements.push({
+        x,
+        z:-80-shardNoise(index+1481)*11,
+        seed:1511+index*37,
+        scale:.74+shardNoise(index+1493)*.55
+      });
+    });
+    const treeBranchMatrices=[];
+    const treeBranchMotion=[];
+    const treeLeafMatrixFamilies=[[],[],[]];
+    const treeLeafMotionFamilies=[[],[],[]];
+    const treeCanopyDescriptors=[];
+    let activeTreeMotion=null;
+    const treeDummy=new THREE.Object3D();
+    const treeUp=new THREE.Vector3(0,1,0);
+    const treeDirection=new THREE.Vector3();
+    const treeMidpoint=new THREE.Vector3();
+    function addTreeBranch(start,end,radius) {
+      treeDirection.subVectors(end,start);
+      const length=treeDirection.length();
+      if (length<.01) return;
+      treeMidpoint.copy(start).add(end).multiplyScalar(.5);
+      treeDummy.position.copy(treeMidpoint);
+      treeDummy.quaternion.setFromUnitVectors(
+        treeUp,treeDirection.normalize()
+      );
+      treeDummy.scale.set(radius,length,radius);
+      treeDummy.updateMatrix();
+      treeBranchMatrices.push(treeDummy.matrix.clone());
+      treeBranchMotion.push(activeTreeMotion);
+    }
+    function addTreeLeaf(position,scale,seed) {
+      treeDummy.position.copy(position);
+      treeDummy.rotation.set(
+        shardNoise(seed+3)*Math.PI,
+        shardNoise(seed+7)*Math.PI*2,
+        shardNoise(seed+11)*Math.PI
+      );
+      treeDummy.scale.copy(scale);
+      treeDummy.updateMatrix();
+      const family=Math.min(
+        treeLeafMatrixFamilies.length-1,
+        Math.floor(shardNoise(seed+23)*treeLeafMatrixFamilies.length)
+      );
+      treeLeafMatrixFamilies[family].push(treeDummy.matrix.clone());
+      treeLeafMotionFamilies[family].push({
+        ...activeTreeMotion,
+        w:(shardNoise(seed+31)*2-1)*4.2
+      });
+    }
+    treePlacements.forEach((placement,treeIndex) => {
+      const seed=placement.seed;
+      const crownStyle=treeIndex%4;
+      const crownReach=[1,1.3,.68,1.08][crownStyle];
+      const crownBaseHeight=[.56,.47,.63,.53][crownStyle];
+      const crownHeightRange=[.23,.2,.25,.22][crownStyle];
+      const windAngle=shardNoise(seed+2)*Math.PI*2;
+      const windStrength=crownStyle===3
+        ?placement.scale*(2.2+shardNoise(seed+4)*2.2)
+        :0;
+      const height=placement.scale*(
+        18+shardNoise(seed+1)*8
+      );
+      const crownRadius=placement.scale*(
+        6.8+shardNoise(seed+5)*3.4
+      );
+      treeCanopyDescriptors.push({
+        x:placement.x,
+        z:placement.z,
+        height,
+        crownRadius,
+        crownStyle,
+        windAngle,
+        windStrength,
+        scale:placement.scale,
+        seed
+      });
+      activeTreeMotion={
+        x:placement.x,
+        z:placement.z,
+        phase:shardNoise(seed+31)*Math.PI*2,
+        w:0
+      };
+      const base=new THREE.Vector3(placement.x,.06,placement.z);
+      const leanX=(shardNoise(seed+13)-.5)*1.4;
+      const leanZ=(shardNoise(seed+17)-.5)*1.4;
+      const trunkPoints=[
+        base,
+        new THREE.Vector3(
+          placement.x+leanX*.2,height*.17,placement.z+leanZ*.2
+        ),
+        new THREE.Vector3(
+          placement.x+leanX*.55,height*.31,placement.z+leanZ*.55
+        ),
+        new THREE.Vector3(
+          placement.x+leanX,height*.43,placement.z+leanZ
+        )
+      ];
+      addTreeBranch(
+        trunkPoints[0],trunkPoints[1],placement.scale*.62
+      );
+      addTreeBranch(
+        trunkPoints[1],trunkPoints[2],placement.scale*.5
+      );
+      addTreeBranch(
+        trunkPoints[2],trunkPoints[3],placement.scale*.38
+      );
+      const primaryCount=[8,9,7,8][crownStyle]+treeIndex%2;
+      for (let primary=0;primary<primaryCount;primary++) {
+        const phase=
+          primary/primaryCount*Math.PI*2+
+          shardNoise(seed+primary*43)*.58;
+        const startRatio=.24+
+          (primary%4)*.055+
+          shardNoise(seed+primary*47)*.035;
+        const branchStart=new THREE.Vector3(
+          THREE.MathUtils.lerp(
+            placement.x,trunkPoints[3].x,startRatio/.46
+          ),
+          height*startRatio,
+          THREE.MathUtils.lerp(
+            placement.z,trunkPoints[3].z,startRatio/.46
+          )
+        );
+        const primaryReach=crownRadius*(
+          .42+shardNoise(seed+primary*53)*.25
+        )*crownReach;
+        const windProgress=.3+primary/primaryCount*.55;
+        const primaryEnd=new THREE.Vector3(
+          placement.x+leanX+
+            Math.cos(phase)*primaryReach+
+            Math.cos(windAngle)*windStrength*windProgress,
+          height*(
+            crownBaseHeight+
+            shardNoise(seed+primary*59)*crownHeightRange
+          ),
+          placement.z+leanZ+
+            Math.sin(phase)*primaryReach+
+            Math.sin(windAngle)*windStrength*windProgress
+        );
+        addTreeBranch(
+          branchStart,primaryEnd,
+          placement.scale*(.24-primary*.009)
+        );
+        for (let fork=0;fork<3;fork++) {
+          const forkPhase=
+            phase+(fork-1)*(.38+shardNoise(
+              seed+primary*61+fork*13
+            )*.24);
+          const forkReach=crownRadius*(
+            .34+shardNoise(seed+primary*67+fork*17)*.24
+          )*crownReach*(crownStyle===1?1.08:.92);
+          const forkEnd=new THREE.Vector3(
+            primaryEnd.x+Math.cos(forkPhase)*forkReach+
+              Math.cos(windAngle)*windStrength*.18,
+            Math.min(
+              height*.98,
+              primaryEnd.y+height*(
+                (crownStyle===1?.08:.12)+shardNoise(
+                  seed+primary*71+fork*19
+                )*(crownStyle===2?.2:.15)
+              )
+            ),
+            primaryEnd.z+Math.sin(forkPhase)*forkReach+
+              Math.sin(windAngle)*windStrength*.18
+          );
+          addTreeBranch(
+            primaryEnd,forkEnd,
+            placement.scale*(.105+shardNoise(
+              seed+primary*73+fork*23
+            )*.055)
+          );
+          const leavesPerFork=
+            10+(primary+fork)%4+(crownStyle===1?2:0);
+          for (let leaf=0;leaf<leavesPerFork;leaf++) {
+            const leafSeed=
+              seed+primary*179+fork*41+leaf*17;
+            const leafAngle=
+              leaf/leavesPerFork*Math.PI*2+
+              shardNoise(leafSeed)*.7;
+            const leafRadius=crownRadius*(
+              .04+shardNoise(leafSeed+5)*.11
+            );
+            const leafPosition=new THREE.Vector3(
+              forkEnd.x+Math.cos(leafAngle)*leafRadius,
+              forkEnd.y+(shardNoise(leafSeed+7)-.45)*
+                height*.11,
+              forkEnd.z+Math.sin(leafAngle)*leafRadius
+            );
+            const leafScale=placement.scale*(
+              .68+shardNoise(leafSeed+11)*.58
+            );
+            addTreeLeaf(
+              leafPosition,
+              new THREE.Vector3(
+                leafScale*(.74+shardNoise(leafSeed+13)*.5),
+                leafScale*(.48+shardNoise(leafSeed+17)*.35),
+                leafScale*(.42+shardNoise(leafSeed+19)*.4)
+              ),
+              leafSeed
+            );
+          }
+        }
+        const innerLeafCount=6+(crownStyle===1?2:0);
+        for (
+          let innerLeaf=0;
+          innerLeaf<innerLeafCount;
+          innerLeaf++
+        ) {
+          const innerSeed=seed+primary*211+innerLeaf*29;
+          const position=primaryEnd.clone().add(
+            new THREE.Vector3(
+              (shardNoise(innerSeed)-.5)*crownRadius*.25,
+              (shardNoise(innerSeed+3)-.3)*height*.09,
+              (shardNoise(innerSeed+7)-.5)*crownRadius*.25
+            )
+          );
+          const scale=placement.scale*(
+            .72+shardNoise(innerSeed+11)*.5
+          );
+          addTreeLeaf(
+            position,
+            new THREE.Vector3(scale,scale*.7,scale*.62),
+            innerSeed
+          );
+        }
+      }
+      const crownFillCount=
+        34+(treeIndex%5)*3+(crownStyle===1?10:0);
+      for (let fill=0;fill<crownFillCount;fill++) {
+        const fillSeed=seed+fill*307+2203;
+        const angle=shardNoise(fillSeed)*Math.PI*2;
+        const radial=Math.sqrt(shardNoise(fillSeed+3))*
+          crownRadius*.82*crownReach;
+        const normalizedRadius=radial/(crownRadius*crownReach||1);
+        const crownCenterY=height*(
+          crownBaseHeight+crownHeightRange*.52
+        );
+        const position=new THREE.Vector3(
+          placement.x+leanX+
+            Math.cos(angle)*radial+
+            Math.cos(windAngle)*windStrength*(
+              .36+normalizedRadius*.48
+            ),
+          crownCenterY+
+            (shardNoise(fillSeed+7)-.46)*
+              height*(.22-normalizedRadius*.07),
+          placement.z+leanZ+
+            Math.sin(angle)*radial+
+            Math.sin(windAngle)*windStrength*(
+              .36+normalizedRadius*.48
+            )
+        );
+        const scale=placement.scale*(
+          .64+shardNoise(fillSeed+11)*.56
+        );
+        addTreeLeaf(
+          position,
+          new THREE.Vector3(
+            scale*(.72+shardNoise(fillSeed+13)*.56),
+            scale*(.5+shardNoise(fillSeed+17)*.4),
+            scale*(.44+shardNoise(fillSeed+19)*.46)
+          ),
+          fillSeed
+        );
+      }
+    });
+    // Build a middle scale between fine foliage and the existing monumental
+    // shard field. Small triangular prisms hover just outside each crown,
+    // while any pre-existing perimeter shard that crowds a tree is resized
+    // and seated in that same halo instead of visually crushing the canopy.
+    const treePolygonHaloMatrices=[];
+    const treePolygonHaloMotion=[];
+    treeCanopyDescriptors.forEach((tree,treeIndex) => {
+      const haloCount=5+treeIndex%4;
+      for (let halo=0;halo<haloCount;halo++) {
+        const seed=tree.seed+halo*331+2707;
+        const angle=
+          halo/haloCount*Math.PI*2+
+          shardNoise(seed)*.76;
+        const radial=tree.crownRadius*(
+          1.03+shardNoise(seed+3)*.42
+        );
+        const scale=tree.scale*(
+          .72+shardNoise(seed+5)*.72
+        );
+        treeDummy.position.set(
+          tree.x+Math.cos(angle)*radial+
+            Math.cos(tree.windAngle)*tree.windStrength*.5,
+          tree.height*(
+            .5+shardNoise(seed+7)*.46
+          ),
+          tree.z+Math.sin(angle)*radial+
+            Math.sin(tree.windAngle)*tree.windStrength*.5
+        );
+        treeDummy.rotation.set(
+          (shardNoise(seed+11)-.5)*1.7,
+          angle+(shardNoise(seed+13)-.5)*1.1,
+          (shardNoise(seed+17)-.5)*1.9
+        );
+        treeDummy.scale.set(
+          scale*(.7+shardNoise(seed+19)*.8),
+          scale*(1.1+shardNoise(seed+23)*1.25),
+          scale*(.42+shardNoise(seed+29)*.52)
+        );
+        treeDummy.updateMatrix();
+        treePolygonHaloMatrices.push(treeDummy.matrix.clone());
+        treePolygonHaloMotion.push({
+          x:tree.x,
+          z:tree.z,
+          phase:shardNoise(tree.seed+31)*Math.PI*2,
+          w:(shardNoise(seed+31)*2-1)*4.8
+        });
+      }
+    });
+    let treeIntegratedPerimeterShards=0;
+    let removedTreeSideShardStructures=0;
+    perimeterShardStates.forEach((state,index) => {
+      if (
+        Math.abs(state.x)>52 &&
+        Math.abs(state.x)<105 &&
+        state.z>-122 &&
+        state.z<72
+      ) {
+        removedTreeSideShardStructures++;
+        perimeterShardDummy.position.set(state.x,state.y,state.z);
+        perimeterShardDummy.rotation.set(0,0,0);
+        perimeterShardDummy.scale.set(0,0,0);
+        perimeterShardDummy.updateMatrix();
+        perimeterShardFill.setMatrixAt(
+          index,perimeterShardDummy.matrix
+        );
+        perimeterShardWire.setMatrixAt(
+          index,perimeterShardDummy.matrix
+        );
+        return;
+      }
+      let nearestTree=null;
+      let nearestDistance=Infinity;
+      for (const tree of treeCanopyDescriptors) {
+        const distance=Math.hypot(state.x-tree.x,state.z-tree.z);
+        if (distance<nearestDistance) {
+          nearestDistance=distance;
+          nearestTree=tree;
+        }
+      }
+      if (
+        !nearestTree ||
+        nearestDistance>nearestTree.crownRadius+16
+      ) return;
+      treeIntegratedPerimeterShards++;
+      const seed=nearestTree.seed+index*379+3001;
+      const angle=Math.atan2(
+        state.z-nearestTree.z,state.x-nearestTree.x
+      )+(shardNoise(seed)-.5)*.42;
+      const radial=nearestTree.crownRadius*(
+        1.12+shardNoise(seed+3)*.48
+      );
+      state.x=nearestTree.x+Math.cos(angle)*radial;
+      state.z=nearestTree.z+Math.sin(angle)*radial;
+      state.y=nearestTree.height*(
+        .47+shardNoise(seed+5)*.48
+      );
+      const scale=nearestTree.scale*(
+        .75+shardNoise(seed+7)*.8
+      );
+      state.scale.set(
+        scale*(.68+shardNoise(seed+11)*.75),
+        scale*(1.2+shardNoise(seed+13)*1.35),
+        scale*(.18+shardNoise(seed+17)*.28)
+      );
+      state.rotation.set(
+        (shardNoise(seed+19)-.5)*1.45,
+        angle+(shardNoise(seed+23)-.5)*1.1,
+        (shardNoise(seed+29)-.5)*1.7
+      );
+      perimeterShardDummy.position.set(state.x,state.y,state.z);
+      perimeterShardDummy.rotation.copy(state.rotation);
+      perimeterShardDummy.scale.copy(state.scale);
+      perimeterShardDummy.updateMatrix();
+      perimeterShardFill.setMatrixAt(
+        index,perimeterShardDummy.matrix
+      );
+      perimeterShardWire.setMatrixAt(
+        index,perimeterShardDummy.matrix
+      );
+    });
+    perimeterShardFill.instanceMatrix.needsUpdate=true;
+    perimeterShardWire.instanceMatrix.needsUpdate=true;
+    const treeBranchGeometry=new THREE.CylinderGeometry(
+      .72,1,1,6,1,false
+    );
+    const treeLeafGeometries=[
+      new THREE.IcosahedronGeometry(1,0),
+      new THREE.DodecahedronGeometry(1,0),
+      new THREE.OctahedronGeometry(1,0)
+    ];
+    const treeMotionUniforms={time:{value:0}};
+    const treeWireMaterial=new THREE.MeshBasicMaterial({
+      color:WHITE,
+      wireframe:true,
+      transparent:true,
+      opacity:.82,
+      toneMapped:false
+    });
+    function installTreeMotionAttributes(geometry,motion) {
+      const centers=new Float32Array(motion.length*2);
+      const phases=new Float32Array(motion.length);
+      const wValues=new Float32Array(motion.length);
+      motion.forEach((state,index) => {
+        centers[index*2]=state.x;
+        centers[index*2+1]=state.z;
+        phases[index]=state.phase;
+        wValues[index]=state.w||0;
+      });
+      geometry.setAttribute(
+        "treeCenter",
+        new THREE.InstancedBufferAttribute(centers,2)
+      );
+      geometry.setAttribute(
+        "treePhase",
+        new THREE.InstancedBufferAttribute(phases,1)
+      );
+      geometry.setAttribute(
+        "treeW",
+        new THREE.InstancedBufferAttribute(wValues,1)
+      );
+    }
+    function treeMotionMaterial(source,key,foldLeaves=false) {
+      const material=source.clone();
+      material.onBeforeCompile=shader => {
+        shader.uniforms.treeMotionTime=treeMotionUniforms.time;
+        shader.vertexShader=`
+          attribute vec2 treeCenter;
+          attribute float treePhase;
+          attribute float treeW;
+          uniform float treeMotionTime;
+        `+shader.vertexShader;
+        shader.vertexShader=shader.vertexShader.replace(
+          "#include <project_vertex>",
+          `
+            vec4 treeWorld=vec4(transformed,1.);
+            #ifdef USE_INSTANCING
+              treeWorld=instanceMatrix*treeWorld;
+            #endif
+            vec3 treeOrigin=vec3(treeCenter.x,0.,treeCenter.y);
+            vec3 treeRelative=treeWorld.xyz-treeOrigin;
+            float treeWave=sin(treeMotionTime*.31+treePhase);
+            float treeBreath=1.+treeWave*.028;
+            treeRelative.xz*=treeBreath;
+            treeRelative.y*=1.+treeWave*.038;
+            treeRelative.x+=
+              sin(treeMotionTime*.17+treePhase*.73)*
+              treeRelative.y*.006;
+            ${
+              foldLeaves
+                ?`
+                  float xwAngle=
+                    treeMotionTime*.026+treePhase*.21;
+                  float zwAngle=
+                    treeMotionTime*.019-treePhase*.16+.68;
+                  float xwCos=cos(xwAngle);
+                  float xwSin=sin(xwAngle);
+                  float zwCos=cos(zwAngle);
+                  float zwSin=sin(zwAngle);
+                  float rotatedX=
+                    treeRelative.x*xwCos-treeW*xwSin;
+                  float firstW=
+                    treeRelative.x*xwSin+treeW*xwCos;
+                  float rotatedZ=
+                    treeRelative.z*zwCos-firstW*zwSin;
+                  float projectedW=
+                    treeRelative.z*zwSin+firstW*zwCos;
+                  float projection=clamp(
+                    30./(30.-projectedW),.78,1.28
+                  );
+                  treeRelative.x=mix(
+                    treeRelative.x,rotatedX*projection,.2
+                  );
+                  treeRelative.z=mix(
+                    treeRelative.z,rotatedZ*projection,.2
+                  );
+                  treeRelative.y*=mix(1.,projection,.13);
+                `
+                :""
+            }
+            treeWorld.xyz=treeOrigin+treeRelative;
+            vec4 mvPosition=modelViewMatrix*treeWorld;
+            gl_Position=projectionMatrix*mvPosition;
+          `
+        );
+      };
+      material.customProgramCacheKey=() =>
+        `polygonal-tree-${key}-${foldLeaves?"fold":"breath"}-v1`;
+      material.needsUpdate=true;
+      return material;
+    }
+    installTreeMotionAttributes(
+      treeBranchGeometry,treeBranchMotion
+    );
+    treeLeafGeometries.forEach((geometry,index) => {
+      installTreeMotionAttributes(
+        geometry,treeLeafMotionFamilies[index]
+      );
+    });
+    const treeBranchFillMaterial=treeMotionMaterial(
+      blueMaterial,"branch-fill",false
+    );
+    const treeBranchWireMaterial=treeMotionMaterial(
+      treeWireMaterial,"branch-wire",false
+    );
+    const treeLeafFillMaterial=treeMotionMaterial(
+      blueMaterial,"leaf-fill",true
+    );
+    const treeLeafWireMaterial=treeMotionMaterial(
+      treeWireMaterial,"leaf-wire",true
+    );
+    function addTreeInstances(geometry,matrices,material,wire=false) {
+      const mesh=new THREE.InstancedMesh(
+        geometry,material,matrices.length
+      );
+      matrices.forEach((matrix,index)=>mesh.setMatrixAt(index,matrix));
+      mesh.instanceMatrix.needsUpdate=true;
+      mesh.frustumCulled=false;
+      if (wire) mesh.renderOrder=5;
+      scene.add(mesh);
+      return mesh;
+    }
+    addTreeInstances(
+      treeBranchGeometry,treeBranchMatrices,treeBranchFillMaterial
+    );
+    addTreeInstances(
+      treeBranchGeometry,
+      treeBranchMatrices,
+      treeBranchWireMaterial,
+      true
+    );
+    treeLeafGeometries.forEach((geometry,index) => {
+      addTreeInstances(
+        geometry,
+        treeLeafMatrixFamilies[index],
+        treeLeafFillMaterial
+      );
+      addTreeInstances(
+        geometry,
+        treeLeafMatrixFamilies[index],
+        treeLeafWireMaterial,
+        true
+      );
+    });
+    const treePolygonHaloGeometry=new THREE.CylinderGeometry(
+      1,1,1,3,1,false
+    );
+    installTreeMotionAttributes(
+      treePolygonHaloGeometry,treePolygonHaloMotion
+    );
+    const treeHaloFillMaterial=treeMotionMaterial(
+      blueMaterial,"halo-fill",true
+    );
+    const treeHaloWireMaterial=treeMotionMaterial(
+      treeWireMaterial,"halo-wire",true
+    );
+    addTreeInstances(
+      treePolygonHaloGeometry,
+      treePolygonHaloMatrices,
+      treeHaloFillMaterial
+    );
+    addTreeInstances(
+      treePolygonHaloGeometry,
+      treePolygonHaloMatrices,
+      treeHaloWireMaterial,
+      true
+    );
+    document.body.dataset.polygonalTrees=String(treePlacements.length);
+    document.body.dataset.polygonalTreeBranches=String(
+      treeBranchMatrices.length
+    );
+    document.body.dataset.polygonalTreeLeaves=String(
+      treeLeafMatrixFamilies.reduce(
+        (total,matrices)=>total+matrices.length,0
+      )
+    );
+    document.body.dataset.polygonalTreeFoliageFamilies=String(
+      treeLeafGeometries.length
+    );
+    document.body.dataset.polygonalTreeCrownStyles=
+      "vase,spreading,columnar,windswept";
+    document.body.dataset.polygonalTreeHaloPrisms=String(
+      treePolygonHaloMatrices.length
+    );
+    document.body.dataset.polygonalTreeIntegratedShards=String(
+      treeIntegratedPerimeterShards
+    );
+    document.body.dataset.removedTreeSideShardStructures=String(
+      removedTreeSideShardStructures
+    );
+    document.body.dataset.polygonalTreePlacement="sides-and-rear";
+    document.body.dataset.polygonalTreeMotion=
+      "breathing-branches-tesseract-foliage";
+
+    // Low faceted grass tufts texture the two side grounds. Each tuft is a
+    // genuinely three-dimensional fan of bent, tapered blades—not a pebble or
+    // blob—and the center arrival route remains completely bare.
+    function polygonalGrassTuftGeometry() {
+      const positions=[];
+      const indices=[];
+      const bladeCount=7;
+      const addRing=(centerX,y,halfDepth,halfWidth,angle) => {
+        const cos=Math.cos(angle);
+        const sin=Math.sin(angle);
+        const start=positions.length/3;
+        for (const [dx,dz] of [
+          [-halfDepth,-halfWidth],
+          [halfDepth,-halfWidth],
+          [halfDepth,halfWidth],
+          [-halfDepth,halfWidth]
+        ]) {
+          const localX=centerX+dx;
+          positions.push(
+            localX*cos-dz*sin,
+            y,
+            localX*sin+dz*cos
+          );
+        }
+        return start;
+      };
+      const quad=(a,b,c,d) => {
+        indices.push(a,b,c,a,c,d);
+      };
+      for (let blade=0;blade<bladeCount;blade++) {
+        const seed=3701+blade*43;
+        const angle=
+          blade/bladeCount*Math.PI*2+
+          (shardNoise(seed)-.5)*.62;
+        const radial=.04+shardNoise(seed+3)*.16;
+        const height=.68+shardNoise(seed+5)*.58;
+        const width=.12+shardNoise(seed+7)*.13;
+        const depth=.045+shardNoise(seed+11)*.055;
+        const lean=.18+shardNoise(seed+13)*.32;
+        const base=addRing(
+          radial,0,depth,width,angle
+        );
+        const middle=addRing(
+          radial+lean*.34,
+          height*.54,
+          depth*.72,
+          width*.62,
+          angle
+        );
+        const tip=addRing(
+          radial+lean,
+          height,
+          depth*.24,
+          width*.025,
+          angle
+        );
+        for (let side=0;side<4;side++) {
+          const next=(side+1)%4;
+          quad(
+            base+side,base+next,middle+next,middle+side
+          );
+          quad(
+            middle+side,middle+next,tip+next,tip+side
+          );
+        }
+        quad(base+3,base+2,base+1,base);
+        quad(tip,tip+1,tip+2,tip+3);
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(positions,3)
+      );
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    }
+    const grassTuftMatrices=[];
+    const grassTuftCountPerSide=420;
+    for (const side of [-1,1]) {
+      for (let tuft=0;tuft<grassTuftCountPerSide;tuft++) {
+        const seed=3401+tuft*17+(side>0?7001:0);
+        const x=side*(61+shardNoise(seed)*43);
+        const z=-116+shardNoise(seed+3)*180;
+        const scale=.42+shardNoise(seed+5)*.52;
+        treeDummy.position.set(x,.025,z);
+        treeDummy.rotation.set(
+          0,
+          shardNoise(seed+11)*Math.PI*2,
+          0
+        );
+        treeDummy.scale.set(
+          scale*(.78+shardNoise(seed+17)*.44),
+          scale*(.8+shardNoise(seed+19)*.42),
+          scale*(.78+shardNoise(seed+23)*.44)
+        );
+        treeDummy.updateMatrix();
+        grassTuftMatrices.push(treeDummy.matrix.clone());
+      }
+    }
+    const grassTuftGeometry=polygonalGrassTuftGeometry();
+    addTreeInstances(
+      grassTuftGeometry,grassTuftMatrices,blueMaterial
+    );
+    addTreeInstances(
+      grassTuftGeometry,grassTuftMatrices,treeWireMaterial,true
+    );
+    document.body.dataset.polygonalGrassDots="0";
+    document.body.dataset.polygonalGrassTufts=String(
+      grassTuftMatrices.length
+    );
+    document.body.dataset.polygonalGrassPlacement="museum-sides";
 
     // One generative rule owns the entire interior: a continuous faceted
     // spiral. Floors, walls, rails, rooms, clearances, and art mounts all derive
@@ -2928,30 +3904,39 @@
       return promise;
     }
     const artworkSurfaces = [];
-    let artworkProxyMesh = null;
+    const artworkProxyMeshes = [];
     const artworkProxyHidden = new Set();
     const artworkProxyPosition = new THREE.Vector3();
     const artworkProxyQuaternion = new THREE.Quaternion();
     const artworkProxyScale = new THREE.Vector3();
     const artworkProxyUp = new THREE.Vector3(0,1,0);
     function setArtworkProxyVisible(surface,visible) {
-      if (!artworkProxyMesh || surface.proxyIndex===undefined ||
+      const proxyMesh=artworkProxyMeshes[surface.proxyFamily];
+      if (!proxyMesh || surface.proxyIndex===undefined ||
           surface.proxyHidden===!visible) return false;
       if (visible) {
-        artworkProxyMesh.setMatrixAt(surface.proxyIndex,surface.proxyMatrix);
+        proxyMesh.setMatrixAt(surface.proxyIndex,surface.proxyMatrix);
       } else {
         const hiddenMatrix=new THREE.Matrix4().compose(
           surface.worldPosition,
           artworkProxyQuaternion.identity(),
           artworkProxyScale.set(0,0,0)
         );
-        artworkProxyMesh.setMatrixAt(surface.proxyIndex,hiddenMatrix);
+        proxyMesh.setMatrixAt(surface.proxyIndex,hiddenMatrix);
       }
       surface.proxyHidden=!visible;
       return true;
     }
     function addArtworkProxy(surface) {
-      if (!artworkProxyMesh || artworkProxyMesh.count>=artworkProxyMesh.userData.capacity) return;
+      let proxyHash=2166136261;
+      const proxyKey=`${surface.item?.[0]||""}|${surface.item?.[1]||""}`;
+      for (let index=0;index<proxyKey.length;index++) {
+        proxyHash^=proxyKey.charCodeAt(index);
+        proxyHash=Math.imul(proxyHash,16777619);
+      }
+      const proxyFamily=(proxyHash>>>0)%artworkProxyMeshes.length;
+      const proxyMesh=artworkProxyMeshes[proxyFamily];
+      if (!proxyMesh || proxyMesh.count>=proxyMesh.userData.capacity) return;
       artworkProxyPosition.copy(surface.worldPosition)
         .addScaledVector(surface.worldNormal,.12);
       artworkProxyQuaternion.setFromAxisAngle(artworkProxyUp,surface.rotationY);
@@ -2959,10 +3944,11 @@
       surface.proxyMatrix=new THREE.Matrix4().compose(
         artworkProxyPosition,artworkProxyQuaternion,artworkProxyScale
       );
-      surface.proxyIndex=artworkProxyMesh.count++;
+      surface.proxyFamily=proxyFamily;
+      surface.proxyIndex=proxyMesh.count++;
       surface.proxyHidden=false;
-      artworkProxyMesh.setMatrixAt(surface.proxyIndex,surface.proxyMatrix);
-      artworkProxyMesh.instanceMatrix.needsUpdate=true;
+      proxyMesh.setMatrixAt(surface.proxyIndex,surface.proxyMatrix);
+      proxyMesh.instanceMatrix.needsUpdate=true;
     }
     const artworkFrameAssets = new Map();
     function ornateFrameGeometry(width,height,variant) {
@@ -3890,43 +4876,131 @@
     buildDecadeHeaders();
     const generatedMountCapacity=Object.values(mountSets)
       .reduce((total,mounts)=>total+mounts.length,0);
-    const proxyCanvas=document.createElement("canvas");
-    proxyCanvas.width=32;
-    proxyCanvas.height=32;
-    const proxyContext=proxyCanvas.getContext("2d");
-    proxyContext.fillStyle="#1010a8";
-    proxyContext.fillRect(0,0,32,32);
-    proxyContext.fillStyle="#4f76bd";
-    proxyContext.fillRect(5,5,22,22);
-    proxyContext.fillStyle="#7298cf";
-    proxyContext.fillRect(5,5,11,11);
-    proxyContext.strokeStyle="#fff";
-    proxyContext.lineWidth=2;
-    proxyContext.strokeRect(1,1,30,30);
-    const proxyTexture=new THREE.CanvasTexture(proxyCanvas);
-    proxyTexture.colorSpace=THREE.SRGBColorSpace;
-    proxyTexture.magFilter=THREE.NearestFilter;
-    proxyTexture.minFilter=THREE.NearestFilter;
-    artworkProxyMesh=new THREE.InstancedMesh(
-      new THREE.PlaneGeometry(1,1),
-      new THREE.MeshBasicMaterial({
-        map:proxyTexture,toneMapped:false,side:THREE.FrontSide
-      }),
-      generatedMountCapacity
-    );
-    artworkProxyMesh.count=0;
-    artworkProxyMesh.frustumCulled=false;
-    artworkProxyMesh.renderOrder=2;
-    artworkProxyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    artworkProxyMesh.userData.capacity=generatedMountCapacity;
-    scene.add(artworkProxyMesh);
+    const proxyPalettes=[
+      ["#17236f","#e3a12f","#f4e8ce","#9d342b"],
+      ["#102e3a","#55a59c","#e8d6a5","#d4583e"],
+      ["#40245f","#dd7eaa","#f2d66d","#243b76"],
+      ["#782e28","#e0b65e","#376976","#eee1c8"],
+      ["#193b75","#70a7da","#f2a65a","#f5e7cf"],
+      ["#314b28","#a7bb64","#d56448","#e9d9b5"],
+      ["#512c3b","#d9a0ae","#4d86a4","#f0d4a2"],
+      ["#2d315d","#db654f","#e9c46a","#73a89d"]
+    ];
+    const proxyPlaneGeometry=new THREE.PlaneGeometry(1,1);
+    for (let variant=0;variant<proxyPalettes.length;variant++) {
+      const palette=proxyPalettes[variant];
+      const proxyCanvas=document.createElement("canvas");
+      proxyCanvas.width=96;
+      proxyCanvas.height=96;
+      const context=proxyCanvas.getContext("2d");
+      context.fillStyle=palette[0];
+      context.fillRect(0,0,96,96);
+      context.fillStyle=palette[2];
+      if (variant===0) {
+        context.fillRect(10,12,35,72);
+        context.fillStyle=palette[1];
+        context.fillRect(50,12,36,31);
+        context.fillStyle=palette[3];
+        context.fillRect(50,48,36,36);
+      } else if (variant===1) {
+        context.beginPath();
+        context.arc(48,48,31,0,Math.PI*2);
+        context.fill();
+        context.fillStyle=palette[3];
+        context.fillRect(9,42,78,13);
+      } else if (variant===2) {
+        context.beginPath();
+        context.moveTo(5,77);
+        context.lineTo(35,9);
+        context.lineTo(91,59);
+        context.closePath();
+        context.fill();
+        context.fillStyle=palette[1];
+        context.beginPath();
+        context.arc(65,28,18,0,Math.PI*2);
+        context.fill();
+      } else if (variant===3) {
+        context.fillRect(9,9,78,22);
+        context.fillStyle=palette[1];
+        context.fillRect(9,37,48,50);
+        context.fillStyle=palette[3];
+        context.fillRect(63,37,24,50);
+      } else if (variant===4) {
+        context.fillRect(8,8,80,80);
+        context.fillStyle=palette[1];
+        for (let band=0;band<5;band++) {
+          context.fillRect(8,13+band*15,80,7);
+        }
+        context.fillStyle=palette[3];
+        context.fillRect(38,8,20,80);
+      } else if (variant===5) {
+        context.beginPath();
+        context.moveTo(8,86);
+        context.quadraticCurveTo(48,5,88,86);
+        context.closePath();
+        context.fill();
+        context.fillStyle=palette[3];
+        context.beginPath();
+        context.moveTo(19,86);
+        context.quadraticCurveTo(48,30,77,86);
+        context.closePath();
+        context.fill();
+      } else if (variant===6) {
+        context.fillRect(11,11,33,33);
+        context.fillStyle=palette[1];
+        context.fillRect(52,11,33,33);
+        context.fillStyle=palette[3];
+        context.fillRect(11,52,33,33);
+        context.fillStyle=palette[2];
+        context.beginPath();
+        context.arc(68,68,17,0,Math.PI*2);
+        context.fill();
+      } else {
+        context.beginPath();
+        context.moveTo(7,20);
+        context.bezierCurveTo(30,2,62,42,89,16);
+        context.lineTo(89,48);
+        context.bezierCurveTo(62,74,30,34,7,52);
+        context.closePath();
+        context.fill();
+        context.fillStyle=palette[3];
+        context.beginPath();
+        context.arc(48,69,17,0,Math.PI*2);
+        context.fill();
+      }
+      context.strokeStyle="#fff";
+      context.lineWidth=4;
+      context.strokeRect(2,2,92,92);
+      const proxyTexture=new THREE.CanvasTexture(proxyCanvas);
+      proxyTexture.colorSpace=THREE.SRGBColorSpace;
+      proxyTexture.magFilter=THREE.LinearFilter;
+      proxyTexture.minFilter=THREE.LinearMipmapLinearFilter;
+      proxyTexture.generateMipmaps=true;
+      const proxyMesh=new THREE.InstancedMesh(
+        proxyPlaneGeometry,
+        new THREE.MeshBasicMaterial({
+          map:proxyTexture,toneMapped:false,side:THREE.FrontSide
+        }),
+        generatedMountCapacity
+      );
+      proxyMesh.count=0;
+      proxyMesh.frustumCulled=false;
+      proxyMesh.renderOrder=2;
+      proxyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      proxyMesh.userData.capacity=generatedMountCapacity;
+      artworkProxyMeshes.push(proxyMesh);
+      scene.add(proxyMesh);
+    }
+    document.body.dataset.artworkProxyVariants=String(artworkProxyMeshes.length);
+    document.body.dataset.artworkProxyStyle="deterministic-color-compositions";
     window.museumExpansionPlan.generatedMountCapacity=generatedMountCapacity;
     document.body.dataset.generatedMountCapacity=String(generatedMountCapacity);
     document.body.dataset.generatedRooms=String(
       generationDiagnostics.roomsAccepted
     );
     const dynamicArchitecture=new Set([
-      ...animatedSteps,...fragments,...entryFragments
+      ...animatedSteps,...fragments,...entryFragments,
+      ...distantCrystalFoldPieces
     ]);
     for (const object of architecturalMeshes) {
       if (dynamicArchitecture.has(object)) continue;
@@ -4335,6 +5409,7 @@
     let flying=false;
     let lastSpaceTapAt=-Infinity;
     let touchMove = new THREE.Vector2();
+    let mobileRunHeld=false;
     let lookPointer = null, lookLastX = 0, lookLastY = 0;
     const baseFov=68;
     const clock = new THREE.Clock();
@@ -4587,10 +5662,58 @@
       keys.clear();
       keyReleaseTimers.forEach(clearTimeout);
       keyReleaseTimers.clear();
+      setMobileRunHeld(false);
     });
 
     const stick = document.getElementById("touch-stick");
     const knob = document.getElementById("touch-knob");
+    const mobileRunButton=document.getElementById("mobile-run");
+    const mobileJumpButton=document.getElementById("mobile-jump");
+    function setMobileRunHeld(held) {
+      mobileRunHeld=held;
+      mobileRunButton.classList.toggle("active",held);
+      mobileRunButton.setAttribute("aria-pressed",String(held));
+    }
+    mobileRunButton.addEventListener("pointerdown",event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      mobileRunButton.setPointerCapture(event.pointerId);
+      setMobileRunHeld(true);
+    });
+    const releaseMobileRun=event=>{
+      if (event?.pointerId!==undefined &&
+          mobileRunButton.hasPointerCapture(event.pointerId)) {
+        mobileRunButton.releasePointerCapture(event.pointerId);
+      }
+      setMobileRunHeld(false);
+    };
+    mobileRunButton.addEventListener("pointerup",releaseMobileRun);
+    mobileRunButton.addEventListener("pointercancel",releaseMobileRun);
+    mobileRunButton.addEventListener("lostpointercapture",()=>{
+      setMobileRunHeld(false);
+    });
+    mobileJumpButton.addEventListener("pointerdown",event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      mobileJumpButton.setPointerCapture(event.pointerId);
+      mobileJumpButton.classList.add("active");
+      if (!renderer.xr.isPresenting && !flying && grounded) {
+        verticalVelocity=6.3;
+        grounded=false;
+      }
+    });
+    const releaseMobileJump=event=>{
+      if (event?.pointerId!==undefined &&
+          mobileJumpButton.hasPointerCapture(event.pointerId)) {
+        mobileJumpButton.releasePointerCapture(event.pointerId);
+      }
+      mobileJumpButton.classList.remove("active");
+    };
+    mobileJumpButton.addEventListener("pointerup",releaseMobileJump);
+    mobileJumpButton.addEventListener("pointercancel",releaseMobileJump);
+    mobileJumpButton.addEventListener("lostpointercapture",()=>{
+      mobileJumpButton.classList.remove("active");
+    });
     function updateStick(e) {
       const rect = stick.getBoundingClientRect();
       const x = e.clientX - (rect.left+rect.width/2);
@@ -4682,7 +5805,7 @@
       const forward = Number(keys.has("KeyW")||keys.has("ArrowUp")) - Number(keys.has("KeyS")||keys.has("ArrowDown")) - touchMove.y;
       const side = Number(keys.has("KeyD")||keys.has("ArrowRight")) - Number(keys.has("KeyA")||keys.has("ArrowLeft")) + touchMove.x;
       const shiftHeld=keys.has("ShiftLeft")||keys.has("ShiftRight");
-      const sprinting=shiftHeld && !flying;
+      const sprinting=(shiftHeld||mobileRunHeld) && !flying;
       const targetFov=sprinting?84:baseFov;
       const nextFov=THREE.MathUtils.damp(camera.fov,targetFov,sprinting?8:11,dt);
       if (Math.abs(nextFov-camera.fov)>.01) {
@@ -5550,8 +6673,10 @@
           streamArtwork(surface,alignment*8-distance*.08,"preview");
         }
       }
-      if (proxyMatrixDirty && artworkProxyMesh) {
-        artworkProxyMesh.instanceMatrix.needsUpdate=true;
+      if (proxyMatrixDirty) {
+        for (const proxyMesh of artworkProxyMeshes) {
+          proxyMesh.instanceMatrix.needsUpdate=true;
+        }
       }
       for (const [key,job] of textureJobsByURL) {
         // Finish tiny preview requests even if the camera moves on: they are
@@ -5645,6 +6770,7 @@
     function animate(time) {
       const dt = Math.min(clock.getDelta(), .05);
       dimensionalFoldUniforms.time.value=time*.001;
+      treeMotionUniforms.time.value=time*.001;
       animatedSteps.forEach(step => {
         // The two helix strands breathe reciprocally: while one expands, the
         // other contracts. Their vertical wave stays synchronized, preserving
@@ -5744,6 +6870,61 @@
         } else {
           piece.scale.set(1,1,1);
         }
+      });
+      distantCrystalFoldPieces.forEach(piece => {
+        const data=piece.userData;
+        // Treat the two interleaved halves as the +W and -W layers of one
+        // four-dimensional object. Rotate every original vertex through X-W
+        // and Z-W planes, then perspective-project it back into XYZ. This is
+        // the same inner/outer volume exchange as a rotating 8-cell: no group
+        // shuffling, no decorative 3D spin, and no accumulating transforms.
+        const xwAngle=time*.000012+data.phase;
+        const zwAngle=time*.0000085-data.phase*.41+.72;
+        const xwCos=Math.cos(xwAngle);
+        const xwSin=Math.sin(xwAngle);
+        const zwCos=Math.cos(zwAngle);
+        const zwSin=Math.sin(zwAngle);
+        for (const layer of data.morphLayers) {
+          const target=layer.position.array;
+          const base=layer.base;
+          for (let index=0;index<base.length;index+=3) {
+            const baseX=base[index];
+            const baseY=base[index+1];
+            const baseZ=base[index+2];
+            const normalizedX=baseX/data.xExtent;
+            const normalizedZ=baseZ/data.zExtent;
+            const rotatedX=
+              normalizedX*xwCos-data.wLayer*xwSin;
+            const firstW=
+              normalizedX*xwSin+data.wLayer*xwCos;
+            const rotatedZ=
+              normalizedZ*zwCos-firstW*zwSin;
+            const projectedW=
+              normalizedZ*zwSin+firstW*zwCos;
+            const perspective=THREE.MathUtils.clamp(
+              3.55/(3.55-projectedW),.84,1.2
+            );
+            target[index]=THREE.MathUtils.lerp(
+              baseX,rotatedX*data.xExtent*perspective,.32
+            );
+            // Scaling height about zero keeps every crystal rooted while its
+            // upper volume breathes through the fourth-dimensional projection.
+            target[index+1]=baseY*THREE.MathUtils.lerp(
+              1,perspective,.28
+            );
+            target[index+2]=THREE.MathUtils.lerp(
+              baseZ,rotatedZ*data.zExtent*perspective,.28
+            );
+          }
+          layer.position.needsUpdate=true;
+        }
+        piece.position.x=data.baseX;
+        piece.position.y=0;
+        piece.position.z=data.baseZ;
+        piece.scale.set(1,1,1);
+        piece.rotation.x=0;
+        piece.rotation.y=0;
+        piece.rotation.z=0;
       });
       floatingFinials.forEach((finial,index) => {
         const data=finial.userData;
