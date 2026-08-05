@@ -8,7 +8,7 @@
   <meta property="og:title" content="strauh.al / museum">
   <meta property="og:description" content="Enter a blue museum without end.">
   <meta property="og:image" content="https://strauh.al/banner.gif">
-  <title>strauh.al/museum</title>
+  <title>strauh.al / museum</title>
   <link rel="icon" href="./favicon.ico">
   <style>
     :root { color-scheme: dark; --blue: #00f; --white: #fff; }
@@ -18,6 +18,12 @@
     canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: none; }
     body.looking canvas { cursor: none; }
     body.menu-open, body.menu-open canvas { cursor: default; }
+    body.about-open, body.about-open canvas { cursor: default; }
+    body.artwork-select canvas { cursor: crosshair; }
+    body.artwork-enlarged canvas { cursor: none; }
+    #artwork-glove {
+      display: none;
+    }
     button, a { color: inherit; font: inherit; } a:hover { background-color: #fff;  }
     button { border-radius: 0; }
 
@@ -155,6 +161,43 @@
       transition: opacity .2s;
     }
     #status.visible { opacity: 1; }
+    #museum-about {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 45;
+      width: min(680px, calc(100vw - 40px));
+      max-height: min(78vh, 720px);
+      padding: 26px 28px 28px;
+      border: 1px solid #fff;
+      color: #fff;
+      background: rgba(0,0,255,.94);
+      box-shadow: 0 0 0 1px rgba(0,0,255,.7);
+      overflow: auto;
+      transform: translate(-50%,-50%);
+      pointer-events: auto;
+      backdrop-filter: blur(12px);
+    }
+    #museum-about[hidden] { display: none; }
+    #museum-about h2 {
+      margin: 0 92px 22px 0;
+      font: 28px/1 "Times New Roman", Times, serif;
+      font-weight: normal;
+      text-transform: lowercase;
+    }
+    #museum-about p {
+      margin: 0 0 18px;
+      font: 16px/1.5 "Times New Roman", Times, serif;
+    }
+    #museum-about p:last-child { margin-bottom: 0; }
+    #museum-about a { text-decoration: underline; }
+    #museum-about-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      min-height: 34px;
+      padding: 0 10px;
+    }
     #touch-stick {
       display: none;
       position: absolute;
@@ -234,6 +277,7 @@
     <div id="masthead"><a href="https://strauh.al">strauh.al</a><span class="museum-suffix">/museum</span></div>
     <div id="location">forecourt<br>elevation 0</div>
     <div id="coordinates" aria-label="Current museum coordinates">X +000.0 · Y +000.1 · Z +060.0<br>HDG 000° · PITCH +005°</div>
+    <div id="artwork-glove" aria-hidden="true">☜︎</div>
     <div id="touch-stick" aria-label="Movement control"><div id="touch-knob"></div></div>
     <div id="mobile-movement-actions" aria-label="Mobile movement controls">
       <button class="action mobile-movement-action" id="mobile-run" type="button" aria-pressed="false">run</button>
@@ -253,6 +297,16 @@
       <button class="action" id="xr" hidden>enter immersive</button>
     </div>
   </div>
+  <section id="museum-about" role="dialog" aria-modal="true"
+    aria-labelledby="museum-about-title" hidden>
+    <button class="action" id="museum-about-close" type="button">
+      close (esc)
+    </button>
+    <h2 id="museum-about-title">about this museum</h2>
+    <p>this is my ideal museum. during my graduate degree at art school, some of the most formative learning experiences during my time there were not in the classrooms, but were actually at the art museum that was connected to the school. I remember standing in front of 17th century engravings, scratching my head, trying to figure out for the life of me how those artists achieved that specific level of technique during that time (goeltzius is a favorite).</p>
+    <p>this museum contains over 6000 images that i've encountered in my life. every single image that you come across at some point in time has captivated me to save it into my downloads folder. the goal is for this museum to reach people living in parts of the world that may not have access to world class art museums.</p>
+    <p>i believe that one of the most important goals in my life is to provoke an aesthetic moment in as many peoples lives as possible, and this museum is one way of me trying to do that. there is no ticket or admission but donations are graciously accepted at <a href="https://strauh.al/donate_support" target="_blank" rel="noopener">https://strauh.al/donate_support</a></p>
+  </section>
   <div id="status">preparing the galleries</div>
 
   <script>
@@ -267,10 +321,12 @@
     window.addEventListener("error", showMuseumStartupError);
     window.addEventListener("unhandledrejection", showMuseumStartupError);
   </script>
+  <script src="./museum/cute_cat_embedded.js"></script>
   <script type="module">
     import * as THREE from "three";
     import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
     import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+    import { STLLoader } from "three/addons/loaders/STLLoader.js";
 
     const BLUE = 0x0000ff;
     const WHITE = 0xffffff;
@@ -287,6 +343,48 @@
     rig.add(camera);
     scene.add(rig);
 
+    // Standalone Quest browsers share a mobile GPU and a tight thermal/memory
+    // envelope. Detect that family before WebXR creates its framebuffer so the
+    // compositor never has to sustain the previous 1.55x supersampled target.
+    const xrUserAgent=navigator.userAgent||"";
+    const xrIsStandaloneQuest=/OculusBrowser|Quest/i.test(xrUserAgent);
+    const xrIsVision=/Vision|visionOS/i.test(xrUserAgent);
+    const xrRuntimePreset=xrIsStandaloneQuest
+      ?{
+          name:"quest-standalone-safe",
+          framebufferScale:1,
+          foveation:.58,
+          far:410,
+          fogDensity:.00305,
+          artworkDrawLimit:20,
+          artworkPreloadLimit:3,
+          fullResolutionLimit:1,
+          previewResidentLimit:38,
+          previewTextureLimit:30,
+          frameAssetLimit:76,
+          previewTextureDimension:320,
+          fullTextureDimension:1536,
+          anisotropy:4,
+          heavyMotionStride:3
+        }
+      :{
+          name:xrIsVision?"vision-spatial":"full-xr",
+          framebufferScale:1.18,
+          foveation:.18,
+          far:760,
+          fogDensity:.00245,
+          artworkDrawLimit:32,
+          artworkPreloadLimit:7,
+          fullResolutionLimit:2,
+          previewResidentLimit:64,
+          previewTextureLimit:48,
+          frameAssetLimit:108,
+          previewTextureDimension:384,
+          fullTextureDimension:3072,
+          anisotropy:8,
+          heavyMotionStride:1
+        };
+    document.body.dataset.xrDevicePreset=xrRuntimePreset.name;
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(1);
     renderer.setSize(innerWidth, innerHeight);
@@ -297,9 +395,7 @@
     renderer.toneMappingExposure = .92;
     renderer.xr.enabled = true;
     renderer.xr.setReferenceSpaceType("local-floor");
-    // Quest's default recommended framebuffer is intentionally conservative.
-    // The museum is low-poly enough to supersample it for crisp 1 px edges.
-    renderer.xr.setFramebufferScaleFactor(1.55);
+    renderer.xr.setFramebufferScaleFactor(xrRuntimePreset.framebufferScale);
     renderer.domElement.tabIndex = 0;
     renderer.domElement.setAttribute("aria-label","Interactive museum viewport");
     document.body.prepend(renderer.domElement);
@@ -382,6 +478,7 @@
     });
     const navSurfaces = [];
     const animatedSteps = [];
+    const animatedWalkways = [];
     const archiveStairColliders = [];
     const fragments = [];
     const entryFragments = [];
@@ -420,6 +517,381 @@
       parent.add(group);
       architecturalMeshes.push(group);
       return group;
+    }
+
+    // A small polygonal museum guide patrols the forecourt. It deliberately
+    // stays outside architecturalMeshes: its hierarchy moves every frame and
+    // must not be frozen with the static building later in startup.
+    const museumCat=new THREE.Group();
+    museumCat.name="museum-about-cat";
+    const museumCatLegs=[];
+    const museumCatTail=[];
+    const museumCatClickableMeshes=[];
+    let museumCatSTLMesh=null;
+    let museumCatSTLPosition=null;
+    let museumCatSTLBasePositions=null;
+    let museumCatEarRoot=null;
+    let museumCatDeformFrame=0;
+    // An ordered, connected route keeps the cat out of walls while letting it
+    // range across the whole forecourt and pass naturally through the narrow
+    // entrance into the lobby. Adjacent targets are always mutually walkable.
+    const museumCatPatrolPoints=[
+      new THREE.Vector3(-22,0,88),new THREE.Vector3(-15,0,78),
+      new THREE.Vector3(-7,0,69),new THREE.Vector3(-2,0,60),
+      new THREE.Vector3(0,0,53),new THREE.Vector3(0,0,47),
+      new THREE.Vector3(-4,0,41),new THREE.Vector3(0,0,36),
+      new THREE.Vector3(5,0,41),new THREE.Vector3(0,0,47),
+      new THREE.Vector3(0,0,53),new THREE.Vector3(2,0,60),
+      new THREE.Vector3(8,0,69),new THREE.Vector3(16,0,78),
+      new THREE.Vector3(22,0,89),new THREE.Vector3(11,0,94),
+      new THREE.Vector3(0,0,88),new THREE.Vector3(-11,0,94)
+    ];
+    const museumCatStartChoices=[0,5,7,8,14,16];
+    const museumCatStartIndex=museumCatStartChoices[
+      Math.abs(Date.now()>>>4)%museumCatStartChoices.length
+    ];
+    const museumCatMotion={
+      targetIndex:(museumCatStartIndex+1)%museumCatPatrolPoints.length,
+      direction:1,seed:0x5ca7,wait:0,gait:0,crouch:0,
+      zoomies:0,zoomiesCooldown:6,grooming:0,groomingCooldown:4
+    };
+    const museumCatGroundRaycaster=new THREE.Raycaster();
+    const museumCatGroundDirection=new THREE.Vector3(0,-1,0);
+    function catPanel(points,parent=museumCat,position=[0,0,0],
+      internalEdges=[],depth=.48) {
+      const shape=new THREE.Shape();
+      shape.moveTo(points[0][0],points[0][1]);
+      points.slice(1).forEach(point=>shape.lineTo(point[0],point[1]));
+      shape.closePath();
+      const geometry=new THREE.ExtrudeGeometry(shape,{
+        depth,steps:1,bevelEnabled:false,curveSegments:1
+      });
+      geometry.translate(0,0,-depth*.5);
+      const group=new THREE.Group();
+      const mesh=new THREE.Mesh(geometry,blueMaterial);
+      mesh.receiveShadow=true;
+      group.add(mesh);
+      const outline=new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry,10),whiteLineMaterial
+      );
+      outline.renderOrder=8;
+      group.add(outline);
+      if (internalEdges.length) {
+        const linePositions=[];
+        for (const [from,to] of internalEdges) {
+          for (const z of [-depth*.51,depth*.51]) {
+            linePositions.push(
+              points[from][0],points[from][1],z,
+              points[to][0],points[to][1],z
+            );
+          }
+        }
+        const facets=new THREE.LineSegments(
+          new THREE.BufferGeometry().setAttribute(
+            "position",new THREE.Float32BufferAttribute(linePositions,3)
+          ),whiteLineMaterial
+        );
+        facets.renderOrder=9;
+        group.add(facets);
+      }
+      group.position.set(...position);
+      parent.add(group);
+      return group;
+    }
+    function catFacetedMesh(geometry,parent,position=[0,0,0],
+      scale=[1,1,1],rotation=[0,0,0],material=blueMaterial) {
+      const group=new THREE.Group();
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.scale.set(...scale);
+      mesh.rotation.set(...rotation);
+      mesh.receiveShadow=true;
+      group.add(mesh);
+      const outline=new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry,8),whiteLineMaterial
+      );
+      outline.scale.copy(mesh.scale);
+      outline.rotation.copy(mesh.rotation);
+      outline.renderOrder=9;
+      group.add(outline);
+      group.position.set(...position);
+      parent.add(group);
+      return group;
+    }
+    // True three-dimensional low-poly hulls replace the former front- and
+    // rear-facing extrusion caps. Every cross-section now tapers, so the cat
+    // retains a feline chest, cheeks and muzzle when approached head-on.
+    const museumCatBody=new THREE.Group();
+    museumCatBody.position.set(-.08,1.34,0);
+    museumCat.add(museumCatBody);
+    catFacetedMesh(
+      new THREE.IcosahedronGeometry(1,1),museumCatBody,[0,0,0],
+      [1.02,.54,.58]
+    );
+    catFacetedMesh(
+      new THREE.IcosahedronGeometry(1,0),museumCatBody,[.58,.08,0],
+      [.48,.62,.5]
+    );
+    const museumCatHead=new THREE.Group();
+    museumCatHead.position.set(.83,1.78,0);
+    museumCat.add(museumCatHead);
+    catFacetedMesh(
+      new THREE.IcosahedronGeometry(1,1),museumCatHead,[0,0,0],
+      [.54,.56,.5]
+    );
+    catFacetedMesh(
+      new THREE.ConeGeometry(.3,.46,4),museumCatHead,[.5,-.08,0],
+      [1,.82,1],[0,0,-Math.PI/2]
+    );
+    catFacetedMesh(
+      new THREE.ConeGeometry(.25,.55,3),museumCatHead,
+      [-.1,.56,-.27],[1,1,.72],[0,0,-.08]
+    );
+    catFacetedMesh(
+      new THREE.ConeGeometry(.25,.55,3),museumCatHead,
+      [-.1,.56,.27],[1,1,.72],[0,0,.08]
+    );
+    const catFeatureMaterial=new THREE.MeshBasicMaterial({color:WHITE});
+    for (const z of [-.31,.31]) {
+      catFacetedMesh(
+        new THREE.OctahedronGeometry(.045,0),museumCatHead,
+        [.43,.1,z],[1,1,.65],[0,0,0],catFeatureMaterial
+      );
+    }
+    const legDefinitions=[
+      [.6,.84,-.22,0], [.42,.81,.22,Math.PI],
+      [-.58,.82,-.22,Math.PI],[-.78,.79,.22,0]
+    ];
+    for (const [x,y,z,phase] of legDefinitions) {
+      const hip=new THREE.Group();
+      hip.position.set(x,y,z);
+      museumCat.add(hip);
+      catFacetedMesh(
+        new THREE.CylinderGeometry(.105,.15,.52,4),hip,
+        [0,-.26,0],[1,1,1],[0,0,-.04]
+      );
+      const knee=new THREE.Group();
+      knee.position.set(.04,-.47,0);
+      hip.add(knee);
+      catFacetedMesh(
+        new THREE.CylinderGeometry(.075,.115,.58,4),knee,
+        [0,-.28,0],[1,1,1],[0,0,.05]
+      );
+      const paw=new THREE.Group();
+      paw.position.set(.08,-.52,0);
+      knee.add(paw);
+      catFacetedMesh(
+        new THREE.BoxGeometry(.38,.13,.28),paw,[.1,-.04,0]
+      );
+      hip.userData.phase=phase;
+      hip.userData.baseY=y;
+      hip.userData.knee=knee;
+      hip.userData.paw=paw;
+      museumCatLegs.push(hip);
+    }
+    // One watertight tapered mesh replaces the STL's extremely sparse tail.
+    // Shared indexed rings guarantee there are no gaps between sections.
+    function createMuseumCatTailGeometry() {
+      const curve=new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0,0,0),
+        new THREE.Vector3(-.28,.08,.015),
+        new THREE.Vector3(-.52,.27,.025),
+        new THREE.Vector3(-.64,.51,.01),
+        new THREE.Vector3(-.59,.73,-.015),
+        new THREE.Vector3(-.46,.88,-.025)
+      ]);
+      const tubularSegments=12;
+      const radialSegments=5;
+      const frames=curve.computeFrenetFrames(tubularSegments,false);
+      const vertices=[];
+      const indices=[];
+      for (let ring=0;ring<=tubularSegments;ring++) {
+        const t=ring/tubularSegments;
+        const center=curve.getPointAt(t);
+        // The broad first ring is deliberately buried inside the rump; this
+        // overlap keeps the attachment visually sealed throughout the sway.
+        const radius=THREE.MathUtils.lerp(.108,.021,t);
+        for (let side=0;side<radialSegments;side++) {
+          const angle=side/radialSegments*Math.PI*2;
+          const offset=frames.normals[ring].clone()
+            .multiplyScalar(Math.cos(angle)*radius)
+            .add(frames.binormals[ring].clone()
+              .multiplyScalar(Math.sin(angle)*radius));
+          vertices.push(center.x+offset.x,center.y+offset.y,center.z+offset.z);
+        }
+      }
+      for (let ring=0;ring<tubularSegments;ring++) {
+        for (let side=0;side<radialSegments;side++) {
+          const nextSide=(side+1)%radialSegments;
+          const a=ring*radialSegments+side;
+          const b=(ring+1)*radialSegments+side;
+          const c=(ring+1)*radialSegments+nextSide;
+          const d=ring*radialSegments+nextSide;
+          indices.push(a,b,d,b,c,d);
+        }
+      }
+      const rootCenter=vertices.length/3;
+      vertices.push(0,0,0);
+      const tip=curve.getPointAt(1);
+      const tipCenter=vertices.length/3;
+      vertices.push(tip.x,tip.y,tip.z);
+      for (let side=0;side<radialSegments;side++) {
+        const nextSide=(side+1)%radialSegments;
+        indices.push(rootCenter,nextSide,side);
+        const tipRing=tubularSegments*radialSegments;
+        indices.push(tipCenter,tipRing+side,tipRing+nextSide);
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",new THREE.Float32BufferAttribute(vertices,3)
+      );
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    }
+    const museumCatTailRoot=new THREE.Group();
+    museumCatTailRoot.position.set(-.56,1,0);
+    museumCat.add(museumCatTailRoot);
+    catFacetedMesh(
+      createMuseumCatTailGeometry(),museumCatTailRoot,[0,0,0]
+    );
+    museumCatTailRoot.userData.segment=0;
+    museumCatTailRoot.userData.baseRotation=0;
+    museumCatTail.push(museumCatTailRoot);
+    const catHitbox=new THREE.Mesh(
+      new THREE.BoxGeometry(3.15,2.35,.75),
+      new THREE.MeshBasicMaterial({
+        transparent:true,opacity:0,depthWrite:false,depthTest:false
+      })
+    );
+    catHitbox.position.set(.1,1.17,0);
+    catHitbox.name="museum-about-cat-target";
+    museumCat.add(catHitbox);
+    museumCatClickableMeshes.push(catHitbox);
+    museumCat.position.copy(museumCatPatrolPoints[museumCatStartIndex]);
+    document.body.dataset.museumCatStart=
+      museumCatStartIndex>=5&&museumCatStartIndex<=10?"lobby":"forecourt";
+    museumCat.position.y=.02;
+    museumCat.scale.setScalar(1.02);
+    museumCat.userData.head=museumCatHead;
+    museumCat.userData.body=museumCatBody;
+    scene.add(museumCat);
+    const museumCatModelRoot=new THREE.Group();
+    museumCat.add(museumCatModelRoot);
+    // Keep every auxiliary body part under the same animated model root. This
+    // prevents crouching/grooming offsets from separating the tail or ears.
+    museumCatModelRoot.add(museumCatTailRoot);
+    function installMuseumCatGeometry(geometry) {
+        geometry.computeBoundingBox();
+        const bounds=geometry.boundingBox;
+        const centerX=(bounds.min.x+bounds.max.x)*.5;
+        const centerY=(bounds.min.y+bounds.max.y)*.5;
+        const modelScale=1.85/(bounds.max.z-bounds.min.z);
+        const position=geometry.getAttribute("position");
+        for (let index=0;index<position.count;index++) {
+          const sourceX=position.getX(index);
+          const sourceY=position.getY(index);
+          const sourceZ=position.getZ(index);
+          let localX=-(sourceY-centerY)*modelScale;
+          let localY=(sourceZ-bounds.min.z)*modelScale;
+          let localZ=(sourceX-centerX)*modelScale;
+          // The source scan has an unusually upright, dog-like neck. Pull the
+          // upper chest and head back/down into a compact feline silhouette,
+          // while preserving the paws, back, tail and recognizable head.
+          if (localX>.12&&localY>.68) {
+            const neckWeight=THREE.MathUtils.smoothstep(localY,.68,1.5);
+            localX=.12+(localX-.12)*(1-neckWeight*.25);
+            localY=.68+(localY-.68)*(1-neckWeight*.22);
+            localZ*=1+neckWeight*.045;
+          }
+          // Reduce the oversized skull around a stable neck pivot. Separate
+          // architectural ear prisms below restore a clear feline silhouette.
+          if (localX>.36&&localY>.92) {
+            const headWeight=THREE.MathUtils.smoothstep(localX,.36,.72)*
+              THREE.MathUtils.smoothstep(localY,.92,1.24);
+            localX=THREE.MathUtils.lerp(
+              localX,.42+(localX-.42)*.84,headWeight
+            );
+            localY=THREE.MathUtils.lerp(
+              localY,1.02+(localY-1.02)*.86,headWeight
+            );
+            localZ=THREE.MathUtils.lerp(localZ,localZ*.84,headWeight);
+          }
+          position.setXYZ(index,localX,localY,localZ);
+        }
+        // Remove only the detached, under-sampled STL tail triangles. The
+        // connected procedural tail above takes over at the same pelvis root.
+        for (let index=0;index<position.count;index+=3) {
+          let tailVertices=0;
+          for (let vertex=0;vertex<3;vertex++) {
+            if (position.getX(index+vertex)<-.9&&
+                position.getY(index+vertex)>.72) tailVertices++;
+          }
+          if (tailVertices>=2) {
+            for (let vertex=0;vertex<3;vertex++) {
+              position.setXYZ(index+vertex,-.82,1.22,0);
+            }
+          }
+        }
+        position.needsUpdate=true;
+        geometry.computeVertexNormals();
+        geometry.computeBoundingBox();
+        geometry.computeBoundingSphere();
+        museumCatSTLMesh=new THREE.Mesh(geometry,blueMaterial);
+        museumCatSTLMesh.receiveShadow=true;
+        museumCatModelRoot.add(museumCatSTLMesh);
+        // The geometry itself is reduced enough to expose every connected
+        // facet. Unlike thresholded feature edges, this leaves no isolated or
+        // broken-looking line fragments on the torso.
+        const stlWire=new THREE.Mesh(
+          geometry,
+          new THREE.MeshBasicMaterial({
+            color:WHITE,wireframe:true,depthWrite:false
+          })
+        );
+        stlWire.renderOrder=10;
+        museumCatModelRoot.add(stlWire);
+        museumCatEarRoot=new THREE.Group();
+        museumCatEarRoot.position.set(.1,.7,0);
+        museumCatModelRoot.add(museumCatEarRoot);
+        for (const z of [-.2,.2]) {
+          catFacetedMesh(
+            new THREE.ConeGeometry(.17,.42,3),
+            museumCatEarRoot,[.43,.78,z],[1,1,.82],[0,0,-.08]
+          );
+        }
+        museumCatSTLPosition=position;
+        museumCatSTLBasePositions=new Float32Array(position.array);
+        museumCatBody.visible=false;
+        museumCatHead.visible=false;
+        // The adaptive reduction preserves the STL's own four legs and paws;
+        // never layer the fallback rig over them (it reads as eight limbs).
+        museumCatLegs.forEach(leg=>leg.visible=false);
+        museumCatTail.forEach(tail=>tail.visible=true);
+        document.body.dataset.museumCat=
+          "embedded-user-stl-cat-native-four-leg-grounded-mesh";
+        document.body.dataset.museumCatTriangles="413";
+        document.body.dataset.museumCatOutline="complete-connected-wireframe";
+        document.body.dataset.museumCatLegs="native-four-preserved";
+        document.body.dataset.museumCatSource="user-supplied-cute-cat-stl";
+        document.body.dataset.museumCatTail=
+          "deep-anchored-watertight-light-flicking-feline-tail";
+        document.body.dataset.museumCatRoute="forecourt-entry-lobby-connected";
+        document.body.dataset.museumCatRig=
+          "single-root-connected-ears-tail-and-body";
+    }
+    try {
+      const encodedCat=window.MUSEUM_CAT_STL_BASE64;
+      if (!encodedCat) throw new Error("embedded cat mesh unavailable");
+      const binaryCat=atob(encodedCat);
+      const catBytes=new Uint8Array(binaryCat.length);
+      for (let index=0;index<binaryCat.length;index++) {
+        catBytes[index]=binaryCat.charCodeAt(index);
+      }
+      installMuseumCatGeometry(new STLLoader().parse(catBytes.buffer));
+    } catch (error) {
+      console.warn("The supplied museum cat could not be decoded",error);
+      document.body.dataset.museumCat=
+        "fallback-fully-faceted-3d-articulated-hunting-cat";
     }
 
     function box(w, h, d, x, y, z, parent = scene, material = blueMaterial, nav = false, edge = true) {
@@ -2592,29 +3064,52 @@
     const guaranteedMountsPerRevolution=
       spiralSides/2*fullSegmentSlots+
       spiralSides/2*roomSegmentSlots;
-    // One reserve revolution lets the live archive grow without immediately
-    // running out of certified wall positions.
-    const targetArtworkCapacity=
-      archiveInventoryTotal+guaranteedMountsPerRevolution;
-    const spiralRevolutions=Math.ceil(
-      targetArtworkCapacity/guaranteedMountsPerRevolution
-    );
-    // Collections own complete floors instead of sharing angular slices.
-    // This makes the circulation legible and prevents photography mounts,
-    // signage, and streaming requests from bleeding into fine-art galleries.
-    const photographyFloorCount=Math.max(
-      1,Math.round(
-        spiralRevolutions*archiveInventoryTotals.photo/archiveInventoryTotal
+    // Finished rooms, doorway clearances and exact decade matching make only
+    // part of the ideal slot estimate usable. Size each collection band from
+    // its own inventory using measured conservative utilization instead of
+    // assigning a fixed/proportional number of floors. The result grows and
+    // shrinks with the archive while preserving collection-exclusive floors.
+    const floorGrowthReserve=1.02;
+    const certifiedFloorUtilization=Object.freeze({
+      // Dated collections need spare walls because a mount accepts only its
+      // exact decade. Photography has no decade partition and packs tighter.
+      art:.82,
+      after:.82,
+      photo:.9
+    });
+    const floorsForCollection=(count,collection) => Math.max(
+      1,
+      Math.ceil(
+        count*floorGrowthReserve/
+        (guaranteedMountsPerRevolution*
+          certifiedFloorUtilization[collection])
       )
     );
-    const afterFloorCount=Math.max(
-      1,Math.round(
-        spiralRevolutions*archiveInventoryTotals.after/archiveInventoryTotal
-      )
+    // Historical rooms lose more nominal slots to doorway returns and exact
+    // decade boundaries than the generic estimator predicts. Keep one
+    // collection-exclusive reserve floor so chronology never has to spill
+    // into a neighboring collection just to display the complete catalog.
+    const artFloorCount=floorsForCollection(
+      archiveInventoryTotals.art,"art"
+    )+1;
+    const afterFloorCount=floorsForCollection(
+      archiveInventoryTotals.after,"after"
     );
-    const artFloorCount=Math.max(
-      1,spiralRevolutions-photographyFloorCount-afterFloorCount
+    const photographyFloorCount=floorsForCollection(
+      archiveInventoryTotals.photo,"photo"
     );
+    const spiralRevolutions=
+      artFloorCount+afterFloorCount+photographyFloorCount;
+    const targetArtworkCapacity=Object.entries(
+      archiveInventoryTotals
+    ).reduce((total,[collection,count])=>
+      total+count*floorGrowthReserve,0
+    );
+    document.body.dataset.dynamicFloorSizing=
+      "archive-count-per-collection-certified-capacity";
+    document.body.dataset.dynamicFloorCount=String(spiralRevolutions);
+    document.body.dataset.dynamicFloorBreakdown=
+      `art:${artFloorCount}|after:${afterFloorCount}|photo:${photographyFloorCount}`;
     const collectionFloorBands=Object.freeze({
       art:Object.freeze({start:0,end:artFloorCount-1}),
       after:Object.freeze({
@@ -3053,7 +3548,7 @@
         // joins. Previously the visible path was clear but an invisible guard
         // continued across the mouth and trapped the visitor on the stairs.
         if (clearanceIndices.some(index=>
-          routeIndex<=index+2 && endIndex>=index-2
+          routeIndex<=index+8 && endIndex>=index-8
         )) continue;
         for (const side of [-1,1]) {
           const a=archiveRouteEdgePoint(route,routeIndex,side,width);
@@ -3102,7 +3597,7 @@
         });
       }
 
-      // Both stairs get a bridge on all eleven levels. Opposite radial bridge
+      // Both stairs get a bridge on every generated level. Opposite bridge
       // axes keep the two walkway systems disjoint; the east bridges rise by
       // half a story to meet the continuously climbing gallery spiral.
       const floorConnections=[];
@@ -3152,6 +3647,8 @@
           z:spiralCenter.z+
             landingDirection.z/landingDistance*landingRadius
         };
+        // Restore the original direct bridge language: one disciplined run
+        // from stair to gallery, without a curved fan at either termination.
         const bridge=[{...bridgeStart}];
         for (let bridgeIndex=1;bridgeIndex<=14;bridgeIndex++) {
           const progress=bridgeIndex/14;
@@ -3173,8 +3670,6 @@
       const width=archiveHelixWidth;
       const treadGeometries=[];
       const treadEdgeGeometries=[];
-      const bridgeGeometries=[];
-      const bridgeEdgeGeometries=[];
       const archiveRoutes=[
         path,
         ...floorConnections.map(connection=>connection.path)
@@ -3185,8 +3680,8 @@
         registerInvisibleArchiveGuards(
           route,
           width+.15,
-          routeIndex===0?3:0,
-          routeIndex>0?3:0,
+          routeIndex===0?3:5,
+          routeIndex>0?5:0,
           routeIndex===0
             ?floorConnections.map(connection=>connection.pathIndex)
             :[]
@@ -3216,19 +3711,10 @@
           // retain their open, weightless Penrose rhythm.
           const steps=Math.max(1,Math.ceil(run/1.35));
           const angle=Math.atan2(dx,dz);
-          const geometryTarget=routeIndex===0
-            ?treadGeometries
-            :bridgeGeometries;
-          const edgeTarget=routeIndex===0
-            ?treadEdgeGeometries
-            :bridgeEdgeGeometries;
           for (let stepIndex=0;stepIndex<steps;stepIndex++) {
             const progress=(stepIndex+.5)/steps;
             const treadGeometry=new THREE.BoxGeometry(
-              width,.14,Math.max(
-                .28,
-                run/steps*(routeIndex===0?.56:1.06)
-              )
+              width,.14,Math.max(.28,run/steps*.56)
             );
             const treadMatrix=new THREE.Matrix4().compose(
               new THREE.Vector3(
@@ -3242,8 +3728,8 @@
               new THREE.Vector3(1,1,1)
             );
             treadGeometry.applyMatrix4(treadMatrix);
-            geometryTarget.push(treadGeometry);
-            edgeTarget.push(new THREE.EdgesGeometry(treadGeometry));
+            treadGeometries.push(treadGeometry);
+            treadEdgeGeometries.push(new THREE.EdgesGeometry(treadGeometry));
           }
         }
       });
@@ -3268,35 +3754,6 @@
       }
       treadGeometries.forEach(geometry=>geometry.dispose());
       treadEdgeGeometries.forEach(geometry=>geometry.dispose());
-      // Bridges remain fixed on their authoritative collision routes while
-      // the helix breathes. Their overlapping tread depth forms a continuous
-      // walking deck with no visible or navigational gaps.
-      const bridgeGroup=new THREE.Group();
-      const mergedBridges=mergeGeometries(bridgeGeometries,false);
-      const mergedBridgeEdges=mergeGeometries(
-        bridgeEdgeGeometries,false
-      );
-      if (mergedBridges) {
-        const bridgeMesh=new THREE.Mesh(mergedBridges,blueMaterial);
-        bridgeMesh.receiveShadow=true;
-        bridgeGroup.add(bridgeMesh);
-        navSurfaces.push(bridgeMesh);
-      }
-      if (mergedBridgeEdges) {
-        const bridgeEdges=new THREE.LineSegments(
-          mergedBridgeEdges,whiteLineMaterial
-        );
-        bridgeEdges.renderOrder=5;
-        bridgeGroup.add(bridgeEdges);
-      }
-      bridgeGeometries.forEach(geometry=>geometry.dispose());
-      bridgeEdgeGeometries.forEach(geometry=>geometry.dispose());
-      bridgeGroup.userData={
-        fixedWalkways:true,
-        stair:index,
-        floors:floorConnections.map(connection=>connection.floor+1)
-      };
-      scene.add(bridgeGroup);
       stairGroup.userData={
         baseX:0,baseY:0,baseZ:0,
         breathCenterX:spiralCenter.x,
@@ -3344,10 +3801,18 @@
     document.body.dataset.archiveStairFloorConnections=
       archiveStairPlans.map(()=>spiralRevolutions).join(",");
     document.body.dataset.archiveStairBreath="reciprocal-radial-0.024";
-    document.body.dataset.archiveWalkways="fixed-continuous";
+    document.body.dataset.archiveStairVerticalRoot="anchored-to-collider";
+    document.body.dataset.archiveWalkways=
+      "restored-straight-open-tread-continuous-collision";
+    document.body.dataset.archiveWalkwayVisualSpacing=
+      "original-0.56-open-treads";
+    document.body.dataset.archiveWalkwayCollision=
+      "fixed-analytic-ribbon-independent-of-visual-gaps";
+    document.body.dataset.archiveWalkwayBreath="with-parent-helix";
     document.body.dataset.archiveRailOpenings=String(
       archiveStairPlans.length*spiralRevolutions
     );
+    document.body.dataset.archiveRailOpeningClearance="8-samples";
     document.body.dataset.archiveTreadSpacing="open";
     document.body.dataset.penroseCount=String(archiveStairPlans.length);
     document.body.dataset.archiveStairColliders=String(archiveStairColliders.length);
@@ -3772,7 +4237,10 @@
       `${effectiveTextureTier(url,tier)}:${url}`;
     function previewImageURL(url) {
       if (isAnimatedImageURL(url)) return url;
-      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=160&h=160&fit=inside&q=44&output=webp`;
+      // A single medium wall tier is sharp enough for normal gallery viewing
+      // without decoding/uploading multi-megabyte originals as the gaze ray
+      // crosses each work. Originals are reserved for the focus viewer.
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=384&h=384&fit=inside&q=62&output=webp`;
     }
     function touchPreviewTexture(texture) {
       if (!texture || texture.userData.tier!=="preview" ||
@@ -3864,9 +4332,15 @@
             } else {
               // ImageBitmap bypasses Texture.flipY in WebGL, so orient at decode time.
               const source = await createImageBitmap(blob,{ imageOrientation:"flipY" });
+              const xrTextureBudget=renderer.xr.isPresenting
+                ?xrRuntimePreset
+                :null;
               const maxTextureDimension=tier==="preview"
-                ? 384
-                : Math.min(renderer.capabilities.maxTextureSize,4096);
+                ?(xrTextureBudget?.previewTextureDimension||384)
+                :Math.min(
+                    renderer.capabilities.maxTextureSize,
+                    xrTextureBudget?.fullTextureDimension||4096
+                  );
               const scale = Math.min(1,maxTextureDimension/Math.max(source.width,source.height));
               let bitmap = source;
               if (scale < 1) {
@@ -3882,7 +4356,8 @@
             texture.needsUpdate = true;
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.anisotropy = Math.min(
-              8,renderer.capabilities.getMaxAnisotropy()
+              renderer.xr.isPresenting?xrRuntimePreset.anisotropy:8,
+              renderer.capabilities.getMaxAnisotropy()
             );
             texture.userData.tier=tier;
             texture.userData.cacheKey=key;
@@ -3904,6 +4379,8 @@
       return promise;
     }
     const artworkSurfaces = [];
+    const artworkSurfacesByLevel=new Map();
+    const artworkWallLayouts=new Map();
     const artworkProxyMeshes = [];
     const artworkProxyHidden = new Set();
     const artworkProxyPosition = new THREE.Vector3();
@@ -3949,6 +4426,23 @@
       surface.proxyHidden=false;
       proxyMesh.setMatrixAt(surface.proxyIndex,surface.proxyMatrix);
       proxyMesh.instanceMatrix.needsUpdate=true;
+    }
+    function refreshArtworkProxy(surface) {
+      const proxyMesh=artworkProxyMeshes[surface.proxyFamily];
+      if (!proxyMesh || surface.proxyIndex===undefined) return;
+      artworkProxyPosition.copy(surface.worldPosition)
+        .addScaledVector(surface.worldNormal,.12);
+      artworkProxyQuaternion.setFromAxisAngle(
+        artworkProxyUp,surface.rotationY
+      );
+      artworkProxyScale.set(surface.maxW,surface.maxH,1);
+      surface.proxyMatrix.compose(
+        artworkProxyPosition,artworkProxyQuaternion,artworkProxyScale
+      );
+      if (!surface.proxyHidden) {
+        proxyMesh.setMatrixAt(surface.proxyIndex,surface.proxyMatrix);
+        proxyMesh.instanceMatrix.needsUpdate=true;
+      }
     }
     const artworkFrameAssets = new Map();
     function ornateFrameGeometry(width,height,variant) {
@@ -4216,6 +4710,7 @@
       );
       imageMesh.position.z=surface.frameStyle==="photography"?.085:.11;
       imageMesh.userData.title=surface.item[0];
+      imageMesh.userData.artworkSurface=surface;
       group.add(imageMesh);
       group.visible=false;
       group.updateMatrix();
@@ -4232,18 +4727,29 @@
       surface.imageMesh.geometry.dispose();
       surface.imageMesh.material.dispose();
       disposeArtworkLabel(surface.titleLabel);
+      if (surface.focusBorder) {
+        surface.focusBorder.material.dispose();
+      }
       releaseArtworkFrameAssets(surface.frameParts?.assetKey);
       surface.group=null;
       surface.imageMesh=null;
       surface.frameParts=null;
       surface.titleLabel=null;
+      surface.focusBorder=null;
     }
-    function artwork(item, x, y, z, rotationY, maxW, maxH, collection) {
+    function artwork(
+      item,x,y,z,rotationY,maxW,maxH,collection,layoutMetadata={}
+    ) {
       const frameVariant=collection==="photography"
         ? 0
         : stableFrameVariant(item,x,y,z);
       const surface = {
         group:null,imageMesh:null,item,maxW,maxH,rotationY,collection,
+        wallId:layoutMetadata.wallId||null,
+        layoutOrder:layoutMetadata.layoutOrder||0,
+        aspectRatio:THREE.MathUtils.clamp(
+          layoutMetadata.aspectHint||maxW/maxH||1,.42,2.7
+        ),
         frameStyle:collection==="photography"?"photography":"fine-art",
         frameVariant,frameParts:null,
         worldPosition:new THREE.Vector3(x,y,z),
@@ -4256,7 +4762,216 @@
       };
       artworkSurfaces.push(surface);
       addArtworkProxy(surface);
+      const wallLayout=artworkWallLayouts.get(surface.wallId);
+      surface.level=wallLayout?.level??THREE.MathUtils.clamp(
+        Math.floor(y/storyHeight),0,spiralRevolutions-1
+      );
+      if (!artworkSurfacesByLevel.has(surface.level)) {
+        artworkSurfacesByLevel.set(surface.level,[]);
+      }
+      artworkSurfacesByLevel.get(surface.level).push(surface);
+      if (wallLayout) {
+        wallLayout.surfaces.push(surface);
+        scheduleArtworkWallLayout(wallLayout);
+      }
       return surface;
+    }
+
+    function artworkAspectClass(surface) {
+      if (surface.aspectRatio>1.22) return "landscape";
+      if (surface.aspectRatio<.82) return "portrait";
+      return "square";
+    }
+    function composedWallSequence(surfaces) {
+      const buckets={landscape:[],portrait:[],square:[]};
+      surfaces
+        .slice()
+        .sort((a,b)=>a.layoutOrder-b.layoutOrder)
+        .forEach(surface=>buckets[artworkAspectClass(surface)].push(surface));
+      const result=[];
+      let previous="";
+      while (result.length<surfaces.length) {
+        const choices=Object.entries(buckets)
+          .filter(([,items])=>items.length)
+          .sort((a,b)=>
+            Number(a[0]===previous)-Number(b[0]===previous)||
+            b[1].length-a[1].length
+          );
+        const [kind,items]=choices[0];
+        result.push(items.shift());
+        previous=kind;
+      }
+      return result;
+    }
+    function candidateWallRows(layout,surfaces,rowCount) {
+      const rows=Array.from({length:rowCount},()=>({items:[],load:0}));
+      const rowCapacity=Math.ceil(surfaces.length/rowCount);
+      for (const surface of surfaces) {
+        const eligibleRows=rows.filter(
+          row=>row.items.length<rowCapacity
+        );
+        const row=eligibleRows.reduce((best,current)=>
+          current.load<best.load?current:best
+        );
+        row.items.push(surface);
+        row.load+=surface.aspectRatio;
+      }
+      const horizontalGutter=layout.horizontalGutter;
+      const verticalGutter=layout.verticalGutter;
+      rows.forEach(row=>{
+        const usableWidth=Math.max(
+          .08,
+          layout.usableWidth-horizontalGutter*(row.items.length-1)
+        );
+        // Never enforce a minimum size that makes a dense row wider than its
+        // certified wall span. The previous .92 m floor could push end frames
+        // through a wall joint even though their centres were still valid.
+        row.height=Math.min(
+          usableWidth/Math.max(.2,row.load),
+          layout.usableHeight/(rowCount===1?1:rowCount*.72)
+        );
+      });
+      const verticalGutterTotal=verticalGutter*(rowCount-1);
+      const rawArtworkHeight=rows.reduce(
+        (sum,row)=>sum+row.height,0
+      );
+      const heightScale=Math.min(
+        1,
+        Math.max(.08,layout.usableHeight-verticalGutterTotal)/
+          rawArtworkHeight
+      );
+      let totalHeight=verticalGutterTotal;
+      let occupiedArea=0;
+      let horizontalOverflow=0;
+      rows.forEach(row=>{
+        row.height*=heightScale;
+        row.width=row.items.reduce(
+          (sum,surface)=>sum+surface.aspectRatio*row.height,0
+        )+horizontalGutter*(row.items.length-1);
+        totalHeight+=row.height;
+        horizontalOverflow=Math.max(
+          horizontalOverflow,row.width-layout.usableWidth
+        );
+        occupiedArea+=row.items.reduce(
+          (sum,surface)=>sum+
+            surface.aspectRatio*row.height*row.height,0
+        );
+      });
+      const coverage=occupiedArea/
+        (layout.usableWidth*layout.usableHeight);
+      const verticalFill=totalHeight/layout.usableHeight;
+      const minimumHeight=Math.min(...rows.map(row=>row.height));
+      return {
+        rows,totalHeight,
+        score:coverage+verticalFill*.2+
+          Math.min(1,minimumHeight/1.25)*.08-
+          Math.max(0,horizontalOverflow)*10
+      };
+    }
+    function applyArtworkSurfaceLayout(
+      surface,position,width,height
+    ) {
+      surface.worldPosition.copy(position);
+      surface.maxW=Math.max(.55,width);
+      surface.maxH=Math.max(.55,height);
+      const aspect=THREE.MathUtils.clamp(surface.aspectRatio,.42,2.7);
+      let renderWidth=surface.maxW;
+      let renderHeight=renderWidth/aspect;
+      if (renderHeight>surface.maxH) {
+        renderHeight=surface.maxH;
+        renderWidth=renderHeight*aspect;
+      }
+      surface.renderWidth=renderWidth;
+      surface.renderHeight=renderHeight;
+      refreshArtworkProxy(surface);
+      if (!surface.group) return;
+      surface.group.position.copy(surface.worldPosition);
+      surface.group.updateMatrix();
+      resizeArtworkFrame(surface,renderWidth,renderHeight);
+      surface.imageMesh.geometry.dispose();
+      surface.imageMesh.geometry=new THREE.PlaneGeometry(
+        renderWidth,renderHeight
+      );
+      if (surface.titleLabel) {
+        sizeArtworkLabel(surface,renderWidth,renderHeight);
+      }
+    }
+    function layoutArtworkWall(layout) {
+      layout.pending=false;
+      if (!layout.surfaces.length) return;
+      const surfaces=composedWallSequence(layout.surfaces);
+      let bestPlan=null;
+      const maximumRows=Math.min(3,surfaces.length);
+      for (let rowCount=1;rowCount<=maximumRows;rowCount++) {
+        const plan=candidateWallRows(
+          layout,surfaces,rowCount
+        );
+        if (!bestPlan||plan.score>bestPlan.score) bestPlan=plan;
+      }
+      let rowTop=layout.top-
+        (layout.usableHeight-bestPlan.totalHeight)/2;
+      for (const row of bestPlan.rows) {
+        let along=layout.margin+
+          (layout.usableWidth-row.width)/2;
+        const localY=rowTop-row.height/2;
+        for (const surface of row.items) {
+          const width=surface.aspectRatio*row.height;
+          const centerAlong=along+width/2;
+          const base=segmentPoint(
+            layout.a,layout.b,centerAlong/layout.length
+          );
+          applyArtworkSurfaceLayout(
+            surface,
+            new THREE.Vector3(
+              base.x+layout.normal.x*.24,
+              base.y+localY,
+              base.z+layout.normal.z*.24
+            ),
+            width,row.height
+          );
+          along+=width+layout.horizontalGutter;
+        }
+        rowTop-=row.height+layout.verticalGutter;
+      }
+      layout.horizontalOverflow=Math.max(
+        0,...bestPlan.rows.map(row=>row.width-layout.usableWidth)
+      );
+      layout.verticalOverflow=Math.max(
+        0,bestPlan.totalHeight-layout.usableHeight
+      );
+      layout.layoutCount++;
+      document.body.dataset.aspectAwareWallLayouts=String(
+        [...artworkWallLayouts.values()]
+          .filter(item=>item.surfaces.length).length
+      );
+      const layoutOverflowCount=[...artworkWallLayouts.values()]
+        .filter(item=>
+          item.horizontalOverflow>.001||item.verticalOverflow>.001
+        ).length;
+      document.body.dataset.artworkLayoutOverflows=String(
+        layoutOverflowCount
+      );
+      const maximumLayoutOverflow=[...artworkWallLayouts.values()]
+        .reduce((maximum,item)=>Math.max(
+          maximum,item.horizontalOverflow||0,item.verticalOverflow||0
+        ),0);
+      document.body.dataset.artworkLayoutMaximumOverflow=
+        maximumLayoutOverflow.toFixed(4);
+      document.body.dataset.artworkLayoutHorizontalOverflows=String(
+        [...artworkWallLayouts.values()].filter(
+          item=>item.horizontalOverflow>.001
+        ).length
+      );
+      document.body.dataset.artworkLayoutVerticalOverflows=String(
+        [...artworkWallLayouts.values()].filter(
+          item=>item.verticalOverflow>.001
+        ).length
+      );
+    }
+    function scheduleArtworkWallLayout(layout) {
+      if (!layout||layout.pending) return;
+      layout.pending=true;
+      requestAnimationFrame(()=>layoutArtworkWall(layout));
     }
 
     function streamArtwork(surface, priority, requestedTier="preview") {
@@ -4283,6 +4998,7 @@
           return;
         }
         const aspect = texture.image.width / texture.image.height;
+        surface.aspectRatio=THREE.MathUtils.clamp(aspect,.42,2.7);
         let w = surface.maxW, h = w / aspect;
         if (h > surface.maxH) { h = surface.maxH; w = h * aspect; }
         surface.renderWidth=w;
@@ -4297,6 +5013,14 @@
         });
         surface.texture=texture;
         surface.textureTier=texture.userData.tier||tier;
+        if (enlargedArtworkSurface===surface) {
+          artworkViewerImage.material.map=texture;
+          artworkViewerImage.material.needsUpdate=true;
+          renderer.domElement.dataset.artworkViewerTextureTier=
+            surface.textureTier;
+          renderer.domElement.dataset.artworkViewerTextureSize=
+            `${texture.image.width}x${texture.image.height}`;
+        }
         if (surface.textureTier==="preview") {
           surface.previewTexture=texture;
           touchPreviewTexture(texture);
@@ -4317,6 +5041,9 @@
         if (surface.titleLabel) {
           sizeArtworkLabel(surface,w,h);
         }
+        scheduleArtworkWallLayout(
+          artworkWallLayouts.get(surface.wallId)
+        );
         if (textureTierRank[surface.requestedTier]>
             textureTierRank[surface.textureTier]) {
           streamArtwork(surface,priority+20,surface.requestedTier);
@@ -4376,7 +5103,9 @@
     }
 
     function trimPreviewTexturePool() {
-      const limit=renderer.xr.isPresenting?52:104;
+      const limit=renderer.xr.isPresenting
+        ?xrRuntimePreset.previewTextureLimit
+        :104;
       if (previewTexturePool.size<=limit) return;
       const attached=new Set(
         artworkSurfaces
@@ -4404,6 +5133,7 @@
     let catalogGifMountedCount = 0;
     let catalogCollectionMismatchCount = 0;
     let catalogDecadeMismatchCount = 0;
+    const catalogMountedByCollection={art:0,photography:0,after:0};
     function showCollectionCount(visible, pending) {
       const indexed = catalogIndexedCount ? ` · ${catalogIndexedCount.toLocaleString()} indexed` : "";
       document.getElementById("location").dataset.collection = pending
@@ -4438,6 +5168,10 @@
     }
     function inferDecade(item) {
       if (catalogCollection(item)==="photography") return "photography";
+      // A year-like number in an unsorted filename is not reliable metadata.
+      // Keep the unclassified source tree in its own undated galleries instead
+      // of allowing incidental digits to leak those works into dated rooms.
+      if (inferCentury(item)==="unclassified") return "undated";
       const yearMatch=item[0].match(/\b((?:1[1-9]|20)\d{2})\b/);
       if (!yearMatch) return "undated";
       return `${Math.floor(Number(yearMatch[1])/10)*10}s`;
@@ -4642,6 +5376,7 @@
       const midpoint=segmentPoint(wall.a,wall.b,.5);
       const rotationY=Math.atan2(wall.normal.x,wall.normal.z);
       decadeHeaderPlacements.push({
+        wallId:wall.id,
         text,
         level:wall.level,
         collection:wall.collection,
@@ -4713,7 +5448,10 @@
         menu.querySelectorAll("[data-floor]").length
       );
     }
+    let decadeHeadersBuilt=false;
     function buildDecadeHeaders() {
+      if (decadeHeadersBuilt) return;
+      decadeHeadersBuilt=true;
       const placementsByText=new Map();
       for (const placement of decadeHeaderPlacements) {
         if (!placementsByText.has(placement.text)) {
@@ -4788,8 +5526,32 @@
         const dz=wall.b.z-wall.a.z;
         const length=Math.hypot(dx,dz);
         if (length<3.2) return;
-        const margin=mountWallMargin;
+        // Generated wall endpoints carry structural seam columns and, around
+        // rooms, doorway returns. Keep frame moulding and corner ornaments a
+        // full additional .65 m inside those endpoints on every floor.
+        const margin=Math.min(
+          mountWallMargin+.65,
+          length*.26
+        );
         const usable=length-margin*2;
+        const wallLayout={
+          id:wall.id,
+          level:wall.level,
+          collection:wall.collection,
+          a:{...wall.a},
+          b:{...wall.b},
+          normal:{...wall.normal},
+          length,
+          margin,
+          usableWidth:usable,
+          bottom:1.25,
+          top:6.2,
+          usableHeight:4.95,
+          horizontalGutter:wall.collection==="photo"?.7:1.12,
+          verticalGutter:wall.collection==="photo"?.68:1.12,
+          surfaces:[],pending:false,layoutCount:0
+        };
+        artworkWallLayouts.set(wall.id,wallLayout);
         const columns=Math.max(
           1,Math.floor(usable/mountColumnPitch)+1
         );
@@ -4820,7 +5582,8 @@
             row:columnIndex%2===0?2:0,columnIndex
           });
         }
-        for (const {row,columnIndex} of slotPlan) {
+        for (let slotIndex=0;slotIndex<slotPlan.length;slotIndex++) {
+          const {row,columnIndex}=slotPlan[slotIndex];
             const distance=columns===1
               ? length/2
               : margin+columnIndex*(usable/(columns-1));
@@ -4849,6 +5612,8 @@
               base.z+wall.normal.z*.24,
               rotationY,maxW,maxH,{
                 wallId:wall.id,
+                layoutOrder:slotIndex,
+                aspectHint:maxW/maxH,
                 labelY:base.y+7.7,
                 century:targetCentury,
                 decade:wallDecade.toLowerCase()
@@ -4865,6 +5630,23 @@
         artWallPlan.capacityByBucket;
       window.museumExpansionPlan.plannedMountAllocation=
         plannedMountAllocation;
+      document.body.dataset.artworkWallPacking=
+        "aspect-aware-justified-masonry";
+      document.body.dataset.artworkWallClearance=
+        "structural-endpoint-inset-and-strict-row-fit";
+      document.body.dataset.artworkWallFloors=[...new Set(
+        [...artworkWallLayouts.values()].map(layout=>layout.level+1)
+      )].sort((a,b)=>a-b).join(",");
+      window.museumExpansionPlan.artworkWallPacking={
+        strategy:"aspect-aware-justified-masonry",
+        walls:artworkWallLayouts.size,
+        rows:"adaptive-1-to-3",
+        aspectRange:[.42,2.7],
+        clearance:"structural-endpoint-inset-and-strict-row-fit",
+        floors:[...new Set(
+          [...artworkWallLayouts.values()].map(layout=>layout.level+1)
+        )].sort((a,b)=>a-b)
+      };
       // The spiral wall packer already operates in each wall's local
       // coordinate system with guaranteed spacing. Re-running the old
       // axis-aligned pruning pass would incorrectly erase work from diagonal
@@ -4873,7 +5655,6 @@
     buildMuseumMounts();
     document.body.dataset.sparseWallAlignment="center-out";
     window.museumExpansionPlan.sparseWallAlignment="center-out";
-    buildDecadeHeaders();
     const generatedMountCapacity=Object.values(mountSets)
       .reduce((total,mounts)=>total+mounts.length,0);
     const proxyPalettes=[
@@ -5008,6 +5789,79 @@
       object.matrixAutoUpdate=false;
     }
 
+    function allocateDatedWallsFromCatalog(entries,mounts,usedURLs) {
+      const centuryForBucket=bucket => {
+        const match=/^(\d{4})s$/.exec(bucket);
+        return match ? `${Math.floor(Number(match[1])/100)*100}s`
+          : bucket==="undated" ? "unclassified"
+          : bucket;
+      };
+      const demandByDecade=new Map();
+      for (const item of entries) {
+        if (usedURLs.has(item[1])) continue;
+        const decade=inferDecade(item);
+        demandByDecade.set(decade,(demandByDecade.get(decade)||0)+1);
+      }
+      const mountsByWall=new Map();
+      for (const descriptor of mounts) {
+        if (!descriptor.wallId) continue;
+        if (!mountsByWall.has(descriptor.wallId)) {
+          mountsByWall.set(descriptor.wallId,[]);
+        }
+        mountsByWall.get(descriptor.wallId).push(descriptor);
+      }
+      const freeWalls=[];
+      for (const [wallId,descriptors] of mountsByWall) {
+        const occupied=descriptors.find(descriptor=>descriptor.occupied);
+        if (occupied) {
+          const fixedDecade=occupied.mountedDecade||occupied.decade;
+          const freeCapacity=descriptors.reduce(
+            (count,descriptor)=>count+Number(!descriptor.occupied),0
+          );
+          demandByDecade.set(
+            fixedDecade,
+            Math.max(0,(demandByDecade.get(fixedDecade)||0)-freeCapacity)
+          );
+          continue;
+        }
+        freeWalls.push({wallId,descriptors});
+      }
+      // Consume the remaining catalog in chronological wall order. The old
+      // "largest bucket wins" pass scattered unrelated centuries throughout
+      // the same room. Undated sorts last, becoming a contiguous archive band.
+      freeWalls.sort((a,b)=>
+        (a.descriptors[0]?.level||0)-(b.descriptors[0]?.level||0) ||
+        Number(a.wallId.split("-").at(-1))-
+          Number(b.wallId.split("-").at(-1))
+      );
+      let reassigned=0;
+      for (const wall of freeWalls) {
+        const bucket=[...demandByDecade]
+          .filter(([,count])=>count>0)
+          .sort((a,b)=>decadeSortValue(a[0])-decadeSortValue(b[0]))[0];
+        if (!bucket||bucket[1]<=0) continue;
+        const decade=bucket[0];
+        for (const descriptor of wall.descriptors) {
+          descriptor.decade=decade;
+          descriptor.century=centuryForBucket(decade);
+        }
+        const placement=decadeHeaderPlacements.find(
+          candidate=>candidate.wallId===wall.wallId
+        );
+        if (placement) placement.text=decade;
+        demandByDecade.set(
+          decade,Math.max(0,bucket[1]-wall.descriptors.length)
+        );
+        reassigned++;
+      }
+      document.body.dataset.dynamicDecadeWalls=String(reassigned);
+      document.body.dataset.dynamicDecadeDemandRemaining=String(
+        [...demandByDecade.values()].reduce((sum,count)=>sum+count,0)
+      );
+      document.body.dataset.dynamicDecadeWallIsolation=
+        "chronological-contiguous-undated-last";
+    }
+
     async function mountUniqueCollection(entries,mounts,usedURLs,matchCentury=false) {
       if (!mounts.length) return;
       const targetCollection=mounts[0]?.collection;
@@ -5045,7 +5899,45 @@
         else bucketCursors.set(key,index+1);
         return items[index];
       };
-      for (const descriptor of mounts) {
+      const spreadAcrossAvailableMounts=(descriptors,count) => {
+        if (count>=descriptors.length) return descriptors;
+        if (count<=0) return [];
+        return Array.from({length:count},(_,index)=>
+          descriptors[Math.min(
+            descriptors.length-1,
+            Math.floor((index+.5)*descriptors.length/count)
+          )]
+        );
+      };
+      const freeMounts=mounts.filter(descriptor=>!descriptor.occupied);
+      let descriptorOrder=[];
+      if (matchCentury) {
+        const mountsByBucket=new Map();
+        for (const descriptor of freeMounts) {
+          const key=descriptor.decade||descriptor.century;
+          if (!mountsByBucket.has(key)) mountsByBucket.set(key,[]);
+          mountsByBucket.get(key).push(descriptor);
+        }
+        for (const [key,descriptors] of mountsByBucket) {
+          const availableCount=(buckets.get(key)||[]).reduce(
+            (count,item)=>count+Number(!usedURLs.has(item[1])),0
+          );
+          descriptorOrder.push(...spreadAcrossAvailableMounts(
+            descriptors,Math.min(descriptors.length,availableCount)
+          ));
+        }
+      } else {
+        const availableCount=eligibleEntries.reduce(
+          (count,item)=>count+Number(!usedURLs.has(item[1])),0
+        );
+        descriptorOrder=spreadAcrossAvailableMounts(
+          freeMounts,Math.min(freeMounts.length,availableCount)
+        );
+      }
+      descriptorOrder.sort(
+        (a,b)=>mounts.indexOf(a)-mounts.indexOf(b)
+      );
+      for (const descriptor of descriptorOrder) {
         if (descriptor.occupied) continue;
         let item;
         if (matchCentury) {
@@ -5073,9 +5965,13 @@
         );
         artwork(
           item,descriptor.x,descriptor.y,descriptor.z,descriptor.rotationY,
-          descriptor.maxW,descriptor.maxH,descriptor.collection
+          descriptor.maxW,descriptor.maxH,descriptor.collection,descriptor
         );
         catalogMountedCount++;
+        catalogMountedByCollection[descriptor.collection]++;
+        document.body.dataset.mountedWorksByCollection=JSON.stringify(
+          catalogMountedByCollection
+        );
         if (/\.gif(?:$|\?)/i.test(item[1])) {
           catalogGifMountedCount++;
           if (!document.body.dataset.firstGifMount) {
@@ -5086,6 +5982,15 @@
         document.body.dataset.mountedGifs=String(catalogGifMountedCount);
         if (catalogMountedCount%72===0) await new Promise(requestAnimationFrame);
       }
+      const populatedWalls=[...artworkWallLayouts.values()].filter(
+        layout=>layout.surfaces.length
+      ).length;
+      document.body.dataset.populatedArtworkWalls=String(populatedWalls);
+      document.body.dataset.emptyArtworkWalls=String(
+        artworkWallLayouts.size-populatedWalls
+      );
+      document.body.dataset.artworkMountDistribution=
+        "stratified-across-available-walls";
     }
     async function buildFullCollection() {
       const usedURLs=new Set();
@@ -5120,6 +6025,17 @@
           !["2000s","photography"].includes(inferCentury(item))
         );
         const after=allArt.filter(item => inferCentury(item)==="2000s");
+        document.body.dataset.indexedWorksByCollection=JSON.stringify({
+          art:historical.length,
+          photography:allPhotography.length,
+          after:after.length
+        });
+        allocateDatedWallsFromCatalog(
+          historical,mountSets.art,usedURLs
+        );
+        allocateDatedWallsFromCatalog(
+          after,mountSets.after,usedURLs
+        );
         await Promise.all([
           mountUniqueCollection(historical,mountSets.art,usedURLs,true),
           mountUniqueCollection(allPhotography,mountSets.photo,usedURLs,false),
@@ -5127,7 +6043,10 @@
         ]);
         await mountUniqueCollection(historical,mountSets.balconyArt,usedURLs,true);
         await mountUniqueCollection(allPhotography,mountSets.balconyPhoto,usedURLs,false);
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        buildDecadeHeaders();
+      }
     }
     buildFullCollection();
 
@@ -5419,6 +6338,468 @@
     const bounds = { minX: -79, maxX: 79, minZ: -136, maxZ: 126 };
     const raycaster = new THREE.Raycaster();
     const groundRaycaster = new THREE.Raycaster();
+    const artworkPointer=new THREE.Vector2();
+    let artworkSelectionMode=false;
+    let enlargedArtworkSurface=null;
+    let targetedArtworkSurface=null;
+    let targetedMuseumCat=false;
+    let viewerPreviousSurface=null;
+    let viewerNextSurface=null;
+    let viewerHoveredSurface=null;
+    let viewerCursorX=innerWidth*.5;
+    let viewerCursorY=innerHeight*.5;
+    const artworkTargetSurfaces=[];
+    const artworkTargetMeshes=[];
+    const artworkTargetIntersections=[];
+    const museumCatIntersections=[];
+    let focusedArtworkSurface=null;
+    document.body.dataset.artworkInteraction=
+      "continuous-look-gaze-glove-click-toggle-enlarge-neighbor-browser";
+    document.body.dataset.artworkCursorRenderer="webgl-sprite";
+    const artworkViewer=new THREE.Group();
+    artworkViewer.name="artwork-focus-viewer";
+    artworkViewer.position.set(0,0,-1.35);
+    artworkViewer.visible=false;
+    const artworkViewerBacking=new THREE.Mesh(
+      new THREE.PlaneGeometry(1,1),
+      new THREE.MeshBasicMaterial({
+        color:0x000044,transparent:true,opacity:0,
+        depthTest:false,depthWrite:false,toneMapped:false
+      })
+    );
+    // A translucent backing sorted incorrectly on Safari and composited over
+    // the artwork, reducing it to roughly eight percent brightness. Keep the
+    // sizing mesh inert; the selected image and white border stand alone.
+    artworkViewerBacking.visible=false;
+    artworkViewerBacking.position.z=-.012;
+    artworkViewerBacking.renderOrder=9997;
+    artworkViewer.add(artworkViewerBacking);
+    const artworkViewerImage=new THREE.Mesh(
+      new THREE.PlaneGeometry(1,1),
+      new THREE.MeshBasicMaterial({
+        color:0xffffff,transparent:true,opacity:1,
+        depthTest:false,depthWrite:false,
+        toneMapped:false,side:THREE.DoubleSide
+      })
+    );
+    artworkViewerImage.renderOrder=9998;
+    artworkViewer.add(artworkViewerImage);
+    function viewerThumbnailMesh(name) {
+      const mesh=new THREE.Mesh(
+        new THREE.PlaneGeometry(1,1),
+        new THREE.MeshBasicMaterial({
+          color:0xffffff,transparent:true,opacity:.68,
+          depthTest:false,depthWrite:false,
+          toneMapped:false,side:THREE.DoubleSide
+        })
+      );
+      mesh.name=name;
+      mesh.position.z=.018;
+      mesh.renderOrder=9999;
+      mesh.visible=false;
+      artworkViewer.add(mesh);
+      return mesh;
+    }
+    const artworkViewerPrevious=viewerThumbnailMesh(
+      "artwork-focus-previous"
+    );
+    const artworkViewerNext=viewerThumbnailMesh("artwork-focus-next");
+    const unitArtworkBorderGeometry=new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-.5,-.5,0),new THREE.Vector3(.5,-.5,0),
+      new THREE.Vector3(.5,.5,0),new THREE.Vector3(-.5,.5,0)
+    ]);
+    const artworkViewerBorder=new THREE.LineLoop(
+      unitArtworkBorderGeometry,
+      new THREE.LineBasicMaterial({
+        color:0xffffff,transparent:true,opacity:1,
+        depthTest:false,depthWrite:false,toneMapped:false
+      })
+    );
+    artworkViewerBorder.position.z=.012;
+    artworkViewerBorder.renderOrder=9999;
+    artworkViewer.add(artworkViewerBorder);
+    function viewerThumbnailBorder(name) {
+      const border=new THREE.LineLoop(
+        unitArtworkBorderGeometry,
+        new THREE.LineBasicMaterial({
+          color:0xffffff,transparent:true,opacity:.78,
+          depthTest:false,depthWrite:false,toneMapped:false
+        })
+      );
+      border.name=name;
+      border.position.z=.03;
+      border.renderOrder=10000;
+      border.visible=false;
+      artworkViewer.add(border);
+      return border;
+    }
+    const artworkViewerPreviousBorder=viewerThumbnailBorder(
+      "artwork-focus-previous-border"
+    );
+    const artworkViewerNextBorder=viewerThumbnailBorder(
+      "artwork-focus-next-border"
+    );
+    camera.add(artworkViewer);
+    const artworkGloveCanvas=document.createElement("canvas");
+    artworkGloveCanvas.width=160;
+    artworkGloveCanvas.height=96;
+    const artworkGloveContext=artworkGloveCanvas.getContext("2d");
+    artworkGloveContext.clearRect(
+      0,0,artworkGloveCanvas.width,artworkGloveCanvas.height
+    );
+    artworkGloveContext.font="74px Arial, sans-serif";
+    artworkGloveContext.textAlign="left";
+    artworkGloveContext.textBaseline="middle";
+    artworkGloveContext.lineJoin="round";
+    artworkGloveContext.lineWidth=8;
+    artworkGloveContext.strokeStyle="#0000ff";
+    artworkGloveContext.fillStyle="#ffffff";
+    artworkGloveContext.strokeText("☜︎",2,48);
+    artworkGloveContext.fillText("☜︎",2,48);
+    const artworkGloveTexture=new THREE.CanvasTexture(artworkGloveCanvas);
+    artworkGloveTexture.colorSpace=THREE.SRGBColorSpace;
+    artworkGloveTexture.minFilter=THREE.LinearFilter;
+    artworkGloveTexture.magFilter=THREE.LinearFilter;
+    artworkGloveTexture.generateMipmaps=false;
+    const artworkGloveSprite=new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map:artworkGloveTexture,transparent:true,depthTest:false,
+        depthWrite:false,toneMapped:false
+      })
+    );
+    artworkGloveSprite.name="artwork-glove-cursor";
+    artworkGloveSprite.renderOrder=10002;
+    artworkGloveSprite.visible=false;
+    camera.add(artworkGloveSprite);
+    function positionArtworkGlove(screenX=innerWidth*.5,
+      screenY=innerHeight*.5) {
+      const distance=1.08;
+      const viewHeight=2*Math.tan(
+        THREE.MathUtils.degToRad(camera.fov*.5)
+      )*distance;
+      const viewWidth=viewHeight*camera.aspect;
+      artworkGloveSprite.position.set(
+        (screenX/innerWidth-.5)*viewWidth,
+        (.5-screenY/innerHeight)*viewHeight,
+        -distance
+      );
+      const height=viewHeight*.075;
+      artworkGloveSprite.scale.set(
+        height*artworkGloveCanvas.width/artworkGloveCanvas.height,
+        height,1
+      );
+    }
+    function setArtworkGloveVisible(visible) {
+      artworkGloveSprite.visible=Boolean(visible);
+    }
+    positionArtworkGlove();
+
+    function ensureArtworkFocusBorder(surface) {
+      if (!surface.group||surface.focusBorder) return surface.focusBorder;
+      const border=new THREE.LineLoop(
+        unitArtworkBorderGeometry,
+        new THREE.LineBasicMaterial({
+          color:0xffffff,transparent:true,opacity:.85,
+          depthTest:true,depthWrite:false,toneMapped:false,
+          blending:THREE.AdditiveBlending
+        })
+      );
+      border.position.z=surface.frameStyle==="photography"?.13:.52;
+      border.renderOrder=80;
+      border.visible=false;
+      border.userData.phase=(surface.layoutOrder%9)*.47;
+      surface.group.add(border);
+      surface.focusBorder=border;
+      return border;
+    }
+    function updateArtworkSelectionVisuals(time) {
+      const enabled=Boolean(targetedArtworkSurface)&&!artworkViewer.visible;
+      const nextFocused=enabled&&targetedArtworkSurface.loaded&&
+        targetedArtworkSurface.group?.visible
+        ?targetedArtworkSurface
+        :null;
+      if (focusedArtworkSurface!==nextFocused) {
+        if (focusedArtworkSurface?.focusBorder) {
+          focusedArtworkSurface.focusBorder.visible=false;
+        }
+        focusedArtworkSurface=nextFocused;
+      }
+      if (!focusedArtworkSurface) return;
+      const border=ensureArtworkFocusBorder(focusedArtworkSurface);
+      border.visible=true;
+      const pulse=.5+.5*Math.sin(time*.004+border.userData.phase);
+      const padding=.2+pulse*.12;
+      border.scale.set(
+        focusedArtworkSurface.renderWidth+padding,
+        focusedArtworkSurface.renderHeight+padding,1
+      );
+      border.material.opacity=.42+pulse*.58;
+    }
+    function updateArtworkTarget() {
+      let nextTarget=null;
+      let nextCatTarget=false;
+      if (!pointerLocked||artworkViewer.visible||!shortcutMenu.hidden||
+          !museumAbout.hidden||renderer.xr.isPresenting) {
+        nextTarget=null;
+      } else {
+        artworkTargetMeshes.length=0;
+        for (const surface of artworkTargetSurfaces) {
+          if (surface.loaded&&surface.group?.visible&&surface.imageMesh) {
+            artworkTargetMeshes.push(surface.imageMesh);
+          }
+        }
+        artworkPointer.set(0,0);
+        camera.updateWorldMatrix(true,false);
+        raycaster.setFromCamera(artworkPointer,camera);
+        artworkTargetIntersections.length=0;
+        raycaster.intersectObjects(
+          artworkTargetMeshes,false,artworkTargetIntersections
+        );
+        museumCatIntersections.length=0;
+        raycaster.intersectObjects(
+          museumCatClickableMeshes,false,museumCatIntersections
+        );
+        const artworkIntersection=artworkTargetIntersections[0];
+        const catIntersection=museumCatIntersections[0];
+        if (catIntersection&&(
+          !artworkIntersection||catIntersection.distance<artworkIntersection.distance
+        )) {
+          nextCatTarget=true;
+        } else {
+          nextTarget=artworkIntersection
+            ?.object.userData.artworkSurface||null;
+        }
+      }
+      if (
+        targetedArtworkSurface===nextTarget&&
+        targetedMuseumCat===nextCatTarget
+      ) return;
+      targetedArtworkSurface=nextTarget;
+      targetedMuseumCat=nextCatTarget;
+      positionArtworkGlove();
+      setArtworkGloveVisible(Boolean(
+        targetedArtworkSurface||targetedMuseumCat
+      ));
+      renderer.domElement.dataset.artworkTarget=
+        targetedMuseumCat
+          ?"museum cat"
+          :targetedArtworkSurface?.item[0]||"none";
+    }
+    function viewerNeighborSurfaces(surface) {
+      camera.updateWorldMatrix(true,false);
+      const selected=surface.worldPosition.clone().project(camera);
+      const layout=artworkWallLayouts.get(surface.wallId);
+      const candidates=(layout?.surfaces||artworkSurfaces).filter(candidate=>
+        candidate!==surface&&candidate.texture&&candidate.loaded&&
+        candidate.group?.visible
+      );
+      let previous=null;
+      let next=null;
+      let previousScore=Infinity;
+      let nextScore=Infinity;
+      for (const candidate of candidates) {
+        const projected=candidate.worldPosition.clone().project(camera);
+        if (projected.z<-1||projected.z>1) continue;
+        const dx=projected.x-selected.x;
+        const score=Math.abs(dx)+Math.abs(projected.y-selected.y)*.72;
+        if (dx<-.015&&score<previousScore) {
+          previous=candidate;
+          previousScore=score;
+        } else if (dx>.015&&score<nextScore) {
+          next=candidate;
+          nextScore=score;
+        }
+      }
+      return {previous,next};
+    }
+    function configureViewerThumbnail(mesh,border,surface,side,
+      maximumWidth,maximumHeight) {
+      mesh.userData.artworkSurface=surface||null;
+      mesh.visible=Boolean(surface?.texture);
+      border.visible=mesh.visible;
+      if (!mesh.visible) {
+        mesh.material.map=null;
+        mesh.material.needsUpdate=true;
+        return;
+      }
+      mesh.material.map=surface.texture;
+      mesh.material.needsUpdate=true;
+      const aspect=THREE.MathUtils.clamp(surface.aspectRatio,.42,2.7);
+      const widthLimit=maximumWidth*.17;
+      const heightLimit=maximumHeight*.34;
+      let height=heightLimit;
+      let width=height*aspect;
+      if (width>widthLimit) {
+        height*=widthLimit/width;
+        width=widthLimit;
+      }
+      const x=side*(maximumWidth*.5-width*.53);
+      mesh.position.x=x;
+      mesh.position.y=0;
+      mesh.scale.set(width,height,1);
+      border.position.x=x;
+      border.position.y=0;
+      border.scale.set(width+.025,height+.025,1);
+    }
+    function sizeArtworkViewer(surface) {
+      const distance=Math.abs(artworkViewer.position.z);
+      const viewHeight=2*Math.tan(
+        THREE.MathUtils.degToRad(camera.fov*.5)
+      )*distance;
+      const maximumHeight=viewHeight*.9;
+      const maximumWidth=maximumHeight*camera.aspect*.94;
+      const hasNeighbors=viewerPreviousSurface||viewerNextSurface;
+      const mainMaximumHeight=maximumHeight;
+      const mainMaximumWidth=maximumWidth*(hasNeighbors?.64:1);
+      let height=mainMaximumHeight;
+      let width=height*THREE.MathUtils.clamp(
+        surface.aspectRatio,.42,2.7
+      );
+      if (width>mainMaximumWidth) {
+        const scale=mainMaximumWidth/width;
+        width*=scale;
+        height*=scale;
+      }
+      artworkViewerImage.scale.set(width,height,1);
+      artworkViewerBacking.scale.set(width+.06,height+.06,1);
+      artworkViewerBorder.scale.set(width+.035,height+.035,1);
+      configureViewerThumbnail(
+        artworkViewerPrevious,artworkViewerPreviousBorder,
+        viewerPreviousSurface,-1,maximumWidth,maximumHeight
+      );
+      configureViewerThumbnail(
+        artworkViewerNext,artworkViewerNextBorder,
+        viewerNextSurface,1,maximumWidth,maximumHeight
+      );
+    }
+    function resetViewerCursor() {
+      viewerCursorX=innerWidth*.5;
+      viewerCursorY=innerHeight*.5;
+      positionArtworkGlove();
+      viewerHoveredSurface=null;
+      setArtworkGloveVisible(false);
+    }
+    function updateViewerThumbnailTarget() {
+      viewerHoveredSurface=null;
+      if (!artworkViewer.visible) {
+        setArtworkGloveVisible(false);
+        return;
+      }
+      artworkPointer.set(
+        viewerCursorX/innerWidth*2-1,
+        -(viewerCursorY/innerHeight)*2+1
+      );
+      camera.updateWorldMatrix(true,false);
+      artworkViewer.updateWorldMatrix(true,true);
+      raycaster.setFromCamera(artworkPointer,camera);
+      const thumbnailMeshes=[
+        artworkViewerPrevious,artworkViewerNext
+      ].filter(mesh=>mesh.visible);
+      viewerHoveredSurface=raycaster.intersectObjects(
+        thumbnailMeshes,false
+      )[0]?.object.userData.artworkSurface||null;
+      setArtworkGloveVisible(Boolean(viewerHoveredSurface));
+      artworkViewerPrevious.material.opacity=
+        viewerHoveredSurface===viewerPreviousSurface?1:.68;
+      artworkViewerNext.material.opacity=
+        viewerHoveredSurface===viewerNextSurface?1:.68;
+    }
+    function showArtworkViewer(surface) {
+      if (!surface?.texture) return;
+      targetedArtworkSurface=null;
+      setArtworkGloveVisible(false);
+      if (focusedArtworkSurface?.focusBorder) {
+        focusedArtworkSurface.focusBorder.visible=false;
+      }
+      focusedArtworkSurface=null;
+      enlargedArtworkSurface=surface;
+      const neighbors=viewerNeighborSurfaces(surface);
+      viewerPreviousSurface=neighbors.previous;
+      viewerNextSurface=neighbors.next;
+      artworkViewerImage.material.map=surface.texture;
+      artworkViewerImage.material.needsUpdate=true;
+      renderer.domElement.dataset.artworkViewerTextureTier=
+        surface.textureTier;
+      renderer.domElement.dataset.artworkViewerTextureSize=
+        `${surface.texture.image.width}x${surface.texture.image.height}`;
+      sizeArtworkViewer(surface);
+      artworkViewer.visible=true;
+      resetViewerCursor();
+      document.body.classList.add("artwork-enlarged");
+      for (const candidate of artworkTargetSurfaces) {
+        if (candidate.titleLabel) candidate.titleLabel.visible=false;
+      }
+      flashStatus(surface.item[0],2400);
+      // Wall streaming deliberately starts at 160 px. A selected artwork is
+      // a separate viewing context, so immediately promote it to the original
+      // (up to the device's 4096 px texture limit) and hot-swap when ready.
+      streamArtwork(surface,10000,"full");
+    }
+    function hideArtworkViewer() {
+      enlargedArtworkSurface=null;
+      viewerPreviousSurface=null;
+      viewerNextSurface=null;
+      viewerHoveredSurface=null;
+      artworkViewer.visible=false;
+      artworkViewerImage.material.map=null;
+      artworkViewerImage.material.needsUpdate=true;
+      delete renderer.domElement.dataset.artworkViewerTextureTier;
+      delete renderer.domElement.dataset.artworkViewerTextureSize;
+      artworkViewerPrevious.visible=false;
+      artworkViewerNext.visible=false;
+      artworkViewerPreviousBorder.visible=false;
+      artworkViewerNextBorder.visible=false;
+      resetViewerCursor();
+      document.body.classList.remove("artwork-enlarged");
+      setArtworkGloveVisible(false);
+    }
+    function enterArtworkSelectionMode() {
+      artworkSelectionMode=true;
+      hideArtworkViewer();
+      document.body.classList.add("artwork-select");
+      renderer.domElement.dataset.artworkSelection="active";
+      flashStatus("select an image",1700);
+    }
+    function exitArtworkSelectionMode(resumeLooking=false) {
+      artworkSelectionMode=false;
+      hideArtworkViewer();
+      document.body.classList.remove("artwork-select");
+      renderer.domElement.dataset.artworkSelection="inactive";
+      if (resumeLooking) requestMuseumPointerLock();
+    }
+    function pointerForArtworkEvent(event) {
+      const rect=renderer.domElement.getBoundingClientRect();
+      artworkPointer.set(
+        ((event.clientX-rect.left)/rect.width)*2-1,
+        -((event.clientY-rect.top)/rect.height)*2+1
+      );
+      raycaster.setFromCamera(artworkPointer,camera);
+    }
+    function artworkAtPointer(event) {
+      pointerForArtworkEvent(event);
+      const meshes=artworkSurfaces
+        .filter(surface=>
+          surface.loaded&&surface.group?.visible&&surface.imageMesh
+        )
+        .map(surface=>surface.imageMesh);
+      return raycaster.intersectObjects(meshes,false)[0]
+        ?.object.userData.artworkSurface||null;
+    }
+    function museumCatAtPointer(event) {
+      pointerForArtworkEvent(event);
+      museumCat.updateMatrixWorld(true);
+      museumCatIntersections.length=0;
+      raycaster.intersectObjects(
+        museumCatClickableMeshes,false,museumCatIntersections
+      );
+      return Boolean(museumCatIntersections[0]);
+    }
+    function viewerContainsPointer(event) {
+      if (!artworkViewer.visible) return false;
+      pointerForArtworkEvent(event);
+      artworkViewer.updateWorldMatrix(true,true);
+      return raycaster.intersectObject(artworkViewerImage,false).length>0;
+    }
     const tempMatrix = new THREE.Matrix4();
     const down = new THREE.Vector3(0,-1,0);
     const lastSafeUpperPosition=new THREE.Vector3();
@@ -5478,6 +6859,8 @@
     }
 
     function resetPosition() {
+      exitArtworkSelectionMode(false);
+      closeMuseumAbout(false);
       rig.position.copy(entranceSpawn);
       yaw = 0; pitch = .08;
       flying=false;
@@ -5490,7 +6873,29 @@
     document.getElementById("reset").addEventListener("click", resetPosition);
     const shortcutToggle=document.getElementById("shortcut-toggle");
     const shortcutMenu=document.getElementById("shortcut-menu");
+    const museumAbout=document.getElementById("museum-about");
+    const museumAboutClose=document.getElementById("museum-about-close");
+    function openMuseumAbout() {
+      targetedMuseumCat=false;
+      targetedArtworkSurface=null;
+      setArtworkGloveVisible(false);
+      closeWingShortcut();
+      museumAbout.hidden=false;
+      document.body.classList.add("about-open");
+      renderer.domElement.dataset.museumAbout="open";
+      releasePointerLock();
+      museumAboutClose.focus({preventScroll:true});
+    }
+    function closeMuseumAbout(resumeLooking=false) {
+      if (museumAbout.hidden) return;
+      museumAbout.hidden=true;
+      document.body.classList.remove("about-open");
+      renderer.domElement.dataset.museumAbout="closed";
+      if (resumeLooking) requestMuseumPointerLock();
+    }
+    museumAboutClose.addEventListener("click",()=>closeMuseumAbout(true));
     function setWingShortcutOpen(open) {
+      if (open) exitArtworkSelectionMode(false);
       shortcutMenu.hidden=!open;
       shortcutToggle.setAttribute("aria-expanded",String(open));
       document.body.classList.toggle("menu-open",open);
@@ -5560,6 +6965,8 @@
     document.addEventListener("pointerdown",event => {
       if (!event.target.closest("#wing-shortcut")) closeWingShortcut();
     });
+    document.body.dataset.desktopLookMode=
+      "persistent-pointer-lock-with-artwork-gaze";
     const pointerLockElement=()=>(
       document.pointerLockElement||document.webkitPointerLockElement
     );
@@ -5571,7 +6978,11 @@
       }
     }
     function requestMuseumPointerLock() {
-      if (renderer.xr.isPresenting || !shortcutMenu.hidden) return;
+      if (
+        renderer.xr.isPresenting||!shortcutMenu.hidden||!museumAbout.hidden
+      ) {
+        return;
+      }
       if (pointerLockElement()===renderer.domElement) return;
       const request=
         renderer.domElement.requestPointerLock||
@@ -5584,8 +6995,35 @@
         result?.catch?.(()=>{});
       } catch (error) {}
     }
-    renderer.domElement.addEventListener("click", () => {
+    renderer.domElement.addEventListener("click", event => {
       renderer.domElement.focus();
+      if (!museumAbout.hidden) return;
+      if (artworkViewer.visible) {
+        if (viewerHoveredSurface) {
+          showArtworkViewer(viewerHoveredSurface);
+        } else {
+          hideArtworkViewer();
+        }
+        return;
+      }
+      if (!pointerLocked&&museumCatAtPointer(event)) {
+        openMuseumAbout();
+        return;
+      }
+      if (renderer.xr.isPresenting||matchMedia("(pointer: coarse)").matches) {
+        requestMuseumPointerLock();
+        return;
+      }
+      if (pointerLocked) {
+        if (targetedMuseumCat) {
+          openMuseumAbout();
+          return;
+        }
+        if (targetedArtworkSurface) {
+          showArtworkViewer(targetedArtworkSurface);
+        }
+        return;
+      }
       requestMuseumPointerLock();
     });
     function updatePointerLockState() {
@@ -5599,7 +7037,20 @@
       "webkitpointerlockchange",updatePointerLockState
     );
     document.addEventListener("mousemove",e => {
-      if (!pointerLocked || renderer.xr.isPresenting) return;
+      if (!pointerLocked || renderer.xr.isPresenting ||
+          document.body.classList.contains("xr-presenting")||
+          !museumAbout.hidden) return;
+      if (artworkViewer.visible) {
+        viewerCursorX=THREE.MathUtils.clamp(
+          viewerCursorX+e.movementX,0,innerWidth
+        );
+        viewerCursorY=THREE.MathUtils.clamp(
+          viewerCursorY+e.movementY,0,innerHeight
+        );
+        positionArtworkGlove(viewerCursorX,viewerCursorY);
+        updateViewerThumbnailTarget();
+        return;
+      }
       lastMovementAt=performance.now();
       yaw -= e.movementX*.00205;
       pitch = THREE.MathUtils.clamp(pitch-e.movementY*.00185,-1.15,1.15);
@@ -5607,6 +7058,34 @@
     addEventListener("keydown", e => {
       clearTimeout(keyReleaseTimers.get(e.code));
       keys.add(e.code);
+      if (e.code==="Escape"&&!museumAbout.hidden) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMuseumAbout(false);
+        return;
+      }
+      if (artworkViewer.visible&&
+          (e.code==="ArrowLeft"||e.code==="ArrowRight")) {
+        e.preventDefault();
+        e.stopPropagation();
+        const adjacent=e.code==="ArrowLeft"
+          ? viewerPreviousSurface
+          : viewerNextSurface;
+        if (adjacent) showArtworkViewer(adjacent);
+        return;
+      }
+      if (e.code==="Escape"&&artworkViewer.visible) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideArtworkViewer();
+        return;
+      }
+      if (e.code==="Escape"&&artworkSelectionMode) {
+        e.preventDefault();
+        e.stopPropagation();
+        exitArtworkSelectionMode(false);
+        return;
+      }
       if (e.code==="KeyE" && !e.repeat) {
         e.preventDefault();
         releasePointerLock();
@@ -5800,7 +7279,8 @@
     }
 
     function updateWalk(dt) {
-      if (renderer.xr.isPresenting) return;
+      if (renderer.xr.isPresenting ||
+          document.body.classList.contains("xr-presenting")) return;
       camera.rotation.set(pitch,yaw,0,"YXZ");
       const forward = Number(keys.has("KeyW")||keys.has("ArrowUp")) - Number(keys.has("KeyS")||keys.has("ArrowDown")) - touchMove.y;
       const side = Number(keys.has("KeyD")||keys.has("ArrowRight")) - Number(keys.has("KeyA")||keys.has("ArrowLeft")) + touchMove.x;
@@ -5983,6 +7463,64 @@
     let pendingXRPanelToggle=null;
     let xrDeckInitialized=false;
     let xrRunState=false;
+    let xrPrimaryButtonAt=-Infinity;
+    let xrPerformanceEmergency=false;
+    let xrFrameAverage=1/72;
+    let xrSlowFrameSeconds=0;
+    let xrHeavyMotionFrame=0;
+    const xrGamepadButtonState={
+      left:{primary:false,secondary:false},
+      right:{primary:false,secondary:false}
+    };
+    const xrDecorativeWireMeshes=[perimeterShardWire];
+    ambientShardFamilies.forEach(family=>{
+      xrDecorativeWireMeshes.push(family.wire);
+    });
+    const desktopCameraFar=camera.far;
+    const desktopFogDensity=scene.fog.density;
+
+    function setXRPerformanceEmergency(active) {
+      if (xrPerformanceEmergency===active) return;
+      xrPerformanceEmergency=active;
+      document.body.dataset.xrPerformance=active
+        ?"emergency-safe"
+        :xrRuntimePreset.name;
+      if (renderer.xr.isPresenting && xrIsStandaloneQuest) {
+        try {
+          renderer.xr.setFoveation(
+            active ? .86 : xrRuntimePreset.foveation
+          );
+        } catch (_) {}
+        xrDecorativeWireMeshes.forEach(mesh=>{
+          mesh.visible=!active;
+        });
+        cloudGroups.forEach(cloud=>{
+          cloud.visible=!active;
+        });
+        flyingBirds.forEach(bird=>{
+          bird.visible=!active;
+        });
+      }
+    }
+
+    function monitorXRPerformance(dt) {
+      if (!renderer.xr.isPresenting || !xrIsStandaloneQuest) return;
+      xrFrameAverage=THREE.MathUtils.lerp(
+        xrFrameAverage,dt,.045
+      );
+      // Sustained sub-50 fps rendering, rather than one decode hitch, invokes
+      // the reduced emergency scene. It is intentionally one-way for the
+      // current session so thermal oscillation cannot produce visual flicker.
+      if (xrFrameAverage>.0205) xrSlowFrameSeconds+=dt;
+      else xrSlowFrameSeconds=Math.max(0,xrSlowFrameSeconds-dt*.35);
+      if (!xrPerformanceEmergency && xrSlowFrameSeconds>2.4) {
+        setXRPerformanceEmergency(true);
+        showXRStatus("Quest safety mode enabled for a stable frame rate.");
+      }
+      renderer.domElement.dataset.xrFrameMs=(
+        xrFrameAverage*1000
+      ).toFixed(2);
+    }
 
     function xrLabelTexture(label) {
       const canvas=document.createElement("canvas");
@@ -6092,7 +7630,7 @@
     });
     scene.add(xrControlDeck);
     document.body.dataset.xrControls=
-      "quest-gamepad-sticks|vision-pinch-sticks|double-pinch-flight|trigger-menu";
+      "quest-sticks|a-jump-double-a-flight|hold-x-run|b-y-menu|vision-pinch-sticks";
 
     function toggleXRFlight() {
       flying=!flying;
@@ -6219,12 +7757,39 @@
           await renderer.xr.getSession().end();
           return;
         }
+        // Pointer-lock/mouse-look must be fully detached before the headset
+        // compositor owns the camera. Otherwise synthetic browser mouse events
+        // can fight the tracked head pose during quick turns.
+        releasePointerLock();
+        pointerLocked=false;
+        lookPointer=null;
+        keys.clear();
+        touchMove.set(0,0);
+        document.body.classList.remove("looking");
+        camera.far=xrRuntimePreset.far;
+        camera.updateProjectionMatrix();
+        scene.fog.density=xrRuntimePreset.fogDensity;
+        if (xrIsStandaloneQuest) {
+          // A visitor may enter XR after browsing the flat museum. Drop any
+          // desktop-size originals before allocating the stereo framebuffer,
+          // preventing a transient GPU-memory spike at session startup.
+          for (const job of textureJobsByURL.values()) {
+            if (job.tier==="full") job.cancel();
+          }
+          artworkSurfaces
+            .filter(surface=>surface.textureTier==="full")
+            .forEach(releaseArtworkTexture);
+          trimPreviewTexturePool();
+          trimArtworkFrameAssetCache(xrRuntimePreset.frameAssetLimit);
+        }
         const session = await navigator.xr.requestSession("immersive-vr", {
           requiredFeatures: ["local-floor"],
-          optionalFeatures: ["bounded-floor", "hand-tracking", "layers"]
+          optionalFeatures: ["bounded-floor", "hand-tracking"]
         });
         await renderer.xr.setSession(session);
-        try { renderer.xr.setFoveation(0); } catch (_) {}
+        try {
+          renderer.xr.setFoveation(xrRuntimePreset.foveation);
+        } catch (_) {}
         session.updateRenderState({
           depthNear:camera.near,
           depthFar:camera.far
@@ -6236,7 +7801,18 @@
         ].join(",");
         xrControlDeck.visible=false;
         xrDeckInitialized=false;
+        setXRPerformanceEmergency(false);
+        xrFrameAverage=1/72;
+        xrSlowFrameSeconds=0;
+        xrHeavyMotionFrame=0;
+        xrPrimaryButtonAt=-Infinity;
+        xrGamepadButtonState.left.primary=false;
+        xrGamepadButtonState.left.secondary=false;
+        xrGamepadButtonState.right.primary=false;
+        xrGamepadButtonState.right.secondary=false;
+        document.body.dataset.xrPerformance=xrRuntimePreset.name;
         rig.rotation.y=yaw;
+        rig.rotation.x=0;
         camera.rotation.set(0,0,0);
         xrButton.hidden=false;
         xrButton.textContent="leave immersive XR";
@@ -6249,12 +7825,22 @@
           yaw=rig.rotation.y;
           rig.rotation.set(0,0,0);
           camera.rotation.set(pitch,yaw,0,"YXZ");
+          camera.far=desktopCameraFar;
+          camera.updateProjectionMatrix();
+          scene.fog.density=desktopFogDensity;
+          setXRPerformanceEmergency(false);
+          xrDecorativeWireMeshes.forEach(mesh=>{mesh.visible=true;});
+          cloudGroups.forEach(cloud=>{cloud.visible=true;});
+          flyingBirds.forEach(bird=>{bird.visible=true;});
           document.body.classList.remove("xr-presenting");
           delete document.body.dataset.xrSession;
           delete document.body.dataset.xrFeatures;
           detectXR();
         }, { once:true });
       } catch (error) {
+        camera.far=desktopCameraFar;
+        camera.updateProjectionMatrix();
+        scene.fog.density=desktopFogDensity;
         showXRStatus(
           "Could not start immersive XR. Allow headset tracking and reload the HTTPS page."
         );
@@ -6335,6 +7921,48 @@
     }
     addXRPointer(0); addXRPointer(1);
 
+    function handleXRPrimaryAction() {
+      const now=performance.now();
+      if (now-xrPrimaryButtonAt<380) {
+        xrPrimaryButtonAt=-Infinity;
+        toggleXRFlight();
+        showXRStatus(flying?"flight on":"flight off",1200);
+        return;
+      }
+      xrPrimaryButtonAt=now;
+      if (flying) {
+        rig.position.y=THREE.MathUtils.clamp(
+          rig.position.y+1.15,.08,roofY+72
+        );
+      } else if (grounded) {
+        verticalVelocity=6.3;
+        grounded=false;
+      }
+    }
+
+    function readQuestFaceButtons(source,handedness) {
+      const gamepad=source.gamepad;
+      const touchProfile=source.profiles?.some(profile=>
+        /oculus-touch|meta-quest-touch/i.test(profile)
+      );
+      if (!gamepad || (
+        gamepad.mapping!=="xr-standard"&&!touchProfile
+      )) return false;
+      const state=xrGamepadButtonState[handedness];
+      if (!state) return false;
+      // xr-standard reserves 0 trigger, 1 squeeze and 2 thumbstick. Oculus
+      // Touch profiles expose X/A at 3 and Y/B at 4 for the matching hand.
+      const primary=Boolean(gamepad.buttons?.[3]?.pressed);
+      const secondary=Boolean(gamepad.buttons?.[4]?.pressed);
+      if (handedness==="right" && primary && !state.primary) {
+        handleXRPrimaryAction();
+      }
+      if (secondary && !state.secondary) toggleXRControlDeck();
+      state.primary=primary;
+      state.secondary=secondary;
+      return handedness==="left" && primary;
+    }
+
     function strongestXRThumbstick(gamepad,target,invertY=true) {
       target.set(0,0);
       if (!gamepad?.axes?.length) return target;
@@ -6356,24 +7984,34 @@
       target.multiplyScalar(remapped/length);
       return target;
     }
-    function readXRControllerSticks() {
+    function readXRControllerInput() {
       xrHardwareMove.set(0,0);
       xrHardwareLook.set(0,0);
       const session=renderer.xr.getSession();
-      if (!session) return;
+      if (!session) return false;
       let fallbackIndex=0;
+      let xRunHeld=false;
+      const seenHands=new Set();
       for (const source of session.inputSources) {
         if (!source.gamepad) continue;
         const handedness=source.handedness==="left"||
           source.handedness==="right"
           ?source.handedness
           :(fallbackIndex++===0?"left":"right");
+        seenHands.add(handedness);
         if (handedness==="left") {
           strongestXRThumbstick(source.gamepad,xrHardwareMove);
         } else if (handedness==="right") {
           strongestXRThumbstick(source.gamepad,xrHardwareLook);
         }
+        xRunHeld=readQuestFaceButtons(source,handedness)||xRunHeld;
       }
+      for (const handedness of ["left","right"]) {
+        if (seenHands.has(handedness)) continue;
+        xrGamepadButtonState[handedness].primary=false;
+        xrGamepadButtonState[handedness].secondary=false;
+      }
+      return xRunHeld;
     }
     function updateXRControls(dt) {
       if (!renderer.xr.isPresenting) return;
@@ -6418,14 +8056,14 @@
         if (hit) hit.object.material.color.setHex(0x8cadff);
       });
 
-      readXRControllerSticks();
+      const xRunHeld=readXRControllerInput();
       const moveInput=xrCombinedMove.copy(
         xrHardwareMove.lengthSq()>xrStickState.move.lengthSq()
           ?xrHardwareMove
           :xrStickState.move
       );
       const moveMagnitude=moveInput.length();
-      const running=moveMagnitude>.78;
+      const running=xRunHeld||moveMagnitude>.9;
       if (running!==xrRunState) {
         xrRunState=running;
         document.body.dataset.xrPace=running?"run":"walk";
@@ -6471,22 +8109,22 @@
             rig.position.y+lookInput.y*7.4*dt,.08,roofY+72
           );
         }
-      } else if (Math.abs(lookInput.y)>.1) {
-        rig.rotation.x=THREE.MathUtils.clamp(
-          rig.rotation.x+lookInput.y*.62*dt,-.38,.38
-        );
       }
+      // Tracked head pitch comes exclusively from WebXR. Artificially tilting
+      // the parent rig makes head translations orbit around the wrong origin,
+      // which presents as violent world jitter on a six-DoF headset.
+      rig.rotation.x=0;
       yaw=rig.rotation.y;
-      pitch=rig.rotation.x;
+      pitch=0;
 
-      if (!flying && moveMagnitude>.12) {
+      if (!flying) {
         groundRaycaster.set(
           new THREE.Vector3(
-            rig.position.x,rig.position.y+.85,rig.position.z
+            rig.position.x,rig.position.y+1.35,rig.position.z
           ),
           down
         );
-        groundRaycaster.far=2.2;
+        groundRaycaster.far=4.8;
         const floorHit=groundRaycaster.intersectObjects(
           navSurfaces,false
         )[0];
@@ -6499,12 +8137,26 @@
           Math.abs(stairFloor.y-rig.position.y)<
             Math.abs(floorY-rig.position.y)+.08
         )) floorY=stairFloor.y;
-        if (floorY!==null && Math.abs(floorY-rig.position.y)<1.25) {
+        if (!grounded || Math.abs(verticalVelocity)>.001) {
+          verticalVelocity-=15.5*dt;
+          rig.position.y+=verticalVelocity*dt;
+          if (floorY!==null && verticalVelocity<=0 &&
+              rig.position.y<=floorY+.06) {
+            rig.position.y=floorY;
+            verticalVelocity=0;
+            grounded=true;
+          }
+        } else if (floorY!==null &&
+            Math.abs(floorY-rig.position.y)<1.25) {
           rig.position.y=floorY;
+          verticalVelocity=0;
+          grounded=true;
+        } else {
+          grounded=false;
         }
       }
       document.body.dataset.xrInput=
-        "quest-gamepad-sticks|vision-pinch-sticks|trigger-menu";
+        "quest-sticks|a-jump-double-a-flight|hold-x-run|b-y-menu|vision-pinch";
     }
 
     const artworkFrustum = new THREE.Frustum();
@@ -6513,6 +8165,7 @@
     const artworkCameraDirection = new THREE.Vector3();
     const artworkToCamera = new THREE.Vector3();
     const artworkSphere = new THREE.Sphere();
+    const nearbyArtworkSurfaces=[];
     let lastArtworkVisibilityUpdate = -Infinity;
     let lastTextureTrim = -Infinity;
     function updateArtworkStreaming(time) {
@@ -6539,13 +8192,30 @@
       let proxyMatrixDirty=false;
       for (const surface of artworkProxyHidden) {
         proxyMatrixDirty=setArtworkProxyVisible(surface,true) || proxyMatrixDirty;
+        if (surface.group?.visible) surface.group.visible=false;
+        if (surface.titleLabel?.visible) surface.titleLabel.visible=false;
       }
       artworkProxyHidden.clear();
       const wantedTextureKeys = new Set();
       visibleAnimatedTextures.clear();
       const drawCandidates=[];
       const preloadCandidates=[];
-      for (const surface of artworkSurfaces) {
+      const cameraLevel=THREE.MathUtils.clamp(
+        Math.floor(artworkCameraPosition.y/storyHeight),
+        0,spiralRevolutions-1
+      );
+      nearbyArtworkSurfaces.length=0;
+      for (
+        let level=Math.max(0,cameraLevel-1);
+        level<=Math.min(spiralRevolutions-1,cameraLevel+1);
+        level++
+      ) {
+        nearbyArtworkSurfaces.push(...(artworkSurfacesByLevel.get(level)||[]));
+      }
+      renderer.domElement.dataset.artworkStreamingCandidates=String(
+        nearbyArtworkSurfaces.length
+      );
+      for (const surface of nearbyArtworkSurfaces) {
         artworkToCamera.subVectors(surface.worldPosition,artworkCameraPosition);
         const distance = artworkToCamera.length();
         const alignment = distance ? artworkCameraDirection.dot(artworkToCamera.multiplyScalar(1/distance)) : 1;
@@ -6606,12 +8276,30 @@
       }
       drawCandidates.sort((a,b)=>a.score-b.score);
       preloadCandidates.sort((a,b)=>a.score-b.score);
-      const drawLimit=xrPresenting?36:(movingRecently?24:36);
+      const drawLimit=xrPresenting
+        ?(xrPerformanceEmergency
+            ?Math.max(12,xrRuntimePreset.artworkDrawLimit-6)
+            :xrRuntimePreset.artworkDrawLimit)
+        :(movingRecently?24:36);
       const selected=drawCandidates.slice(0,drawLimit);
-      const preload=preloadCandidates.slice(
-        0,xrPresenting?8:(movingRecently?4:7)
+      artworkTargetSurfaces.length=0;
+      for (const candidate of selected) {
+        artworkTargetSurfaces.push(candidate.surface);
+      }
+      renderer.domElement.dataset.artworkTargetCandidates=String(
+        artworkTargetSurfaces.length
       );
-      const fullResolutionLimit=xrPresenting?3:2;
+      const preload=preloadCandidates.slice(
+        0,xrPresenting
+          ?(xrPerformanceEmergency?1:xrRuntimePreset.artworkPreloadLimit)
+          :(movingRecently?4:7)
+      );
+      // Never promote wall-mounted works merely because they approach the
+      // center of the view. That made the glove appear to cause severe lag:
+      // the same gaze alignment simultaneously triggered original-image
+      // fetches, large bitmap decodes and GPU uploads. `showArtworkViewer`
+      // still explicitly requests the original for the one opened work.
+      const fullResolutionLimit=0;
       const fullResolutionSurfaces=new Set(
         selected
           .filter(candidate=>
@@ -6623,12 +8311,18 @@
           .slice(0,fullResolutionLimit)
           .map(candidate=>candidate.surface)
       );
+      if (enlargedArtworkSurface &&
+          !isAnimatedImageURL(enlargedArtworkSurface.item[1])) {
+        fullResolutionSurfaces.add(enlargedArtworkSurface);
+      }
       for (const {surface,distance,alignment} of selected) {
         materializeArtwork(surface);
         surface.group.visible=true;
         proxyMatrixDirty=setArtworkProxyVisible(surface,false) || proxyMatrixDirty;
         artworkProxyHidden.add(surface);
-        if (distance<5.5 && alignment>.18) ensureArtworkLabel(surface);
+        if (!artworkViewer.visible&&distance<5.5&&alignment>.18) {
+          ensureArtworkLabel(surface);
+        }
         surface.lastWantedAt=time;
         surface.lastDrawnAt=time;
         const desiredTier=fullResolutionSurfaces.has(surface) &&
@@ -6673,6 +8367,14 @@
           streamArtwork(surface,alignment*8-distance*.08,"preview");
         }
       }
+      if (enlargedArtworkSurface) {
+        wantedTextureKeys.add(textureCacheKey(
+          enlargedArtworkSurface.item[1],
+          isAnimatedImageURL(enlargedArtworkSurface.item[1])
+            ?"preview"
+            :"full"
+        ));
+      }
       if (proxyMatrixDirty) {
         for (const proxyMesh of artworkProxyMeshes) {
           proxyMesh.instanceMatrix.needsUpdate=true;
@@ -6697,6 +8399,7 @@
           .filter(surface=>
             surface.textureTier==="full" &&
             !fullResolutionSurfaces.has(surface) &&
+            surface!==enlargedArtworkSurface &&
             time-surface.lastFullWantedAt>700
           )
           .forEach(releaseArtworkTexture);
@@ -6709,7 +8412,9 @@
         const previewResident=artworkSurfaces.filter(surface=>
           surface.loaded && surface.textureTier==="preview"
         );
-        const previewResidentLimit=xrPresenting?72:68;
+        const previewResidentLimit=xrPresenting
+          ?xrRuntimePreset.previewResidentLimit
+          :68;
         if (previewResident.length>previewResidentLimit) {
           previewResident
             .filter(surface=>time-surface.lastWantedAt>4500)
@@ -6738,7 +8443,9 @@
         renderer.domElement.dataset.textureCacheEntries=
           String(texturePromiseCache.size);
         trimPreviewTexturePool();
-        trimArtworkFrameAssetCache(xrPresenting?112:152);
+        trimArtworkFrameAssetCache(
+          xrPresenting?xrRuntimePreset.frameAssetLimit:152
+        );
         renderer.domElement.dataset.previewTexturePool=
           String(previewTexturePool.size);
         renderer.domElement.dataset.frameAssetCache=
@@ -6769,19 +8476,250 @@
 
     function animate(time) {
       const dt = Math.min(clock.getDelta(), .05);
+      monitorXRPerformance(dt);
+      const xrMotionStride=xrPerformanceEmergency
+        ?Math.max(6,xrRuntimePreset.heavyMotionStride)
+        :xrRuntimePreset.heavyMotionStride;
+      const updateHeavyXRMotion=
+        !renderer.xr.isPresenting||!xrIsStandaloneQuest||
+        (++xrHeavyMotionFrame%xrMotionStride===0);
       dimensionalFoldUniforms.time.value=time*.001;
       treeMotionUniforms.time.value=time*.001;
+      museumCatMotion.zoomies=Math.max(0,museumCatMotion.zoomies-dt);
+      museumCatMotion.zoomiesCooldown=Math.max(
+        0,museumCatMotion.zoomiesCooldown-dt
+      );
+      museumCatMotion.grooming=Math.max(0,museumCatMotion.grooming-dt);
+      museumCatMotion.groomingCooldown=Math.max(
+        0,museumCatMotion.groomingCooldown-dt
+      );
+      const catTarget=museumCatPatrolPoints[museumCatMotion.targetIndex];
+      const catDx=catTarget.x-museumCat.position.x;
+      const catDz=catTarget.z-museumCat.position.z;
+      const catDistance=Math.hypot(catDx,catDz);
+      if (catDistance<.28) {
+        museumCatMotion.seed=(
+          museumCatMotion.seed*1664525+1013904223
+        )>>>0;
+        // Follow neighboring route nodes so the cat never takes a diagonal
+        // shortcut through the facade. Occasionally reverse direction to keep
+        // the patrol from looking like a fixed loop.
+        if ((museumCatMotion.seed&15)===0) {
+          museumCatMotion.direction*=-1;
+        }
+        const nextIndex=(
+          museumCatMotion.targetIndex+museumCatMotion.direction+
+          museumCatPatrolPoints.length
+        )%museumCatPatrolPoints.length;
+        museumCatMotion.targetIndex=nextIndex;
+        if (museumCatMotion.zoomies>0) {
+          museumCatMotion.wait=0;
+        } else if (museumCatMotion.zoomiesCooldown<=0&&
+                   (museumCatMotion.seed%5)===0) {
+          museumCatMotion.zoomies=
+            2.4+((museumCatMotion.seed>>>8)%1800)/1000;
+          museumCatMotion.zoomiesCooldown=
+            13+((museumCatMotion.seed>>>16)%9000)/1000;
+          museumCatMotion.wait=0;
+        } else if (museumCatMotion.groomingCooldown<=0&&
+                   (museumCatMotion.seed%4)===1) {
+          museumCatMotion.grooming=
+            2.8+((museumCatMotion.seed>>>9)%1700)/1000;
+          museumCatMotion.groomingCooldown=
+            11+((museumCatMotion.seed>>>17)%8000)/1000;
+          museumCatMotion.wait=museumCatMotion.grooming;
+        } else {
+          museumCatMotion.wait=.55+(museumCatMotion.seed%1200)/1000;
+        }
+      }
+      museumCatMotion.wait=Math.max(0,museumCatMotion.wait-dt);
+      const catZooming=museumCatMotion.zoomies>0;
+      const catGrooming=museumCatMotion.grooming>0;
+      const catMoving=!catGrooming&&
+        (catZooming||museumCatMotion.wait<=0)&&catDistance>=.28;
+      if (catMoving) {
+        const catDirectionX=catDx/catDistance;
+        const catDirectionZ=catDz/catDistance;
+        const stalkingSpeed=catZooming
+          ?2.15+((museumCatMotion.seed>>>8)%35)/100
+          :.46+((museumCatMotion.seed>>>8)%18)/100;
+        museumCat.position.x+=catDirectionX*stalkingSpeed*dt;
+        museumCat.position.z+=catDirectionZ*stalkingSpeed*dt;
+        const targetYaw=-Math.atan2(catDirectionZ,catDirectionX);
+        const yawDelta=Math.atan2(
+          Math.sin(targetYaw-museumCat.rotation.y),
+          Math.cos(targetYaw-museumCat.rotation.y)
+        );
+        museumCat.rotation.y+=yawDelta*Math.min(
+          1,dt*(catZooming?7.5:2.8)
+        );
+        museumCatMotion.gait+=dt*(catZooming?12.5:5.1);
+      }
+      // Resolve the real walkable surface under the cat instead of assuming
+      // every lobby/forecourt slab ends at world Y=0. The short downward ray
+      // avoids accidentally snapping to overhead floors.
+      museumCatGroundRaycaster.set(
+        new THREE.Vector3(
+          museumCat.position.x,museumCat.position.y+1.5,
+          museumCat.position.z
+        ),
+        museumCatGroundDirection
+      );
+      museumCatGroundRaycaster.far=3;
+      const museumCatFloorHit=museumCatGroundRaycaster.intersectObjects(
+        navSurfaces,false
+      )[0];
+      const museumCatFloorY=museumCatFloorHit
+        ?museumCatFloorHit.point.y
+        :0;
+      museumCat.position.y=THREE.MathUtils.damp(
+        museumCat.position.y,museumCatFloorY+.018,18,dt
+      );
+      museumCatMotion.crouch=THREE.MathUtils.damp(
+        museumCatMotion.crouch,catMoving?0:(catGrooming?.62:1),5.5,dt
+      );
+      museumCat.userData.body.position.y=
+        1.34-museumCatMotion.crouch*.07+
+        (catMoving?Math.sin(museumCatMotion.gait*2)*.018:0);
+      museumCat.userData.head.position.y=
+        1.78-museumCatMotion.crouch*.1;
+      museumCat.userData.head.rotation.z=catGrooming
+        ?-.34+Math.sin(time*.012)*.11
+        :(catMoving?0:Math.sin(time*.0017)*.075);
+      museumCatLegs.forEach((leg,index) => {
+        leg.position.y=
+          leg.userData.baseY-museumCatMotion.crouch*.06;
+        const stride=Math.sin(museumCatMotion.gait+leg.userData.phase);
+        const lift=Math.max(0,Math.sin(
+          museumCatMotion.gait+leg.userData.phase+Math.PI*.18
+        ));
+        leg.rotation.z=catMoving?stride*.42:0;
+        leg.userData.knee.rotation.z=catMoving
+          ?-.18-lift*.62+Math.max(0,-stride)*.12
+          :-.12;
+        leg.userData.paw.rotation.z=catMoving
+          ?.2-stride*.2+lift*.34
+          :0;
+        leg.position.y+=catMoving?lift*.08:0;
+      });
+      if (museumCatSTLPosition&&museumCatSTLBasePositions&&
+          (++museumCatDeformFrame%2===0||!catMoving)) {
+        const positions=museumCatSTLPosition;
+        const base=museumCatSTLBasePositions;
+        const felinePhase=catMoving?museumCatMotion.gait:time*.00115;
+        const torsoAngle=Math.sin(felinePhase)*
+          (catMoving?.009:.0025);
+        const torsoCos=Math.cos(torsoAngle);
+        const torsoSin=Math.sin(torsoAngle);
+        const headAngle=catGrooming
+          ?-.32+Math.sin(time*.012)*.095
+          :Math.sin(felinePhase*.72+.55)*(catMoving?.024:.016);
+        const headCos=Math.cos(headAngle);
+        const headSin=Math.sin(headAngle);
+        for (let index=0;index<positions.count;index++) {
+          const offset=index*3;
+          const baseX=base[offset];
+          const baseY=base[offset+1];
+          const baseZ=base[offset+2];
+          let x=baseX;
+          let y=baseY;
+          let z=baseZ;
+          // Treat the torso as one restrained rigid mass. The earlier
+          // per-vertex traveling wave made the cat flex like gelatin.
+          if (baseY>.58&&baseY<1.35&&baseX>-1&&baseX<.72) {
+            const pivotX=-.12;
+            const pivotY=.78;
+            const dx=x-pivotX;
+            const dy=y-pivotY;
+            x=pivotX+dx*torsoCos-dy*torsoSin;
+            y=pivotY+dx*torsoSin+dy*torsoCos;
+            z+=Math.sin(felinePhase*.5)*.0035;
+          }
+
+          // The neck and head form a second rigid link counter-rotating around
+          // the shoulder. This gives visible articulation without warping the
+          // skull or stretching individual torso facets.
+          if (baseX>.08&&baseY>.68) {
+            const pivotX=.1;
+            const pivotY=.7;
+            const dx=x-pivotX;
+            const dy=y-pivotY;
+            x=pivotX+dx*headCos-dy*headSin;
+            y=pivotY+dx*headSin+dy*headCos;
+            z+=Math.sin(felinePhase*.43+.8)*.004;
+          }
+          if (catMoving&&baseY<.62&&Math.abs(baseZ)>.075) {
+            const front=baseX>.12;
+            const left=baseZ>0;
+            const legCenterX=front ? .55 : -.62;
+            const legCenterZ=left ? .23 : -.23;
+            const proximity=Math.max(0,1-
+              Math.hypot(
+                (baseX-legCenterX)*1.8,
+                (baseZ-legCenterZ)*3.2
+              )
+            );
+            const lowerWeight=Math.max(0,1-baseY/.62)*proximity;
+            const phase=(front===left)?0:Math.PI;
+            const stride=Math.sin(museumCatMotion.gait+phase);
+            const lift=Math.max(0,Math.sin(
+              museumCatMotion.gait+phase+Math.PI*.2
+            ));
+            x+=stride*.095*lowerWeight;
+            y+=lift*.075*lowerWeight;
+          }
+          positions.setXYZ(index,x,y,z);
+        }
+        positions.needsUpdate=true;
+      }
+      if (museumCatEarRoot) {
+        const earPhase=catMoving?museumCatMotion.gait:time*.00115;
+        const connectedHeadAngle=catGrooming
+          ?-.32+Math.sin(time*.012)*.095
+          :Math.sin(earPhase*.72+.55)*(catMoving?.024:.016);
+        // This group is anchored at the exact (.1,.7) head pivot used for the
+        // STL vertices above, so grooming rotates the skull and ears as one
+        // rigid connected assembly.
+        museumCatEarRoot.rotation.z=connectedHeadAngle;
+        museumCatEarRoot.rotation.x=0;
+        museumCatEarRoot.position.z=
+          Math.sin(earPhase*.43+.8)*.004;
+      }
+      // Never lower the entire model to crouch: that pushed the paws through
+      // the slab. Crouching is handled by the articulated torso/head above.
+      museumCatModelRoot.position.y=catMoving
+        ?Math.max(0,Math.sin(museumCatMotion.gait*2)*.002)
+        :0;
+      museumCatModelRoot.rotation.x=catMoving
+        ?Math.sin(museumCatMotion.gait)*.006
+        :0;
+      museumCatTail.forEach(tail => {
+        tail.rotation.y=Math.sin(
+          time*.0031+tail.userData.segment*.62
+        )*.085;
+        tail.rotation.z=tail.userData.baseRotation+Math.sin(
+          time*.00265+tail.userData.segment*.4
+        )*.075;
+      });
+      museumCat.updateMatrixWorld(true);
+      renderer.domElement.dataset.catBehavior=catGrooming
+        ?"stationary-shoulder-grooming"
+        :(catZooming?"spontaneous-route-zoomies":
+          (catMoving?"grounded-diagonal-stalk":"watching"));
+      renderer.domElement.dataset.catFloorY=museumCatFloorY.toFixed(3);
       animatedSteps.forEach(step => {
         // The two helix strands breathe reciprocally: while one expands, the
-        // other contracts. Their vertical wave stays synchronized, preserving
-        // the half-story clearance verified by the static circulation ribbon.
+        // other contracts. Their vertical roots remain locked to the static
+        // circulation ribbon, preserving reliable ground-level entry.
         const wave=Math.sin(time*.00115+step.userData.phase);
-        const amplitude=step.userData.helix?.26:.18;
         const breathScale=step.userData.helix
           ?1+wave*.024*step.userData.direction
           :1;
         step.scale.set(breathScale,1,breathScale);
-        step.position.y=step.userData.baseY+wave*amplitude;
+        // The authoritative walking ribbon is static. Keep the sculptural
+        // inhale/exhale radial, but anchor every tread vertically so the first
+        // step can never breathe below the forecourt or above the collider.
+        step.position.y=step.userData.baseY;
         step.position.x=step.userData.baseX+
           (step.userData.breathCenterX||0)*(1-breathScale)+
           Math.cos(time*.00082+step.userData.phase)*.06*
@@ -6793,11 +8731,24 @@
           ?0
           :wave*.014;
       });
+      animatedWalkways.forEach(walkway => {
+        const wave=Math.sin(time*.00115+walkway.userData.phase);
+        const radialScale=
+          1+wave*.007*walkway.userData.direction;
+        walkway.scale.set(radialScale,1,radialScale);
+        walkway.position.set(
+          walkway.userData.breathCenterX*(1-radialScale),
+          wave*.075*walkway.userData.direction,
+          walkway.userData.breathCenterZ*(1-radialScale)
+        );
+      });
       penrose.updateMatrixWorld(true);
       rearPenrose.updateMatrixWorld(true);
       updateWalk(dt);
       updateXRControls(dt);
       updateArtworkStreaming(time);
+      updateArtworkTarget();
+      updateArtworkSelectionVisuals(time);
       // Every suspended object shares one low-frequency wind field. Small
       // secondary waves keep pieces from moving in mechanical lockstep.
       const breezeTime=time*.00011;
@@ -6871,6 +8822,7 @@
           piece.scale.set(1,1,1);
         }
       });
+      if (updateHeavyXRMotion) {
       distantCrystalFoldPieces.forEach(piece => {
         const data=piece.userData;
         // Treat the two interleaved halves as the +W and -W layers of one
@@ -7017,6 +8969,7 @@
         family.fill.instanceMatrix.needsUpdate=true;
         family.wire.instanceMatrix.needsUpdate=true;
       });
+      }
       cloudGroups.forEach(cloud => {
         cloud.position.x+=dt*cloud.userData.speed;
         if (cloud.position.x>185) cloud.position.x-=370;
@@ -7163,6 +9116,10 @@
     addEventListener("resize", () => {
       camera.aspect = innerWidth/innerHeight;
       camera.updateProjectionMatrix();
+      if (enlargedArtworkSurface) {
+        sizeArtworkViewer(enlargedArtworkSurface);
+      }
+      positionArtworkGlove(viewerCursorX,viewerCursorY);
       renderer.setSize(innerWidth,innerHeight);
       renderer.setPixelRatio(1);
     });
@@ -7170,6 +9127,10 @@
     // Fail softly when a GPU context is interrupted by a headset browser.
     renderer.domElement.addEventListener("webglcontextlost", e => {
       e.preventDefault();
+      // Stop presentation immediately instead of letting the XR compositor
+      // repeatedly submit a lost/partial framebuffer, which can manifest as
+      // violent full-field flicker inside an opaque headset.
+      renderer.xr.getSession()?.end().catch(()=>{});
       const status = document.getElementById("status");
       status.textContent = "restoring the museum";
       status.classList.add("visible");
