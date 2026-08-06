@@ -8294,18 +8294,20 @@
           ?(xrPerformanceEmergency?1:xrRuntimePreset.artworkPreloadLimit)
           :(movingRecently?4:7)
       );
-      // Never promote wall-mounted works merely because they approach the
-      // center of the view. That made the glove appear to cause severe lag:
-      // the same gaze alignment simultaneously triggered original-image
-      // fetches, large bitmap decodes and GPU uploads. `showArtworkViewer`
-      // still explicitly requests the original for the one opened work.
-      const fullResolutionLimit=0;
+      // Promote only the few works that are physically close enough to inspect.
+      // This is deliberately independent of the glove/gaze target: cursor motion
+      // must not fan out original-image decodes, while walking up to a work should
+      // still replace its compressed preview with the source image. Keep a lower
+      // XR budget to protect standalone headsets.
+      const fullResolutionLimit=xrPresenting
+        ?(xrPerformanceEmergency?0:1)
+        :(movingRecently?2:4);
       const fullResolutionSurfaces=new Set(
         selected
           .filter(candidate=>
-            candidate.distance<17 &&
-            candidate.verticalCoverage>.14 &&
-            candidate.alignment>.28
+            candidate.distance<(xrPresenting?7.5:10.5) &&
+            candidate.verticalCoverage>.18 &&
+            candidate.alignment>.12
           )
           .sort((a,b)=>b.verticalCoverage-a.verticalCoverage)
           .slice(0,fullResolutionLimit)
@@ -8331,7 +8333,7 @@
           : "preview";
         if (desiredTier==="full") surface.lastFullWantedAt=time;
         if (surface.textureTier==="full" && desiredTier==="preview" &&
-            time-surface.lastFullWantedAt>650) {
+            time-surface.lastFullWantedAt>2400) {
           releaseArtworkTexture(surface);
         }
         surface.requestedTier=desiredTier;
@@ -8400,7 +8402,7 @@
             surface.textureTier==="full" &&
             !fullResolutionSurfaces.has(surface) &&
             surface!==enlargedArtworkSurface &&
-            time-surface.lastFullWantedAt>700
+            time-surface.lastFullWantedAt>2600
           )
           .forEach(releaseArtworkTexture);
         resident
