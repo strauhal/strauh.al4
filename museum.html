@@ -3036,8 +3036,10 @@
 
     // Five synchronized, six-minute stems form one spatial composition. Media
     // elements stream compressed MP3 data instead of decoding ~650 MB of PCM
-    // into memory. The synths share one slow orbit and remain quarter-turns
-    // apart, so all four are equidistant and equally loud at the helix center.
+    // into memory. Synths 1/2 and 3/4 occupy two phase-separated, opposing
+    // double helices. Each pair remains diametrically opposed, which keeps the
+    // atrium center balanced while the height oscillation becomes audible as
+    // the visitor moves through the museum.
     // Room tone is decorrelated into four fixed, non-attenuating directions:
     // it stays anchored in the building while head rotation remains audible.
     const museumSoundfield={
@@ -3048,9 +3050,11 @@
     const museumSoundListenerForward=new THREE.Vector3();
     const museumSoundListenerUp=new THREE.Vector3();
     const museumSoundListenerQuaternion=new THREE.Quaternion();
-    const museumSoundOrbitPeriod=168;
+    const museumSoundOrbitPeriod=184;
     const museumSoundOrbitRadius=24;
     const museumSoundCenterY=3.1;
+    const museumSoundHelixMidY=8.35;
+    const museumSoundHelixAmplitude=5.25;
     const museumSoundDirectFileMode=location.protocol==="file:";
     const museumSoundFiles=[
       "roomtone.mp3","synth1.mp3","synth2.mp3","synth3.mp3",
@@ -3058,7 +3062,11 @@
     ];
     document.body.dataset.museumSoundfield="idle";
     document.body.dataset.museumSoundfieldLayout=
-      "fixed-diffuse-roomtone+clockwise-four-stem-orbit";
+      "fixed-diffuse-roomtone+opposing-phase-separated-double-helices";
+    document.body.dataset.museumSoundfieldHelixDirections=
+      "synth1-2:clockwise|synth3-4:counterclockwise";
+    document.body.dataset.museumSoundfieldHelixSpacing=
+      "diametric-pairs+quarter-turn-between-helices";
     document.body.dataset.museumSoundfieldCenter=
       `${spiralCenter.x},${museumSoundCenterY},${spiralCenter.z}`;
     document.body.dataset.museumSoundfieldTransport=museumSoundDirectFileMode
@@ -3263,11 +3271,20 @@
       }
       const orbitAngle=timeSeconds/museumSoundOrbitPeriod*Math.PI*2;
       synthPanners.forEach((panner,index)=>{
-        const angle=orbitAngle+index*Math.PI*.5;
+        const pair=index<2?0:1;
+        const pairMember=index%2;
+        const direction=pair===0?1:-1;
+        // The second helix is a quarter-turn away from the first. Members of
+        // each helix remain on opposite sides, preventing the four stems from
+        // bunching into a muddy source while their vertical motion crosses.
+        const radialPhase=pair*Math.PI*.5+pairMember*Math.PI;
+        const angle=direction*orbitAngle+radialPhase;
+        const verticalPhase=direction*orbitAngle+pairMember*Math.PI;
         positionMuseumPanner(
           panner,
           spiralCenter.x+Math.cos(angle)*museumSoundOrbitRadius,
-          museumSoundCenterY,
+          museumSoundHelixMidY+
+            Math.sin(verticalPhase)*museumSoundHelixAmplitude,
           spiralCenter.z+Math.sin(angle)*museumSoundOrbitRadius
         );
       });
@@ -3563,10 +3580,9 @@
       }
       generatedRoomFootprints.push({level,points:footprint});
       generationDiagnostics.roomsAccepted++;
-      queueWallJoint(leftFront);
-      queueWallJoint(rightFront);
-      queueWallJoint(leftBack);
-      queueWallJoint(rightBack);
+      // These three planes share exact vertices. Adding seam columns here
+      // duplicates structure inside the finished room and visibly erases its
+      // corners; reserve seam supports for exposed spiral-bay joints instead.
       quadSurface([leftFront,rightFront,rightBack,leftBack],blueMaterial,true);
       addGeneratedWall(
         leftBack,rightBack,wallHeight,
@@ -3648,7 +3664,6 @@
       const inner1=polygonPoint(innerRadius,angle1,y1);
       const outer0=polygonPoint(outerRadius,angle0,y0);
       const outer1=polygonPoint(outerRadius,angle1,y1);
-      queueWallJoint(outer0);
       quadSurface([inner0,outer0,outer1,inner1],blueMaterial,true);
       const archiveLandingTarget=archiveLandingTargets.find(
         target=>target.side===side && target.level===level
@@ -3689,6 +3704,9 @@
       const collection=collectionAt(midpoint,side,level);
       const hasRoom=side%2===1;
       const isEntrance=index===0;
+      // A room supplies its own continuous side/back-wall junctions. Only
+      // exposed bays need a post to close the daylight seam between segments.
+      if (!hasRoom && !isEntrance) queueWallJoint(outer0);
       const roomAccepted=hasRoom && addGeneratedRoom(
         midpoint,tangent,outward,(y0+y1)/2,collection,level
       );
