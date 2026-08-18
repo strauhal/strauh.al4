@@ -3031,7 +3031,7 @@
     // it stays anchored in the building while head rotation remains audible.
     const museumSoundfield={
       state:"idle",context:null,master:null,elements:[],synthPanners:[],
-      roomPanners:[],startedAt:0,lastSyncAt:0,error:null
+      roomPanners:[],startedAt:0,lastSyncAt:0,error:null,startPromise:null
     };
     const museumSoundListenerPosition=new THREE.Vector3();
     const museumSoundListenerForward=new THREE.Vector3();
@@ -3086,6 +3086,8 @@
       return element;
     }
     async function startMuseumSoundfield() {
+      if (museumSoundfield.state==="playing") return;
+      if (museumSoundfield.startPromise) return;
       const AudioContextClass=window.AudioContext||window.webkitAudioContext;
       if (!AudioContextClass) {
         museumSoundfield.state="unsupported";
@@ -3140,17 +3142,19 @@
         });
       }
       const context=museumSoundfield.context;
+      museumSoundfield.state="loading";
+      document.body.dataset.museumSoundfield="loading";
+      // Invoke both play() and resume() synchronously while Chrome's transient
+      // user activation is still live. Awaiting resume() before play() works
+      // in Safari but can leave Chrome outside its autoplay gesture window.
+      // MP3s remain streamed; the browser controls request pacing and buffering.
+      const attempts=museumSoundfield.elements.map(element=>
+        element.paused?element.play():Promise.resolve()
+      );
+      const startAttempt=Promise.all([context.resume(),...attempts]);
+      museumSoundfield.startPromise=startAttempt;
       try {
-        await context.resume();
-        museumSoundfield.state="loading";
-        document.body.dataset.museumSoundfield="loading";
-        // Starting directly inside the gesture keeps Safari, Quest Browser and
-        // visionOS autoplay policies satisfied. MP3s remain streamed; the
-        // browser controls request pacing and buffering.
-        const attempts=museumSoundfield.elements.map(element=>
-          element.paused?element.play():Promise.resolve()
-        );
-        await Promise.all(attempts);
+        await startAttempt;
         const referenceTime=Math.max(
           ...museumSoundfield.elements.map(element=>element.currentTime||0)
         );
@@ -3167,6 +3171,8 @@
         museumSoundfield.state="waiting-for-gesture";
         museumSoundfield.error=error;
         document.body.dataset.museumSoundfield="waiting-for-gesture";
+      } finally {
+        museumSoundfield.startPromise=null;
       }
     }
     function updateMuseumSoundfield(timeSeconds) {
