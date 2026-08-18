@@ -3040,6 +3040,7 @@
     const museumSoundOrbitPeriod=168;
     const museumSoundOrbitRadius=24;
     const museumSoundCenterY=3.1;
+    const museumSoundDirectFileMode=location.protocol==="file:";
     const museumSoundFiles=[
       "roomtone.mp3","synth1.mp3","synth2.mp3","synth3.mp3",
       "synth4.mp3"
@@ -3049,6 +3050,9 @@
       "fixed-diffuse-roomtone+clockwise-four-stem-orbit";
     document.body.dataset.museumSoundfieldCenter=
       `${spiralCenter.x},${museumSoundCenterY},${spiralCenter.z}`;
+    document.body.dataset.museumSoundfieldTransport=museumSoundDirectFileMode
+      ?"direct-media-local-file"
+      :"web-audio-spatial-stream";
 
     function setAudioParam(param,value) {
       if (!param) return;
@@ -3088,6 +3092,47 @@
     async function startMuseumSoundfield() {
       if (museumSoundfield.state==="playing") return;
       if (museumSoundfield.startPromise) return;
+      // Chrome assigns file:// documents an opaque origin. Media elements can
+      // play local MP3s there, but connecting them to Web Audio commonly
+      // produces an intentionally silent MediaElementAudioSourceNode. Keep a
+      // synchronized direct-media preview for local files; hosted HTTP(S)
+      // builds retain the complete spatial HRTF soundfield below.
+      if (museumSoundDirectFileMode) {
+        if (!museumSoundfield.elements.length) {
+          museumSoundFiles.forEach(file=>{
+            const element=createMuseumAudioElement(file);
+            element.volume=.18;
+            museumSoundfield.elements.push(element);
+          });
+        }
+        museumSoundfield.state="loading";
+        document.body.dataset.museumSoundfield="loading";
+        const directAttempt=Promise.all(museumSoundfield.elements.map(element=>
+          element.paused?element.play():Promise.resolve()
+        ));
+        museumSoundfield.startPromise=directAttempt;
+        try {
+          await directAttempt;
+          const referenceTime=Math.max(
+            ...museumSoundfield.elements.map(element=>element.currentTime||0)
+          );
+          museumSoundfield.elements.forEach(element=>{
+            if (Math.abs(element.currentTime-referenceTime)>.08) {
+              element.currentTime=referenceTime;
+            }
+          });
+          museumSoundfield.state="playing";
+          museumSoundfield.error=null;
+          document.body.dataset.museumSoundfield="playing";
+        } catch (error) {
+          museumSoundfield.state="waiting-for-gesture";
+          museumSoundfield.error=error;
+          document.body.dataset.museumSoundfield="waiting-for-gesture";
+        } finally {
+          museumSoundfield.startPromise=null;
+        }
+        return;
+      }
       const AudioContextClass=window.AudioContext||window.webkitAudioContext;
       if (!AudioContextClass) {
         museumSoundfield.state="unsupported";
@@ -3237,6 +3282,16 @@
     addEventListener("touchstart",unlockMuseumSoundfield,{capture:true,passive:true});
     addEventListener("keydown",unlockMuseumSoundfield,{capture:true});
     document.addEventListener("visibilitychange",()=>{
+      if (museumSoundDirectFileMode) {
+        if (document.hidden) {
+          museumSoundfield.elements.forEach(element=>element.pause());
+          museumSoundfield.state="suspended";
+          document.body.dataset.museumSoundfield="suspended";
+        } else {
+          startMuseumSoundfield();
+        }
+        return;
+      }
       if (!museumSoundfield.context) return;
       if (document.hidden) {
         museumSoundfield.context.suspend();
