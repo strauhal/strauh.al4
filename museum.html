@@ -3022,6 +3022,222 @@
     const innerRadius=29;
     const outerRadius=42;
     const wallHeight=8.35;
+
+    // Five synchronized, six-minute stems form one spatial composition. Media
+    // elements stream compressed MP3 data instead of decoding ~650 MB of PCM
+    // into memory. The synths share one slow orbit and remain quarter-turns
+    // apart, so all four are equidistant and equally loud at the helix center.
+    // Room tone is decorrelated into four fixed, non-attenuating directions:
+    // it stays anchored in the building while head rotation remains audible.
+    const museumSoundfield={
+      state:"idle",context:null,master:null,elements:[],synthPanners:[],
+      roomPanners:[],startedAt:0,lastSyncAt:0,error:null
+    };
+    const museumSoundListenerPosition=new THREE.Vector3();
+    const museumSoundListenerForward=new THREE.Vector3();
+    const museumSoundListenerUp=new THREE.Vector3();
+    const museumSoundListenerQuaternion=new THREE.Quaternion();
+    const museumSoundOrbitPeriod=168;
+    const museumSoundOrbitRadius=24;
+    const museumSoundCenterY=3.1;
+    const museumSoundFiles=[
+      "roomtone.mp3","synth1.mp3","synth2.mp3","synth3.mp3",
+      "synth4.mp3"
+    ];
+    document.body.dataset.museumSoundfield="idle";
+    document.body.dataset.museumSoundfieldLayout=
+      "fixed-diffuse-roomtone+clockwise-four-stem-orbit";
+    document.body.dataset.museumSoundfieldCenter=
+      `${spiralCenter.x},${museumSoundCenterY},${spiralCenter.z}`;
+
+    function setAudioParam(param,value) {
+      if (!param) return;
+      // Direct assignment replaces the current value. Scheduling a new Web
+      // Audio automation event every render frame would grow an unbounded
+      // timeline during long museum visits.
+      param.value=value;
+    }
+    function positionMuseumPanner(panner,x,y,z) {
+      if (panner.positionX) {
+        setAudioParam(panner.positionX,x);
+        setAudioParam(panner.positionY,y);
+        setAudioParam(panner.positionZ,z);
+      } else {
+        panner.setPosition(x,y,z);
+      }
+    }
+    function createMuseumPanner(context,{fixed=false}={}) {
+      const panner=context.createPanner();
+      panner.panningModel="HRTF";
+      panner.distanceModel="inverse";
+      panner.refDistance=fixed?10000:18;
+      panner.maxDistance=fixed?10000:95;
+      panner.rolloffFactor=fixed?0:.58;
+      panner.coneInnerAngle=360;
+      panner.coneOuterAngle=360;
+      return panner;
+    }
+    function createMuseumAudioElement(file) {
+      const element=new Audio(`./museum/audio/${file}`);
+      element.loop=true;
+      element.preload="auto";
+      element.playsInline=true;
+      element.dataset.museumStem=file;
+      return element;
+    }
+    async function startMuseumSoundfield() {
+      const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+      if (!AudioContextClass) {
+        museumSoundfield.state="unsupported";
+        document.body.dataset.museumSoundfield="unsupported";
+        return;
+      }
+      if (!museumSoundfield.context) {
+        const context=new AudioContextClass({latencyHint:"playback"});
+        museumSoundfield.context=context;
+        const limiter=context.createDynamicsCompressor();
+        limiter.threshold.value=-7;
+        limiter.knee.value=8;
+        limiter.ratio.value=5;
+        limiter.attack.value=.012;
+        limiter.release.value=.24;
+        const master=context.createGain();
+        master.gain.value=.72;
+        master.connect(limiter).connect(context.destination);
+        museumSoundfield.master=master;
+
+        const roomElement=createMuseumAudioElement(museumSoundFiles[0]);
+        const roomSource=context.createMediaElementSource(roomElement);
+        const roomAngles=[0,Math.PI*.5,Math.PI,Math.PI*1.5];
+        const roomDelays=[0,.017,.031,.047];
+        roomAngles.forEach((angle,index)=>{
+          const delay=context.createDelay(.08);
+          delay.delayTime.value=roomDelays[index];
+          const gain=context.createGain();
+          // Four decorrelated branches sum to approximately one stem's power.
+          gain.gain.value=.11;
+          const panner=createMuseumPanner(context,{fixed:true});
+          positionMuseumPanner(
+            panner,
+            spiralCenter.x+Math.cos(angle)*34,
+            museumSoundCenterY,
+            spiralCenter.z+Math.sin(angle)*34
+          );
+          roomSource.connect(delay).connect(gain).connect(panner).connect(master);
+          museumSoundfield.roomPanners.push(panner);
+        });
+        museumSoundfield.elements.push(roomElement);
+
+        museumSoundFiles.slice(1).forEach(file=>{
+          const element=createMuseumAudioElement(file);
+          const source=context.createMediaElementSource(element);
+          const gain=context.createGain();
+          gain.gain.value=.22;
+          const panner=createMuseumPanner(context);
+          source.connect(gain).connect(panner).connect(master);
+          museumSoundfield.elements.push(element);
+          museumSoundfield.synthPanners.push(panner);
+        });
+      }
+      const context=museumSoundfield.context;
+      try {
+        await context.resume();
+        museumSoundfield.state="loading";
+        document.body.dataset.museumSoundfield="loading";
+        // Starting directly inside the gesture keeps Safari, Quest Browser and
+        // visionOS autoplay policies satisfied. MP3s remain streamed; the
+        // browser controls request pacing and buffering.
+        const attempts=museumSoundfield.elements.map(element=>
+          element.paused?element.play():Promise.resolve()
+        );
+        await Promise.all(attempts);
+        const referenceTime=Math.max(
+          ...museumSoundfield.elements.map(element=>element.currentTime||0)
+        );
+        museumSoundfield.elements.forEach(element=>{
+          if (Math.abs(element.currentTime-referenceTime)>.08) {
+            element.currentTime=referenceTime;
+          }
+        });
+        museumSoundfield.startedAt=context.currentTime;
+        museumSoundfield.state="playing";
+        museumSoundfield.error=null;
+        document.body.dataset.museumSoundfield="playing";
+      } catch (error) {
+        museumSoundfield.state="waiting-for-gesture";
+        museumSoundfield.error=error;
+        document.body.dataset.museumSoundfield="waiting-for-gesture";
+      }
+    }
+    function updateMuseumSoundfield(timeSeconds) {
+      const {context,synthPanners,elements}=museumSoundfield;
+      if (!context) return;
+      const viewCamera=renderer.xr.isPresenting
+        ?renderer.xr.getCamera(camera)
+        :camera;
+      viewCamera.getWorldPosition(museumSoundListenerPosition);
+      viewCamera.getWorldDirection(museumSoundListenerForward);
+      museumSoundListenerUp.set(0,1,0).applyQuaternion(
+        viewCamera.getWorldQuaternion(museumSoundListenerQuaternion)
+      );
+      const listener=context.listener;
+      const audioTime=context.currentTime;
+      if (listener.positionX) {
+        setAudioParam(listener.positionX,museumSoundListenerPosition.x);
+        setAudioParam(listener.positionY,museumSoundListenerPosition.y);
+        setAudioParam(listener.positionZ,museumSoundListenerPosition.z);
+        setAudioParam(listener.forwardX,museumSoundListenerForward.x);
+        setAudioParam(listener.forwardY,museumSoundListenerForward.y);
+        setAudioParam(listener.forwardZ,museumSoundListenerForward.z);
+        setAudioParam(listener.upX,museumSoundListenerUp.x);
+        setAudioParam(listener.upY,museumSoundListenerUp.y);
+        setAudioParam(listener.upZ,museumSoundListenerUp.z);
+      } else {
+        listener.setPosition(...museumSoundListenerPosition.toArray());
+        listener.setOrientation(
+          ...museumSoundListenerForward.toArray(),
+          ...museumSoundListenerUp.toArray()
+        );
+      }
+      const orbitAngle=timeSeconds/museumSoundOrbitPeriod*Math.PI*2;
+      synthPanners.forEach((panner,index)=>{
+        const angle=orbitAngle+index*Math.PI*.5;
+        positionMuseumPanner(
+          panner,
+          spiralCenter.x+Math.cos(angle)*museumSoundOrbitRadius,
+          museumSoundCenterY,
+          spiralCenter.z+Math.sin(angle)*museumSoundOrbitRadius
+        );
+      });
+      // The stems have identical durations. Correct only audible drift rather
+      // than seeking every frame, which would repeatedly flush MP3 buffers.
+      if (museumSoundfield.state==="playing"&&
+          audioTime-museumSoundfield.lastSyncAt>2.5) {
+        museumSoundfield.lastSyncAt=audioTime;
+        const reference=elements[0]?.currentTime||0;
+        elements.slice(1).forEach(element=>{
+          const drift=element.currentTime-reference;
+          if (Math.abs(drift)>.12) element.currentTime=reference;
+        });
+        document.body.dataset.museumSoundfieldDrift=Math.max(
+          0,...elements.slice(1).map(element=>
+            Math.abs(element.currentTime-reference)
+          )
+        ).toFixed(3);
+      }
+    }
+    const unlockMuseumSoundfield=()=>startMuseumSoundfield();
+    addEventListener("pointerdown",unlockMuseumSoundfield,{capture:true});
+    addEventListener("touchstart",unlockMuseumSoundfield,{capture:true,passive:true});
+    addEventListener("keydown",unlockMuseumSoundfield,{capture:true});
+    document.addEventListener("visibilitychange",()=>{
+      if (!museumSoundfield.context) return;
+      if (document.hidden) {
+        museumSoundfield.context.suspend();
+      } else {
+        startMuseumSoundfield();
+      }
+    });
     // Snapshot of the actual archive tree, not a visual estimate. Unsorted and
     // unnamed art stays in a clearly tracked unclassified allocation instead
     // of silently inflating the 1900s.
@@ -8479,6 +8695,7 @@
     function animate(time) {
       const dt = Math.min(clock.getDelta(), .05);
       monitorXRPerformance(dt);
+      updateMuseumSoundfield(time*.001);
       const xrMotionStride=xrPerformanceEmergency
         ?Math.max(6,xrRuntimePreset.heavyMotionStride)
         :xrRuntimePreset.heavyMotionStride;
