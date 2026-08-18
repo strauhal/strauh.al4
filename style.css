@@ -109,3 +109,7 @@ body {
     }
 
 }
+
+
+/* discovery navigation */
+.skip-link{position:absolute;left:-9999px;top:0;z-index:9999;background:#fff;color:#00f;padding:.5rem}.skip-link:focus{left:.5rem}.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}.breadcrumbs,.contextual-links{position:relative;z-index:20;width:fit-content;max-width:calc(100% - 2rem);margin:.5rem 0;padding:.25rem .4rem;background:#00f;color:#fff;line-height:1.35}.breadcrumbs a,.contextual-links a{color:#fff}main{display:block}

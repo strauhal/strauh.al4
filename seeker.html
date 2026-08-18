@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEEKER</title>
+    <title>strauh.al/seeker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -97,9 +97,17 @@
             color: #9ca3af;
         }
     </style>
-</head>
+  
+    <meta name="description" content="Explore Seeker, a distinct section of strauh.al&#x27;s hand-built art archive, digital scrapbook, and experimental knowledge graph.">
+    <link rel="canonical" href="https://strauh.al/seeker">
+    <meta property="og:title" content="strauh.al/seeker">
+    <meta property="og:description" content="Explore Seeker, a distinct section of strauh.al&#x27;s hand-built art archive, digital scrapbook, and experimental knowledge graph.">
+    <meta property="og:image" content="https://strauh.al/assets/previews/seeker.svg">
+    <meta property="og:url" content="https://strauh.al/seeker">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+  </head>
 <body>
-
 <div class="container-card">
     <h1 class="text-3xl font-extrabold text-blue-400 mb-4 text-center tracking-tight">SEEKER</h1>
     <p class="text-gray-400 mb-6 text-center">Paste image filenames (one per line) or HTML code with anchor tags below. The AI will generate structured artwork titles.</p>
@@ -379,7 +387,12 @@ OR
             try {
                 const parser = new DOMParser();
                 // Wrap in body to ensure parsing works for fragments
-                const doc = parser.parseFromString(`<body>${rawInput}</body>`, 'text/html');
+                const doc = parser.parseFromString(`<body>${rawInput}
+
+  <!-- discovery-footer: generated -->
+  <nav class="contextual-links" aria-label="Explore related sections"><a href="https://strauh.al/art">strauh.al/art</a> / <a href="https://strauh.al/pagination/page-001">strauh.al/pagination/page-001</a> / <a href="https://strauh.al/knowledge_base">strauh.al/knowledge_base</a> / <a href="https://strauh.al/brain">strauh.al/brain</a> / <a href="https://strauh.al/about">strauh.al/about</a></nav>
+  <!-- /discovery-footer -->
+</body>`, 'text/html');
                 const links = doc.querySelectorAll('a');
                 
                 if (links.length === 0) throw new Error("No anchor tags found in HTML input.");

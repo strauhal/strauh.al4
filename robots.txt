@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Search/citation crawlers are welcome. Training access can be managed separately.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+Sitemap: https://strauh.al/sitemap.xml

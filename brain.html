@@ -26,7 +26,8 @@
   }
   *{box-sizing:border-box}
   @keyframes changeColor{0%{background-color:#00f}50%{background-color:#20f}100%{background-color:#00f}}
-  /* Scroll-lock on <html> only. Leaving <body> without overflow/margin overrides
+  /* Scroll-lock on <html> only. Leaving <body>
+without overflow/margin overrides
      means it does NOT form a block-formatting context, so the <h1>'s top margin
      collapses exactly as on every other strauh.al page -> the header lines up. */
   html{margin:0;height:100%;overflow:hidden;}
@@ -210,7 +211,16 @@
   #chatVoiceRow input:focus{border-color:#fff;}
   #chatVoiceRow .hint{color:var(--muted);font-size:10.5px;line-height:1.4;margin-top:4px;}
 </style>
-</head>
+  
+    <meta name="description" content="Explore an interactive knowledge graph connecting the art, ideas, artists, media, and references collected across strauh.al.">
+    <link rel="canonical" href="https://strauh.al/brain">
+    <meta property="og:title" content="strauh.al/brain">
+    <meta property="og:description" content="Explore an interactive knowledge graph connecting the art, ideas, artists, media, and references collected across strauh.al.">
+    <meta property="og:image" content="https://strauh.al/assets/previews/brain.svg">
+    <meta property="og:url" content="https://strauh.al/brain">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+  </head>
 <body>
 <h1><a href="https://strauh.al">strauh.al</a>/brain</h1>
 
@@ -256,6 +266,7 @@
 </div>
 
 <div id="panel">
+  <h2 class="visually-hidden">Knowledge graph controls</h2>
   <h3>Forces</h3>
   <div class="row"><label>Center force</label><input type="range" id="fCenter" min="0" max="100" value="15"><span class="val" id="vCenter"></span></div>
   <div class="row"><label>Repel force</label><input type="range" id="fRepel" min="0" max="100" value="54"><span class="val" id="vRepel"></span></div>
@@ -2989,5 +3000,9 @@ ensureLoop();
 })();
 }
 </script>
+
+  <!-- discovery-footer: generated -->
+  <nav class="contextual-links" aria-label="Explore related sections"><a href="https://strauh.al/art">strauh.al/art</a> / <a href="https://strauh.al/pagination/page-001">strauh.al/pagination/page-001</a> / <a href="https://strauh.al/knowledge_base">strauh.al/knowledge_base</a> / <a href="https://strauh.al/about">strauh.al/about</a></nav>
+  <!-- /discovery-footer -->
 </body>
 </html>
