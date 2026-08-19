@@ -3044,7 +3044,8 @@
     // it stays anchored in the building while head rotation remains audible.
     const museumSoundfield={
       state:"idle",context:null,master:null,elements:[],synthPanners:[],
-      roomPanners:[],startedAt:0,lastSyncAt:0,error:null,startPromise:null
+      roomPanners:[],startedAt:0,lastSyncAt:0,lastSpatialAt:0,
+      error:null,startPromise:null
     };
     const museumSoundListenerPosition=new THREE.Vector3();
     const museumSoundListenerForward=new THREE.Vector3();
@@ -3055,6 +3056,7 @@
     const museumSoundCenterY=3.1;
     const museumSoundHelixMidY=8.35;
     const museumSoundHelixAmplitude=5.25;
+    const museumSoundSpatialInterval=1/30;
     const museumSoundDirectFileMode=location.protocol==="file:";
     const museumSoundFiles=[
       "roomtone.mp3","synth1.mp3","synth2.mp3","synth3.mp3",
@@ -3072,6 +3074,8 @@
     document.body.dataset.museumSoundfieldTransport=museumSoundDirectFileMode
       ?"direct-media-local-file"
       :"web-audio-spatial-stream";
+    document.body.dataset.museumSoundfieldCompatibility=
+      "30hz-spatial-updates+smooth-drift-correction+lightweight-roomtone";
 
     function setAudioParam(param,value) {
       if (!param) return;
@@ -3091,7 +3095,10 @@
     }
     function createMuseumPanner(context,{fixed=false}={}) {
       const panner=context.createPanner();
-      panner.panningModel="HRTF";
+      // Fixed diffuse room tone does not benefit from four simultaneous HRTF
+      // convolutions. Equal-power panning preserves head-relative direction
+      // while leaving Safari's audio thread available for the moving stems.
+      panner.panningModel=fixed?"equalpower":"HRTF";
       panner.distanceModel="inverse";
       panner.refDistance=fixed?10000:18;
       panner.maxDistance=fixed?10000:95;
@@ -3108,6 +3115,11 @@
       element.dataset.museumStem=file;
       return element;
     }
+    // Begin compressed-media buffering before the first interaction. The
+    // elements stay silent until the gesture unlocks playback, but Safari no
+    // longer has to fetch and decode five MP3 headers at that exact moment.
+    const museumSoundPreloadedElements=
+      museumSoundFiles.map(createMuseumAudioElement);
     async function startMuseumSoundfield() {
       if (museumSoundfield.state==="playing") return;
       if (museumSoundfield.startPromise) return;
@@ -3118,8 +3130,7 @@
       // builds retain the complete spatial HRTF soundfield below.
       if (museumSoundDirectFileMode) {
         if (!museumSoundfield.elements.length) {
-          museumSoundFiles.forEach(file=>{
-            const element=createMuseumAudioElement(file);
+          museumSoundPreloadedElements.forEach(element=>{
             element.volume=.18;
             museumSoundfield.elements.push(element);
           });
@@ -3172,7 +3183,7 @@
         master.connect(limiter).connect(context.destination);
         museumSoundfield.master=master;
 
-        const roomElement=createMuseumAudioElement(museumSoundFiles[0]);
+        const roomElement=museumSoundPreloadedElements[0];
         const roomSource=context.createMediaElementSource(roomElement);
         const roomAngles=[0,Math.PI*.5,Math.PI,Math.PI*1.5];
         const roomDelays=[0,.017,.031,.047];
@@ -3194,8 +3205,7 @@
         });
         museumSoundfield.elements.push(roomElement);
 
-        museumSoundFiles.slice(1).forEach(file=>{
-          const element=createMuseumAudioElement(file);
+        museumSoundPreloadedElements.slice(1).forEach(element=>{
           const source=context.createMediaElementSource(element);
           const gain=context.createGain();
           gain.gain.value=.22;
@@ -3242,61 +3252,76 @@
     function updateMuseumSoundfield(timeSeconds) {
       const {context,synthPanners,elements}=museumSoundfield;
       if (!context) return;
+      const audioTime=context.currentTime;
+      // Spatial values change slowly. Capping control updates avoids flooding
+      // WebKit's real-time audio thread when WebGL happens to render at 60–120
+      // fps, without making head turns or the 184-second orbit feel stepped.
+      const updateSpatial=
+        audioTime-museumSoundfield.lastSpatialAt>=museumSoundSpatialInterval;
+      if (updateSpatial) museumSoundfield.lastSpatialAt=audioTime;
       const viewCamera=renderer.xr.isPresenting
         ?renderer.xr.getCamera(camera)
         :camera;
-      viewCamera.getWorldPosition(museumSoundListenerPosition);
-      viewCamera.getWorldDirection(museumSoundListenerForward);
-      museumSoundListenerUp.set(0,1,0).applyQuaternion(
-        viewCamera.getWorldQuaternion(museumSoundListenerQuaternion)
-      );
       const listener=context.listener;
-      const audioTime=context.currentTime;
-      if (listener.positionX) {
-        setAudioParam(listener.positionX,museumSoundListenerPosition.x);
-        setAudioParam(listener.positionY,museumSoundListenerPosition.y);
-        setAudioParam(listener.positionZ,museumSoundListenerPosition.z);
-        setAudioParam(listener.forwardX,museumSoundListenerForward.x);
-        setAudioParam(listener.forwardY,museumSoundListenerForward.y);
-        setAudioParam(listener.forwardZ,museumSoundListenerForward.z);
-        setAudioParam(listener.upX,museumSoundListenerUp.x);
-        setAudioParam(listener.upY,museumSoundListenerUp.y);
-        setAudioParam(listener.upZ,museumSoundListenerUp.z);
-      } else {
-        listener.setPosition(...museumSoundListenerPosition.toArray());
-        listener.setOrientation(
-          ...museumSoundListenerForward.toArray(),
-          ...museumSoundListenerUp.toArray()
+      if (updateSpatial) {
+        viewCamera.getWorldPosition(museumSoundListenerPosition);
+        viewCamera.getWorldDirection(museumSoundListenerForward);
+        museumSoundListenerUp.set(0,1,0).applyQuaternion(
+          viewCamera.getWorldQuaternion(museumSoundListenerQuaternion)
         );
+        if (listener.positionX) {
+          setAudioParam(listener.positionX,museumSoundListenerPosition.x);
+          setAudioParam(listener.positionY,museumSoundListenerPosition.y);
+          setAudioParam(listener.positionZ,museumSoundListenerPosition.z);
+          setAudioParam(listener.forwardX,museumSoundListenerForward.x);
+          setAudioParam(listener.forwardY,museumSoundListenerForward.y);
+          setAudioParam(listener.forwardZ,museumSoundListenerForward.z);
+          setAudioParam(listener.upX,museumSoundListenerUp.x);
+          setAudioParam(listener.upY,museumSoundListenerUp.y);
+          setAudioParam(listener.upZ,museumSoundListenerUp.z);
+        } else {
+          listener.setPosition(...museumSoundListenerPosition.toArray());
+          listener.setOrientation(
+            ...museumSoundListenerForward.toArray(),
+            ...museumSoundListenerUp.toArray()
+          );
+        }
+        const orbitAngle=timeSeconds/museumSoundOrbitPeriod*Math.PI*2;
+        synthPanners.forEach((panner,index)=>{
+          const pair=index<2?0:1;
+          const pairMember=index%2;
+          const direction=pair===0?1:-1;
+          const radialPhase=pair*Math.PI*.5+pairMember*Math.PI;
+          const angle=direction*orbitAngle+radialPhase;
+          const verticalPhase=direction*orbitAngle+pairMember*Math.PI;
+          positionMuseumPanner(
+            panner,
+            spiralCenter.x+Math.cos(angle)*museumSoundOrbitRadius,
+            museumSoundHelixMidY+
+              Math.sin(verticalPhase)*museumSoundHelixAmplitude,
+            spiralCenter.z+Math.sin(angle)*museumSoundOrbitRadius
+          );
+        });
       }
-      const orbitAngle=timeSeconds/museumSoundOrbitPeriod*Math.PI*2;
-      synthPanners.forEach((panner,index)=>{
-        const pair=index<2?0:1;
-        const pairMember=index%2;
-        const direction=pair===0?1:-1;
-        // The second helix is a quarter-turn away from the first. Members of
-        // each helix remain on opposite sides, preventing the four stems from
-        // bunching into a muddy source while their vertical motion crosses.
-        const radialPhase=pair*Math.PI*.5+pairMember*Math.PI;
-        const angle=direction*orbitAngle+radialPhase;
-        const verticalPhase=direction*orbitAngle+pairMember*Math.PI;
-        positionMuseumPanner(
-          panner,
-          spiralCenter.x+Math.cos(angle)*museumSoundOrbitRadius,
-          museumSoundHelixMidY+
-            Math.sin(verticalPhase)*museumSoundHelixAmplitude,
-          spiralCenter.z+Math.sin(angle)*museumSoundOrbitRadius
-        );
-      });
       // The stems have identical durations. Correct only audible drift rather
       // than seeking every frame, which would repeatedly flush MP3 buffers.
       if (museumSoundfield.state==="playing"&&
-          audioTime-museumSoundfield.lastSyncAt>2.5) {
+          audioTime-museumSoundfield.lastSyncAt>1) {
         museumSoundfield.lastSyncAt=audioTime;
         const reference=elements[0]?.currentTime||0;
         elements.slice(1).forEach(element=>{
           const drift=element.currentTime-reference;
-          if (Math.abs(drift)>.12) element.currentTime=reference;
+          // Small discrepancies are corrected inaudibly. Hard seeking is
+          // reserved for a genuinely lost stem because it flushes Safari's
+          // compressed-media buffer and was the main source of dropouts.
+          if (Math.abs(drift)>.75) {
+            element.currentTime=reference;
+            element.playbackRate=1;
+          } else if (Math.abs(drift)>.035) {
+            element.playbackRate=drift>0?.985:1.015;
+          } else {
+            element.playbackRate=1;
+          }
         });
         document.body.dataset.museumSoundfieldDrift=Math.max(
           0,...elements.slice(1).map(element=>
