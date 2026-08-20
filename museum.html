@@ -490,6 +490,7 @@
     const navSurfaces = [];
     const animatedSteps = [];
     const animatedWalkways = [];
+    const breathingGalleryElements = [];
     const archiveStairColliders = [];
     const fragments = [];
     const entryFragments = [];
@@ -951,7 +952,9 @@
       );
     }
 
-    function frustumGeometry(bottom,top,height,sides=4,offset=Math.PI/4) {
+    function frustumGeometry(
+      bottom,top,height,sides=4,offset=Math.PI/4,omittedSides=[]
+    ) {
       const positions=[];
       for (let y of [0,height]) {
         const radius=y===0?bottom:top;
@@ -965,6 +968,7 @@
         indices.push(0,i+1,i,sides,sides+i,sides+i+1);
       }
       for (let i=0;i<sides;i++) {
+        if (omittedSides.includes(i)) continue;
         const next=(i+1)%sides;
         indices.push(i,next,sides+next,i,sides+next,sides+i);
       }
@@ -1058,11 +1062,19 @@
       return group;
     }
 
-    function cathedralTower(x,z,height,radius,lean=0,parent=scene) {
+    function cathedralTower(
+      x,z,height,radius,lean=0,parent=scene,openBaseSide=null
+    ) {
       const group=new THREE.Group();
       group.position.set(x,0,z);
       group.rotation.z=lean;
-      edged(frustumGeometry(radius,radius*.78,height*.48,6),blueMaterial,[0,0,0],[0,0,0],group);
+      edged(
+        frustumGeometry(
+          radius,radius*.78,height*.48,6,Math.PI/4,
+          openBaseSide===null?[]:[openBaseSide]
+        ),
+        blueMaterial,[0,0,0],[0,0,0],group
+      );
       edged(frustumGeometry(radius*.78,radius*.48,height*.3,6),blueMaterial,[0,height*.48,0],[0,0,0],group);
       edged(frustumGeometry(radius*.48,radius*.22,height*.17,6),blueMaterial,[0,height*.78,0],[0,0,0],group);
       edged(frustumGeometry(radius*.22,0,height*.12,4),blueMaterial,[0,height*.95,0],[0,0,0],group);
@@ -1814,7 +1826,9 @@
     const sagradaFacade=new THREE.Group();
     scene.add(sagradaFacade);
     cathedralTower(-34,45,42,6.4,-.012,sagradaFacade);
-    cathedralTower(-17,43,51,6.7,.008,sagradaFacade);
+    // Preserve the complete inner-left tower but omit the single lower face
+    // aimed into the first-floor gallery, leaving that room visually open.
+    cathedralTower(-17,43,51,6.7,.008,sagradaFacade,4);
     cathedralTower(17,43,55,6.9,-.008,sagradaFacade);
     cathedralTower(34,45,45,6.4,.012,sagradaFacade);
     cathedralTower(-54,40,31,5.3,-.018,sagradaFacade);
@@ -1832,6 +1846,8 @@
     // The eight branching side buttresses occupied the tree-to-museum
     // corridor marked for removal. Primary facade towers remain intact.
     document.body.dataset.branchingSideButtresses="removed";
+    document.body.dataset.firstFloorCathedralClearance=
+      "inner-left-tower-preserved-gallery-facing-base-side-open";
 
     // A distant arc of crystalline mountain architecture rises behind the
     // archive. Broad overlapping core masses provide real volume from every
@@ -3434,7 +3450,31 @@
       const object=edged(
         geometry,material,[0,0,0],[0,0,0],scene,edge
       );
-      if (nav) navSurfaces.push(object.children[0]);
+      // The visible museum is free to inhale and exhale, but locomotion always
+      // resolves against a separate, motionless copy of every floor. Keeping
+      // the collider independent means even a dropped frame cannot open a gap
+      // beneath the visitor.
+      if (nav) {
+        const navSurface=new THREE.Mesh(geometry,navOnlyMaterial);
+        navSurface.name="static-gallery-navigation-surface";
+        scene.add(navSurface);
+        navSurfaces.push(navSurface);
+      }
+      const center=points.reduce((sum,point)=>{
+        sum.x+=point.x;
+        sum.y+=point.y;
+        sum.z+=point.z;
+        return sum;
+      },new THREE.Vector3()).multiplyScalar(1/points.length);
+      const floorPivotY=Math.round(center.y/storyHeight)*storyHeight;
+      const radialAngle=Math.atan2(
+        center.z-spiralCenter.z,center.x-spiralCenter.x
+      );
+      // Nearby surfaces share almost the same phase, so a room reads as one
+      // volume taking a breath instead of a collection of jittering panels.
+      const phase=radialAngle*.16+(floorPivotY/storyHeight)*.19;
+      object.userData.galleryBreath={center,phase,floorPivotY};
+      breathingGalleryElements.push(object);
       return object;
     }
     function segmentPoint(a,b,t) {
@@ -3479,6 +3519,56 @@
           id:`generated-wall-${proceduralArtWalls.length+1}`
         });
       }
+    }
+    function addGeneratedWindowWall(a,b,height,normal,collection,level) {
+      // The outward room faces use a protected clerestory: art remains on a
+      // full-height human-scale wall below while daylight reaches the gallery
+      // and reads as a continuous window stack from the forecourt.
+      const windowBottom=6.38;
+      const windowTop=Math.min(height-.58,7.72);
+      const lowerA={...a};
+      const lowerB={...b};
+      quadSurface([
+        lowerA,lowerB,
+        {...lowerB,y:lowerB.y+windowBottom},
+        {...lowerA,y:lowerA.y+windowBottom}
+      ]);
+      const glassA={...a,y:a.y+windowBottom};
+      const glassB={...b,y:b.y+windowBottom};
+      quadSurface([
+        glassA,glassB,
+        {...glassB,y:b.y+windowTop},
+        {...glassA,y:a.y+windowTop}
+      ],glassMaterial,false,true);
+      quadSurface([
+        {...a,y:a.y+windowTop},{...b,y:b.y+windowTop},
+        {...b,y:b.y+height},{...a,y:a.y+height}
+      ]);
+      // Five quiet panes keep the long horizontal opening architectural rather
+      // than making it read as a missing wall.
+      for (let pane=1;pane<5;pane++) {
+        const t=pane/5;
+        const base=segmentPoint(a,b,t);
+        const half=.075;
+        const length=Math.hypot(b.x-a.x,b.z-a.z)||1;
+        const tx=(b.x-a.x)/length;
+        const tz=(b.z-a.z)/length;
+        quadSurface([
+          {x:base.x-tx*half,y:base.y+windowBottom,z:base.z-tz*half},
+          {x:base.x+tx*half,y:base.y+windowBottom,z:base.z+tz*half},
+          {x:base.x+tx*half,y:base.y+windowTop,z:base.z+tz*half},
+          {x:base.x-tx*half,y:base.y+windowTop,z:base.z-tz*half}
+        ],blueMaterial,false,false);
+      }
+      registerCollisionSegment(
+        {x:a.x,z:a.z},{x:b.x,z:b.z},
+        Math.min(a.y,b.y),Math.max(a.y,b.y)+height,.7
+      );
+      proceduralArtWalls.push({
+        a:{...a},b:{...b},height:windowBottom,
+        normal:{...normal},collection,level,windowed:true,
+        id:`generated-wall-${proceduralArtWalls.length+1}`
+      });
     }
     function addGeneratedRail(a,b) {
       quadSurface([
@@ -3568,7 +3658,7 @@
       queueWallJoint(leftBack);
       queueWallJoint(rightBack);
       quadSurface([leftFront,rightFront,rightBack,leftBack],blueMaterial,true);
-      addGeneratedWall(
+      addGeneratedWindowWall(
         leftBack,rightBack,wallHeight,
         {x:-outward.x,z:-outward.z},collection,level
       );
@@ -3755,6 +3845,98 @@
       (rampFrontLeft.z+rampFrontRight.z)/2+.42
     );
     scene.add(museumFrontMark);
+
+    // A single undecorated wedge sits to the right of the doorway. The guide
+    // is printed directly onto its downward-facing reading surface.
+    function createMuseumHelpPlaque() {
+      const canvas=document.createElement("canvas");
+      canvas.width=960;
+      canvas.height=650;
+      const context=canvas.getContext("2d");
+      context.fillStyle="#0000ff";
+      context.fillRect(0,0,canvas.width,canvas.height);
+      context.strokeStyle="#ffffff";
+      context.lineWidth=1;
+      context.strokeRect(.5,.5,canvas.width-1,canvas.height-1);
+      context.fillStyle="#ffffff";
+      context.textAlign="left";
+      context.textBaseline="middle";
+      context.font='40px "Times New Roman", Times, serif';
+      context.fillText("museum visitor guide",52,70);
+      context.font='29px "Times New Roman", Times, serif';
+      const lines=[
+        "w a s d: walk",
+        "mouse cursor: look",
+        "click or tap artwork: image view",
+        "hold shift: run",
+        "double-tap space: toggle flight"
+      ];
+      lines.forEach((line,index)=>{
+        context.fillText(line,52,160+index*91);
+      });
+      const texture=new THREE.CanvasTexture(canvas);
+      texture.colorSpace=THREE.SRGBColorSpace;
+      texture.minFilter=THREE.LinearMipmapLinearFilter;
+      texture.magFilter=THREE.LinearFilter;
+      const sign=new THREE.Group();
+      const width=3.9;
+      const depth=2.1;
+      const frontHeight=.68;
+      const backHeight=2.18;
+      const halfWidth=width/2;
+      const halfDepth=depth/2;
+      const wedgeGeometry=new THREE.BufferGeometry();
+      wedgeGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute([
+          -halfWidth,0,halfDepth,
+          halfWidth,0,halfDepth,
+          -halfWidth,frontHeight,halfDepth,
+          halfWidth,frontHeight,halfDepth,
+          -halfWidth,0,-halfDepth,
+          halfWidth,0,-halfDepth,
+          -halfWidth,backHeight,-halfDepth,
+          halfWidth,backHeight,-halfDepth
+        ],3)
+      );
+      wedgeGeometry.setIndex([
+        0,1,3,0,3,2,
+        5,4,6,5,6,7,
+        4,5,1,4,1,0,
+        0,2,6,0,6,4,
+        1,5,7,1,7,3,
+        2,3,7,2,7,6
+      ]);
+      wedgeGeometry.computeVertexNormals();
+      edged(
+        wedgeGeometry,blueMaterial,[0,0,0],[0,0,0],sign,true
+      );
+      const slopeRise=backHeight-frontHeight;
+      const slopeLength=Math.hypot(depth,slopeRise);
+      const panel=new THREE.Mesh(
+        new THREE.PlaneGeometry(width-.18,slopeLength-.14),
+        new THREE.MeshBasicMaterial({
+          map:texture,toneMapped:false,side:THREE.DoubleSide
+        })
+      );
+      const panelAngle=-Math.atan2(depth,slopeRise);
+      const panelNormal=new THREE.Vector3(
+        0,-Math.sin(panelAngle),Math.cos(panelAngle)
+      );
+      panel.position.set(
+        0,(frontHeight+backHeight)/2,0
+      ).addScaledVector(panelNormal,.012);
+      panel.rotation.x=panelAngle;
+      panel.renderOrder=6;
+      sign.add(panel);
+      sign.position.set(7.4,0,75.8);
+      sign.rotation.y=-.28;
+      scene.add(sign);
+      return sign;
+    }
+    const museumHelpPlaque=createMuseumHelpPlaque();
+    document.body.dataset.entranceHelpPlaque=
+      "lower-single-wedge-lowercase-guide-on-sloped-face";
 
     // A twelve-sided departure court anchors a true double-helix stair. Both
     // strands climb the full museum and connect independently to every floor.
@@ -4105,23 +4287,21 @@
     document.body.dataset.penroseCount=String(archiveStairPlans.length);
     document.body.dataset.archiveStairColliders=String(archiveStairColliders.length);
 
-    // Twelve slimmed Corinthian columns define the atrium. Pulling their axis
-    // inward and reducing the capital footprint keeps structure out of the
-    // gallery threshold and the bridge approaches.
+    // The continuous atrium order used to place tall Corinthian masses in the
+    // same sightlines and circulation envelopes as several gallery bays. A
+    // complete gallery-clearance sweep removes that free-standing column
+    // system; the outer faceted walls and roof ring remain the structure.
     const roofY=spiralRevolutions*storyHeight+4.4;
-    const atriumColumnRadius=innerRadius-6.5;
-    const atriumColumnScale=.72;
-    for (let side=0;side<spiralSides;side++) {
-      const angle=startAngle+side*Math.PI*2/spiralSides;
-      const position=polygonPoint(atriumColumnRadius,angle,0);
-      column(
-        position.x,position.z,roofY-.5,scene,atriumColumnScale
-      );
-      registerCollisionBox(2.8,roofY-.5,2.8,
-        position.x,(roofY-.5)/2,position.z,.25);
-    }
-    document.body.dataset.atriumColumnRadius=String(atriumColumnRadius);
-    document.body.dataset.atriumColumnScale=String(atriumColumnScale);
+    document.body.dataset.atriumColumns="0-gallery-clearance-sweep";
+    document.body.dataset.atriumColumnClearance="all-gallery-levels-open";
+    document.body.dataset.galleryClearanceAudit=
+      "generated-room-overlap-rejection+zero-free-standing-columns";
+    document.body.dataset.galleryWindows="outward-room-clerestory-five-pane";
+    document.body.dataset.galleryWindowWalls=String(
+      proceduralArtWalls.filter(wall=>wall.windowed).length
+    );
+    document.body.dataset.galleryNavigation=
+      "static-invisible-surfaces-independent-of-visual-breath";
 
     // Legacy groups remain empty; the paired labeled helix above is now the
     // museum's functional Penrose circulation.
@@ -4162,6 +4342,7 @@
     // lantern, and a long slotted needle picked out by the same one-pixel white
     // edges as the museum.
     const centralSpireParts=[];
+    const movingSpirePartGeometries=[];
     function normalizedSpireGeometry(geometry) {
       const normalized=geometry.index
         ? geometry.toNonIndexed()
@@ -4242,7 +4423,7 @@
     }
     function addSpireFacetedShell(
       topRadius,bottomRadius,bottomY,topY,
-      sides=8,rotation=0,gapRatio=.1
+      sides=8,rotation=0,gapRatio=.1,movingSides=[]
     ) {
       const step=Math.PI*2/sides;
       const inset=step*gapRatio*.5;
@@ -4274,7 +4455,12 @@
           ],3)
         );
         geometry.computeVertexNormals();
-        centralSpireParts.push(normalizedSpireGeometry(geometry));
+        const normalized=normalizedSpireGeometry(geometry);
+        if (movingSides.includes(side)) {
+          movingSpirePartGeometries.push(normalized);
+        } else {
+          centralSpireParts.push(normalized);
+        }
       }
     }
     // A compact two-stage root now grows inside the Guggenheim crown. Keeping
@@ -4368,7 +4554,7 @@
     // recessed slots without any medieval spikes or radio-tower cross bracing.
     addSpireFacetedShell(
       .46,4.05,roofY+22.8,roofY+61.3,
-      8,Math.PI/8,.11
+      8,Math.PI/8,.11,[1,4,6]
     );
     addSpireRing(4.02,roofY+22.95,.52,.56);
     for (let rib=0;rib<8;rib++) {
@@ -4384,6 +4570,9 @@
         ],
         .24,.28
       );
+      if (rib===2||rib===5) {
+        movingSpirePartGeometries.push(centralSpireParts.pop());
+      }
     }
     // An oversized Latin cross and faceted finial terminate the fleche. Its
     // proportions remain legible from the distant white forecourt.
@@ -4406,12 +4595,14 @@
       [spiralCenter.x,roofY+77.65,spiralCenter.z],
       [0,Math.PI/6,0],[1,1,1]
     );
+    let centralSpire=null;
+    const movingSpireParts=[];
     const centralSpireGeometry=mergeGeometries(
       centralSpireParts,false
     );
     if (centralSpireGeometry) {
       centralSpireGeometry.computeVertexNormals();
-      const centralSpire=edged(
+      centralSpire=edged(
         centralSpireGeometry,blueMaterial,
         [0,0,0],[0,0,0],scene,true
       );
@@ -4428,7 +4619,40 @@
         spiralCenter.z*(1-spireScale.z)
       );
       centralSpire.name="strauh-al-central-spire";
+      centralSpire.userData.breathRoot={
+        x:spiralCenter.x,y:roofY,z:spiralCenter.z
+      };
+      centralSpire.userData.baseScale={...spireScale};
     }
+    // Five real panels/ribs are kept out of the merged mesh and rendered in
+    // their original positions. Their motion is intentionally minute: the
+    // fleche remains coherent while its own construction subtly loosens.
+    movingSpirePartGeometries.forEach((geometry,index) => {
+      geometry.computeBoundingBox();
+      const modelCenter=geometry.boundingBox.getCenter(new THREE.Vector3());
+      geometry.translate(-modelCenter.x,-modelCenter.y,-modelCenter.z);
+      const piece=edged(
+        geometry,blueMaterial,[0,0,0],[0,0,0],scene,true
+      );
+      const baseScale=centralSpire?.userData.baseScale||{
+        x:3.55,y:5.05,z:3.55
+      };
+      const root={x:spiralCenter.x,y:roofY,z:spiralCenter.z};
+      piece.scale.set(baseScale.x,baseScale.y,baseScale.z);
+      piece.position.set(
+        root.x+(modelCenter.x-root.x)*baseScale.x,
+        root.y+(modelCenter.y-root.y)*baseScale.y,
+        root.z+(modelCenter.z-root.z)*baseScale.z
+      );
+      piece.userData={
+        modelCenter:modelCenter.clone(),
+        baseScale:{...baseScale},
+        root,phase:index*1.41+.6
+      };
+      movingSpireParts.push(piece);
+    });
+    document.body.dataset.spireMovingOriginalPieces=
+      "5-existing-panels-and-ribs-subtle-root-following-motion";
     // A broad, shadowless source directly above the open shaft produces a
     // natural matte pool of daylight in the atrium without glossy hotspots.
     const spireDaylight=new THREE.RectAreaLight(
@@ -4734,55 +4958,65 @@
     }
     const artworkFrameAssets = new Map();
     function ornateFrameGeometry(width,height,variant) {
-      const p = [];
-      const z = .305;
-      const seg = (x1,y1,x2,y2) => p.push(x1,y1,z,x2,y2,z);
+      const positions = [];
+      const profileScale=THREE.MathUtils.clamp(
+        Math.min(width,height)/2.35,.42,.82
+      );
+      const p=value=>value*profileScale;
+      const z = p(.305);
+      const seg = (x1,y1,x2,y2) => positions.push(x1,y1,z,x2,y2,z);
       const rect = inset => {
         const x=width/2+inset, y=height/2+inset;
         seg(-x,-y,x,-y); seg(x,-y,x,y); seg(x,y,-x,y); seg(-x,y,-x,-y);
       };
-      rect(.18);
+      rect(p(.18));
       if (variant===0) {
-        rect(.34);
+        rect(p(.34));
         for (const sx of [-1,1]) for (const sy of [-1,1]) {
-          seg(sx*(width/2+.18),sy*(height/2+.18),sx*(width/2+.52),sy*(height/2+.52));
+          seg(
+            sx*(width/2+p(.18)),sy*(height/2+p(.18)),
+            sx*(width/2+p(.52)),sy*(height/2+p(.52))
+          );
         }
       } else if (variant===1) {
-        const c=.52, k=.2;
+        const c=p(.52), k=p(.2);
         for (const sx of [-1,1]) for (const sy of [-1,1]) {
-          const x=sx*(width/2+.18), y=sy*(height/2+.18);
+          const x=sx*(width/2+p(.18)), y=sy*(height/2+p(.18));
           seg(x,y,x-sx*c,y); seg(x,y,x,y-sy*c);
           seg(x-sx*k,y-sy*c,x-sx*c,y-sy*k);
           seg(x-sx*c,y-sy*k,x-sx*k,y);
         }
       } else if (variant===2) {
-        rect(.31);
-        const top=height/2+.31, peak=top+.52;
-        seg(-width/2-.4,top,0,peak); seg(0,peak,width/2+.4,top);
-        const bottom=-height/2-.31, drop=bottom-.38;
+        rect(p(.31));
+        const top=height/2+p(.31), peak=top+p(.52);
+        seg(-width/2-p(.4),top,0,peak);
+        seg(0,peak,width/2+p(.4),top);
+        const bottom=-height/2-p(.31), drop=bottom-p(.38);
         seg(-width*.32,bottom,0,drop); seg(0,drop,width*.32,bottom);
       } else if (variant===3) {
-        rect(.38);
+        rect(p(.38));
         for (const sx of [-1,1]) for (const sy of [-1,1]) {
-          const x=sx*(width/2+.36), y=sy*(height/2+.36);
-          const d=.34;
+          const x=sx*(width/2+p(.36)), y=sy*(height/2+p(.36));
+          const d=p(.34);
           seg(x,y+sy*d,x+sx*d,y); seg(x+sx*d,y,x,y-sy*d);
           seg(x,y-sy*d,x-sx*d,y); seg(x-sx*d,y,x,y+sy*d);
         }
       } else {
-        rect(.32);
+        rect(p(.32));
         const count=Math.max(3,Math.floor(width/.55));
         for (let i=0;i<=count;i++) {
           const x=-width/2+i*width/count;
-          seg(x,height/2+.18,x,height/2+.43);
-          seg(x,-height/2-.18,x,-height/2-.43);
+          seg(x,height/2+p(.18),x,height/2+p(.43));
+          seg(x,-height/2-p(.18),x,-height/2-p(.43));
         }
         for (const sx of [-1,1]) {
-          seg(sx*(width/2+.18),-height*.28,sx*(width/2+.45),0);
-          seg(sx*(width/2+.45),0,sx*(width/2+.18),height*.28);
+          seg(sx*(width/2+p(.18)),-height*.28,sx*(width/2+p(.45)),0);
+          seg(sx*(width/2+p(.45)),0,sx*(width/2+p(.18)),height*.28);
         }
       }
-      return new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(p,3));
+      return new THREE.BufferGeometry().setAttribute(
+        "position",new THREE.Float32BufferAttribute(positions,3)
+      );
     }
     function frameBandGeometry(width,height,innerOutset,outerOutset,depth,z,bevel) {
       const outerW=width+outerOutset*2;
@@ -4818,21 +5052,32 @@
       if (style==="photography") {
         return frameBandGeometry(width,height,0,.075,.045,.035,0);
       }
+      // Moulding depth is proportional to the image's short edge. Fixed
+      // half-metre profiles overwhelmed small and panoramic works, making the
+      // frame read as the object and the image as a tiny inset.
+      const profileScale=THREE.MathUtils.clamp(
+        Math.min(width,height)/2.35,.42,.82
+      );
+      const p=value=>value*profileScale;
       const depthShift=(variant%3)*.018;
       const parts=[
         // The image sits in a recessed rabbet. Three stepped bands create a
         // deep profile with slanted bevels and a visible indentation.
-        frameBandGeometry(width,height,0,.145,.2,.055,.035),
-        frameBandGeometry(width,height,.145,.225,.065,.025,.018),
-        frameBandGeometry(width,height,.225,.43,.31+depthShift,.035,.055)
+        frameBandGeometry(width,height,0,p(.145),p(.2),p(.055),p(.035)),
+        frameBandGeometry(
+          width,height,p(.145),p(.225),p(.065),p(.025),p(.018)
+        ),
+        frameBandGeometry(
+          width,height,p(.225),p(.43),p(.31+depthShift),p(.035),p(.055)
+        )
       ];
       if (variant===2) {
         parts.push(frameBandGeometry(
-          width,height,.43,.51,.12,.075,.025
+          width,height,p(.43),p(.51),p(.12),p(.075),p(.025)
         ));
       } else if (variant===4) {
         parts.push(frameBandGeometry(
-          width,height,.43,.48,.2,.02,.02
+          width,height,p(.43),p(.48),p(.2),p(.02),p(.02)
         ));
       }
       const merged=mergeGeometries(parts,false);
@@ -4884,11 +5129,94 @@
         artworkFrameAssets.delete(assets.key);
       }
     }
+    function prepareArtworkDeformableGeometry(geometry) {
+      const position=geometry.getAttribute("position");
+      geometry.userData.artworkBasePositions=
+        new Float32Array(position.array);
+      position.setUsage(THREE.DynamicDrawUsage);
+      geometry.computeBoundingSphere();
+      return geometry;
+    }
+    function artworkFrameGeometryClone(source) {
+      return prepareArtworkDeformableGeometry(source.clone());
+    }
+    function deformMountedArtworkGeometry(
+      mesh,surface,time,breathingFrame=false
+    ) {
+      if (!mesh?.geometry) return;
+      const position=mesh.geometry.getAttribute("position");
+      const base=mesh.geometry.userData.artworkBasePositions;
+      if (!position||!base||base.length!==position.array.length) return;
+      const width=Math.max(.001,surface.renderWidth);
+      const height=Math.max(.001,surface.renderHeight);
+      const edge=(surface.layoutOrder+surface.frameVariant)%4;
+      const phase=time*.00034+surface.motionPhase;
+      const forwardDepth=.09+Math.sin(phase*.73)*.025;
+      const rearDepth=.035+Math.cos(phase*.61)*.01;
+      const profileScale=breathingFrame
+        ?1+Math.sin(time*.0005+surface.motionPhase*1.17)*.3
+        :1;
+      const depthScale=breathingFrame
+        ?1+Math.sin(time*.00056+surface.motionPhase*.83+1.3)*.28
+        :1;
+      const halfWidth=width/2;
+      const halfHeight=height/2;
+      for (let offset=0;offset<base.length;offset+=3) {
+        const baseX=base[offset];
+        const baseY=base[offset+1];
+        const baseZ=base[offset+2];
+        const nx=THREE.MathUtils.clamp(baseX/width+.5,0,1);
+        const ny=THREE.MathUtils.clamp(baseY/height+.5,0,1);
+        let edgeWeight;
+        let along;
+        if (edge===0) {
+          edgeWeight=1-nx;
+          along=ny;
+        } else if (edge===1) {
+          edgeWeight=ny;
+          along=nx;
+        } else if (edge===2) {
+          edgeWeight=nx;
+          along=1-ny;
+        } else {
+          edgeWeight=1-ny;
+          along=1-nx;
+        }
+        // A curved falloff keeps this from being an affine rotation: the
+        // selected edge advances while the rest of the face eases backward.
+        const warpWeight=Math.pow(edgeWeight,1.8)*(.82+along*.18);
+        const depthWarp=THREE.MathUtils.lerp(
+          -rearDepth,forwardDepth,warpWeight
+        );
+        let x=baseX;
+        let y=baseY;
+        if (breathingFrame) {
+          if (Math.abs(baseX)>halfWidth) {
+            x=Math.sign(baseX)*(
+              halfWidth+(Math.abs(baseX)-halfWidth)*profileScale
+            );
+          }
+          if (Math.abs(baseY)>halfHeight) {
+            y=Math.sign(baseY)*(
+              halfHeight+(Math.abs(baseY)-halfHeight)*profileScale
+            );
+          }
+        }
+        position.setXYZ(
+          offset/3,x,y,baseZ*depthScale+depthWarp
+        );
+      }
+      position.needsUpdate=true;
+    }
     function createArtworkFrame(width,height,variant,parent,style) {
       const assets=retainArtworkFrameAssets(width,height,variant,style);
-      const shell=new THREE.Mesh(assets.shellGeometry,frameMaterial);
+      const shell=new THREE.Mesh(
+        artworkFrameGeometryClone(assets.shellGeometry),frameMaterial
+      );
       shell.receiveShadow=true;
-      const details=new THREE.LineSegments(assets.detailGeometry,whiteLineMaterial);
+      const details=new THREE.LineSegments(
+        artworkFrameGeometryClone(assets.detailGeometry),whiteLineMaterial
+      );
       details.renderOrder=4;
       parent.add(shell,details);
       return {shell,details,assetKey:assets.key};
@@ -4899,8 +5227,12 @@
         width,height,surface.frameVariant,surface.frameStyle
       );
       const previousKey=surface.frameParts.assetKey;
-      surface.frameParts.shell.geometry=assets.shellGeometry;
-      surface.frameParts.details.geometry=assets.detailGeometry;
+      surface.frameParts.shell.geometry.dispose();
+      surface.frameParts.details.geometry.dispose();
+      surface.frameParts.shell.geometry=
+        artworkFrameGeometryClone(assets.shellGeometry);
+      surface.frameParts.details.geometry=
+        artworkFrameGeometryClone(assets.detailGeometry);
       surface.frameParts.assetKey=assets.key;
       releaseArtworkFrameAssets(previousKey);
     }
@@ -4994,7 +5326,11 @@
       const fallback=artFallbackMaterial.clone();
       fallback.side=THREE.DoubleSide;
       const imageMesh=new THREE.Mesh(
-        new THREE.PlaneGeometry(surface.renderWidth,surface.renderHeight),fallback
+        prepareArtworkDeformableGeometry(
+          new THREE.PlaneGeometry(
+            surface.renderWidth,surface.renderHeight,5,5
+          )
+        ),fallback
       );
       imageMesh.position.z=surface.frameStyle==="photography"?.085:.11;
       imageMesh.userData.title=surface.item[0];
@@ -5014,6 +5350,8 @@
       scene.remove(surface.group);
       surface.imageMesh.geometry.dispose();
       surface.imageMesh.material.dispose();
+      surface.frameParts?.shell.geometry.dispose();
+      surface.frameParts?.details.geometry.dispose();
       disposeArtworkLabel(surface.titleLabel);
       if (surface.focusBorder) {
         surface.focusBorder.material.dispose();
@@ -5040,6 +5378,7 @@
         ),
         frameStyle:collection==="photography"?"photography":"fine-art",
         frameVariant,frameParts:null,
+        motionPhase:(x*.17+y*.11+z*.13+frameVariant*.79)%(Math.PI*2),
         worldPosition:new THREE.Vector3(x,y,z),
         worldNormal:new THREE.Vector3(Math.sin(rotationY),0,Math.cos(rotationY)),
         renderWidth:maxW,renderHeight:maxH,titleLabel:null,
@@ -5116,7 +5455,8 @@
         // through a wall joint even though their centres were still valid.
         row.height=Math.min(
           usableWidth/Math.max(.2,row.load),
-          layout.usableHeight/(rowCount===1?1:rowCount*.72)
+          layout.usableHeight/(rowCount===1?1:rowCount*.72),
+          layout.collection==="photo"?2.35:2.8
         );
       });
       const verticalGutterTotal=verticalGutter*(rowCount-1);
@@ -5177,8 +5517,8 @@
       surface.group.updateMatrix();
       resizeArtworkFrame(surface,renderWidth,renderHeight);
       surface.imageMesh.geometry.dispose();
-      surface.imageMesh.geometry=new THREE.PlaneGeometry(
-        renderWidth,renderHeight
+      surface.imageMesh.geometry=prepareArtworkDeformableGeometry(
+        new THREE.PlaneGeometry(renderWidth,renderHeight,5,5)
       );
       if (surface.titleLabel) {
         sizeArtworkLabel(surface,renderWidth,renderHeight);
@@ -5293,7 +5633,9 @@
         surface.renderHeight=h;
         resizeArtworkFrame(surface,w,h);
         surface.imageMesh.geometry.dispose();
-        surface.imageMesh.geometry = new THREE.PlaneGeometry(w, h);
+        surface.imageMesh.geometry=prepareArtworkDeformableGeometry(
+          new THREE.PlaneGeometry(w,h,5,5)
+        );
         const previousTexture=surface.texture;
         surface.imageMesh.material.dispose();
         surface.imageMesh.material = new THREE.MeshBasicMaterial({
@@ -5639,6 +5981,12 @@
       };
     }
     const decadeHeaderPlacements=[];
+    const floatingDecadeHeaders=[];
+    const decadeHeaderMatrix=new THREE.Matrix4();
+    const decadeHeaderPosition=new THREE.Vector3();
+    const decadeHeaderQuaternion=new THREE.Quaternion();
+    const decadeHeaderScale=new THREE.Vector3();
+    const decadeHeaderEuler=new THREE.Euler();
     const decadeHeaderCursor={
       art:new Map(),
       after:0
@@ -5673,6 +6021,9 @@
           midpoint.y+7.66,
           midpoint.z+wall.normal.z*.285
         ),
+        normal:new THREE.Vector3(wall.normal.x,0,wall.normal.z),
+        motionPhase:(midpoint.x*.13+midpoint.y*.09+midpoint.z*.17+
+          decadeHeaderPlacements.length*.61)%(Math.PI*2),
         rotationY
       });
     }
@@ -5758,7 +6109,8 @@
           template.geometry,template.material,placements.length
         );
         headers.renderOrder=5;
-        headers.frustumCulled=true;
+        headers.frustumCulled=false;
+        headers.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         placements.forEach((placement,index) => {
           quaternion.setFromAxisAngle(
             new THREE.Vector3(0,1,0),placement.rotationY
@@ -5768,6 +6120,7 @@
         });
         headers.instanceMatrix.needsUpdate=true;
         scene.add(headers);
+        floatingDecadeHeaders.push({mesh:headers,placements});
       }
       const coveredFloors=[...new Set(
         decadeHeaderPlacements.map(placement=>placement.level+1)
@@ -5803,12 +6156,39 @@
         )*43758.5453;
         return (value-Math.floor(value))*2-1;
       };
+      const cathedralConflictPoint={x:-17,z:43};
+      const distanceToWallSegment=wall => {
+        const dx=wall.b.x-wall.a.x;
+        const dz=wall.b.z-wall.a.z;
+        const lengthSquared=dx*dx+dz*dz||1;
+        const t=THREE.MathUtils.clamp((
+          (cathedralConflictPoint.x-wall.a.x)*dx+
+          (cathedralConflictPoint.z-wall.a.z)*dz
+        )/lengthSquared,0,1);
+        return Math.hypot(
+          cathedralConflictPoint.x-(wall.a.x+dx*t),
+          cathedralConflictPoint.z-(wall.a.z+dz*t)
+        );
+      };
+      // The restored inner-left cathedral tower overlaps one first-floor art
+      // wall. Keep the architecture and gallery wall, but reserve that entire
+      // wall as an artwork-free buffer so no frame or label is compromised.
+      const obstructedFirstFloorWall=proceduralArtWalls
+        .filter(wall=>wall.level===0&&wall.collection==="art")
+        .map(wall=>({wall,distance:distanceToWallSegment(wall)}))
+        .sort((a,b)=>a.distance-b.distance)[0]||null;
+      const artworkFreeWallIds=new Set(
+        obstructedFirstFloorWall?[obstructedFirstFloorWall.wall.id]:[]
+      );
       const artWallPlan=proportionalWallPlan(
-        proceduralArtWalls.filter(wall=>wall.collection==="art"),
+        proceduralArtWalls.filter(wall=>
+          wall.collection==="art"&&!artworkFreeWallIds.has(wall.id)
+        ),
         archiveInventory.art
       );
       const plannedMountAllocation={art:{},after:{},photo:{}};
       proceduralArtWalls.forEach((wall,wallIndex) => {
+        if (artworkFreeWallIds.has(wall.id)) return;
         const set=mountSets[wall.collection];
         const dx=wall.b.x-wall.a.x;
         const dz=wall.b.z-wall.a.z;
@@ -5833,8 +6213,8 @@
           margin,
           usableWidth:usable,
           bottom:1.25,
-          top:6.2,
-          usableHeight:4.95,
+          top:wall.windowed?5.82:6.2,
+          usableHeight:(wall.windowed?5.82:6.2)-1.25,
           horizontalGutter:wall.collection==="photo"?.7:1.12,
           verticalGutter:wall.collection==="photo"?.68:1.12,
           surfaces:[],pending:false,layoutCount:0
@@ -5925,6 +6305,10 @@
       document.body.dataset.artworkWallFloors=[...new Set(
         [...artworkWallLayouts.values()].map(layout=>layout.level+1)
       )].sort((a,b)=>a-b).join(",");
+      document.body.dataset.firstFloorArtworkFreeWall=
+        obstructedFirstFloorWall
+          ?`${obstructedFirstFloorWall.wall.id}-nearest-cathedral-tower`
+          :"none-found";
       window.museumExpansionPlan.artworkWallPacking={
         strategy:"aspect-aware-justified-masonry",
         walls:artworkWallLayouts.size,
@@ -6069,7 +6453,8 @@
     );
     const dynamicArchitecture=new Set([
       ...animatedSteps,...fragments,...entryFragments,
-      ...distantCrystalFoldPieces
+      ...distantCrystalFoldPieces,...breathingGalleryElements,
+      ...movingSpireParts
     ]);
     for (const object of architecturalMeshes) {
       if (dynamicArchitecture.has(object)) continue;
@@ -6618,6 +7003,7 @@
     let touchMove = new THREE.Vector2();
     let mobileRunHeld=false;
     let lookPointer = null, lookLastX = 0, lookLastY = 0;
+    let touchTapEligible=false, touchStartX=0, touchStartY=0;
     const baseFov=68;
     const clock = new THREE.Clock();
     // The facade approach ends at Z 73, but the intended entrance viewpoint
@@ -7064,6 +7450,8 @@
       raycaster.setFromCamera(artworkPointer,camera);
     }
     function artworkAtPointer(event) {
+      camera.updateWorldMatrix(true,false);
+      scene.updateMatrixWorld(true);
       pointerForArtworkEvent(event);
       const meshes=artworkSurfaces
         .filter(surface=>
@@ -7255,6 +7643,8 @@
     });
     document.body.dataset.desktopLookMode=
       "persistent-pointer-lock-with-artwork-gaze";
+    document.body.dataset.mobileArtworkTap=
+      "direct-screen-raycast-opens-dedicated-view";
     const pointerLockElement=()=>(
       document.pointerLockElement||document.webkitPointerLockElement
     );
@@ -7286,6 +7676,10 @@
     renderer.domElement.addEventListener("click", event => {
       renderer.domElement.focus();
       if (!museumAbout.hidden) return;
+      const coarsePointer=matchMedia("(pointer: coarse)").matches;
+      const acceptedTouchTap=!coarsePointer||touchTapEligible;
+      touchTapEligible=false;
+      if (!acceptedTouchTap) return;
       if (artworkViewer.visible) {
         if (viewerHoveredSurface) {
           showArtworkViewer(viewerHoveredSurface);
@@ -7298,7 +7692,16 @@
         openMuseumAbout();
         return;
       }
-      if (renderer.xr.isPresenting||matchMedia("(pointer: coarse)").matches) {
+      if (coarsePointer) {
+        const tappedArtwork=artworkAtPointer(event);
+        if (tappedArtwork) {
+          showArtworkViewer(tappedArtwork);
+        } else if (museumCatAtPointer(event)) {
+          openMuseumAbout();
+        }
+        return;
+      }
+      if (renderer.xr.isPresenting) {
         requestMuseumPointerLock();
         return;
       }
@@ -7497,6 +7900,9 @@
       renderer.domElement.focus();
       if (pointerLocked) return;
       if (e.pointerType === "touch") {
+        touchTapEligible=true;
+        touchStartX=e.clientX;
+        touchStartY=e.clientY;
         lookPointer=e.pointerId; lookLastX=e.clientX; lookLastY=e.clientY;
         renderer.domElement.setPointerCapture?.(e.pointerId);
         document.body.classList.add("looking");
@@ -7507,6 +7913,9 @@
       lastMovementAt=performance.now();
       if (e.pointerType==="touch") {
         if (e.pointerId !== lookPointer) return;
+        if (Math.hypot(
+          e.clientX-touchStartX,e.clientY-touchStartY
+        )>10) touchTapEligible=false;
         yaw -= (e.clientX-lookLastX)*.005;
         pitch = THREE.MathUtils.clamp(pitch-(e.clientY-lookLastY)*.005,-1.2,1.2);
       }
@@ -8998,6 +9407,166 @@
         :(catZooming?"spontaneous-route-zoomies":
           (catMoving?"grounded-diagonal-stalk":"watching"));
       renderer.domElement.dataset.catFloorY=museumCatFloorY.toFixed(3);
+      const galleryInhale=Math.sin(time*.00034);
+      const galleryVerticalInhale=Math.sin(time*.00034-.9);
+      const galleryRadialScale=1+galleryInhale*.0088;
+      const galleryVerticalScale=1+galleryVerticalInhale*.0058;
+      if (updateHeavyXRMotion) breathingGalleryElements.forEach(element=>{
+        const {phase,floorPivotY}=element.userData.galleryBreath;
+        // A strong shared inhale now moves the outline of the whole museum.
+        // A smaller phase-offset flex lets successive rooms answer that breath
+        // without breaking the building into unrelated motion.
+        const localFlex=Math.sin(time*.00051+phase)*.00235;
+        const scaleX=galleryRadialScale+localFlex;
+        const scaleY=galleryVerticalScale+localFlex*.42;
+        const scaleZ=galleryRadialScale-localFlex*.55;
+        element.scale.set(scaleX,scaleY,scaleZ);
+        element.position.set(
+          spiralCenter.x*(1-scaleX),
+          floorPivotY*(1-scaleY),
+          spiralCenter.z*(1-scaleZ)
+        );
+      });
+      // Frames and images follow the same structural inhale instead of
+      // hovering in front of the moving wall. Selection proxies stay at the
+      // authoritative static wall location, within its generous hit depth.
+      if (updateHeavyXRMotion) artworkSurfaces.forEach(surface=>{
+        if (!surface.group) return;
+        const floorPivotY=Math.round(
+          surface.worldPosition.y/storyHeight
+        )*storyHeight;
+        surface.group.position.set(
+          spiralCenter.x+
+            (surface.worldPosition.x-spiralCenter.x)*galleryRadialScale,
+          floorPivotY+
+            (surface.worldPosition.y-floorPivotY)*galleryVerticalScale,
+          spiralCenter.z+
+            (surface.worldPosition.z-spiralCenter.z)*galleryRadialScale
+        );
+        // Each mounted work has a much smaller independent current: a lateral
+        // slide in the wall plane, a vertical float, and a shallow movement
+        // toward/away from the wall. The amplitudes remain inside the static
+        // selection proxy and never affect collision.
+        const artPhase=surface.motionPhase;
+        const alongDrift=Math.sin(time*.00043+artPhase)*.095;
+        const verticalDrift=Math.sin(
+          time*.00036+artPhase*1.71+.8
+        )*.11;
+        // Always retain a positive wall-normal stand-off. The oscillation is
+        // still genuine Z-space motion, but can no longer carry a frame or its
+        // title plaque through an inhaling wall.
+        const normalDrift=.2+Math.sin(
+          time*.00029+artPhase*.73+2.1
+        )*.055;
+        const tangentX=Math.cos(surface.rotationY);
+        const tangentZ=-Math.sin(surface.rotationY);
+        surface.group.position.x+=
+          tangentX*alongDrift+surface.worldNormal.x*normalDrift;
+        surface.group.position.y+=verticalDrift;
+        surface.group.position.z+=
+          tangentZ*alongDrift+surface.worldNormal.z*normalDrift;
+        surface.group.scale.set(
+          galleryRadialScale,galleryVerticalScale,1
+        );
+        // Keep the mount itself square to the wall. The apparent tilt is a
+        // nonlinear vertex-depth warp, not a rigid rotation of the picture.
+        surface.group.rotation.set(0,surface.rotationY,0);
+        deformMountedArtworkGeometry(
+          surface.imageMesh,surface,time,false
+        );
+        deformMountedArtworkGeometry(
+          surface.frameParts?.shell,surface,time,true
+        );
+        deformMountedArtworkGeometry(
+          surface.frameParts?.details,surface,time,true
+        );
+        surface.group.updateMatrix();
+      });
+      if (updateHeavyXRMotion) floatingDecadeHeaders.forEach(header=>{
+        header.placements.forEach((placement,index)=>{
+          const floorPivotY=Math.round(
+            placement.position.y/storyHeight
+          )*storyHeight;
+          const phase=placement.motionPhase;
+          const tangentX=Math.cos(placement.rotationY);
+          const tangentZ=-Math.sin(placement.rotationY);
+          const along=Math.sin(time*.00037+phase)*.075;
+          const vertical=Math.sin(time*.00031+phase*1.43+.4)*.09;
+          const outward=.27+Math.sin(time*.00026+phase*.81+1.7)*.055;
+          decadeHeaderPosition.set(
+            spiralCenter.x+
+              (placement.position.x-spiralCenter.x)*galleryRadialScale+
+              tangentX*along+placement.normal.x*outward,
+            floorPivotY+
+              (placement.position.y-floorPivotY)*galleryVerticalScale+
+              vertical,
+            spiralCenter.z+
+              (placement.position.z-spiralCenter.z)*galleryRadialScale+
+              tangentZ*along+placement.normal.z*outward
+          );
+          decadeHeaderEuler.set(
+            Math.sin(time*.00028+phase)*.006,
+            placement.rotationY+
+              Math.sin(time*.00023+phase*.93)*.007,
+            Math.sin(time*.00034+phase*1.21+2)*.01
+          );
+          decadeHeaderQuaternion.setFromEuler(decadeHeaderEuler);
+          decadeHeaderScale.set(
+            galleryRadialScale,galleryVerticalScale,1
+          );
+          decadeHeaderMatrix.compose(
+            decadeHeaderPosition,decadeHeaderQuaternion,decadeHeaderScale
+          );
+          header.mesh.setMatrixAt(index,decadeHeaderMatrix);
+        });
+        header.mesh.instanceMatrix.needsUpdate=true;
+      });
+      if (centralSpire&&updateHeavyXRMotion) {
+        // The spire's roof root is immovable. Its open ribs and needle take a
+        // deeper, slower breath so the changing silhouette is readable from
+        // the entrance and through the atrium shaft far below.
+        const spirePrimary=Math.sin(time*.00024-.35);
+        const spireSecondary=Math.sin(time*.00047+1.2);
+        const spireRadialBreath=1+spirePrimary*.045+spireSecondary*.008;
+        const spireVerticalBreath=1+spirePrimary*.075-spireSecondary*.01;
+        const {baseScale,breathRoot}=centralSpire.userData;
+        const scaleX=baseScale.x*spireRadialBreath;
+        const scaleY=baseScale.y*spireVerticalBreath;
+        const scaleZ=baseScale.z*spireRadialBreath;
+        centralSpire.scale.set(scaleX,scaleY,scaleZ);
+        centralSpire.position.set(
+          breathRoot.x*(1-scaleX),
+          breathRoot.y*(1-scaleY),
+          breathRoot.z*(1-scaleZ)
+        );
+        centralSpire.updateMatrix();
+        centralSpire.updateMatrixWorld(true);
+        movingSpireParts.forEach((piece,index) => {
+          const data=piece.userData;
+          const phase=time*.00016+data.phase;
+          const scaleX=data.baseScale.x*spireRadialBreath;
+          const scaleY=data.baseScale.y*spireVerticalBreath;
+          const scaleZ=data.baseScale.z*spireRadialBreath;
+          const center=data.modelCenter;
+          const root=data.root;
+          piece.position.set(
+            root.x+(center.x-root.x)*scaleX+
+              Math.sin(phase*.77)*(.12+(index%2)*.035),
+            root.y+(center.y-root.y)*scaleY+
+              Math.sin(phase+index)*.16,
+            root.z+(center.z-root.z)*scaleZ+
+              Math.cos(phase*.69)*(.1+(index%3)*.025)
+          );
+          piece.rotation.set(
+            Math.sin(phase*.53)*.004,
+            Math.sin(phase*.71)*.005,
+            Math.cos(phase*.61)*.004
+          );
+          piece.scale.set(scaleX,scaleY,scaleZ);
+          piece.updateMatrix();
+          piece.updateMatrixWorld(true);
+        });
+      }
       animatedSteps.forEach(step => {
         // The two helix strands breathe reciprocally: while one expands, the
         // other contracts. Their vertical roots remain locked to the static
@@ -9033,6 +9602,19 @@
           walkway.userData.breathCenterZ*(1-radialScale)
         );
       });
+      renderer.domElement.dataset.galleryBreath=
+        "deep-coherent-radial-0.0088-vertical-0.0058-static-navigation";
+      renderer.domElement.dataset.artworkBreath=
+        "non-rigid-near-edge-depth-warp-no-group-rotation";
+      renderer.domElement.dataset.frameBreath=
+        "pronounced-profile-30-percent-depth-28-percent-edge-warp";
+      renderer.domElement.dataset.decadeLabelBreath=
+        "individual-xy-z-float-guaranteed-outward-clearance-and-tilt";
+      renderer.domElement.dataset.spireBreath=
+        "roof-rooted-radial-0.045-vertical-0.075-deep";
+      renderer.domElement.dataset.galleryBreathElements=String(
+        breathingGalleryElements.length
+      );
       penrose.updateMatrixWorld(true);
       rearPenrose.updateMatrixWorld(true);
       updateWalk(dt);
