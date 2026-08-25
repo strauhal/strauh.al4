@@ -7,11 +7,54 @@
   <title>strauh.al/museum</title>
   <link rel="icon" href="./favicon.ico">
   <style>
-    :root { color-scheme: dark; --blue: #00f; --white: #fff; }
+    @property --museum-blue-red {
+      syntax: "<number>";
+      inherits: true;
+      initial-value: 0;
+    }
+    :root {
+      color-scheme: dark;
+      --museum-blue-red: 0;
+      --blue: rgb(var(--museum-blue-red) 0 255);
+      --white: #fff;
+      animation: museumBlueCycle 10s infinite linear;
+    }
+    @keyframes museumBlueCycle {
+      0%, 100% { --museum-blue-red: 0; }
+      50% { --museum-blue-red: 34; }
+    }
     * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #fff; }
-    body { font-family: "Times New Roman", Times, serif; color: var(--white); }
-    canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: none; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      width: 100dvw;
+      height: 100dvh;
+      min-width: 100%;
+      min-height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #00f;
+      background: var(--blue);
+    }
+    body {
+      position: fixed;
+      inset: 0;
+      font-family: "Times New Roman", Times, serif;
+      color: var(--white);
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      width: 100dvw;
+      height: 100dvh;
+      background: #00f;
+      background: var(--blue);
+      touch-action: none;
+      cursor: none;
+    }
     body.looking canvas { cursor: none; }
     body.menu-open, body.menu-open canvas { cursor: default; }
     body.about-open, body.about-open canvas { cursor: default; }
@@ -94,7 +137,7 @@
       gap: 6px;
       padding: 7px;
       border: 1px solid #fff;
-      background: #00f;
+      background: var(--blue);
       overflow-y: auto;
       overscroll-behavior: contain;
     }
@@ -119,14 +162,14 @@
       padding: 0 16px;
       border: 1px solid #fff;
       color: #fff;
-      background: rgba(0,0,255,.82);
+      background: rgb(var(--museum-blue-red) 0 255 / .82);
       text-transform: uppercase;
       letter-spacing: .12em;
       font: 10px Arial, sans-serif;
       cursor: pointer;
       backdrop-filter: blur(10px);
     }
-    .action:hover, .action:focus-visible { color: #00f; background: #fff; outline: none; }
+    .action:hover, .action:focus-visible { color: var(--blue); background: #fff; outline: none; }
     .action[hidden] { display: none; }
     #coordinates {
       position: absolute;
@@ -134,7 +177,7 @@
       bottom: max(20px, env(safe-area-inset-bottom));
       padding: 7px 9px;
       border: 1px solid rgba(255,255,255,.72);
-      background: rgba(0,0,255,.68);
+      background: rgb(var(--museum-blue-red) 0 255 / .68);
       font: 10px/1.45 "SFMono-Regular", Consolas, monospace;
       letter-spacing: .08em;
       text-transform: uppercase;
@@ -147,7 +190,7 @@
       z-index: 30;
       padding: 10px 14px;
       border: 1px solid #fff;
-      background: #00f;
+      background: var(--blue);
       font: 10px Arial, sans-serif;
       letter-spacing: .18em;
       text-transform: uppercase;
@@ -167,8 +210,8 @@
       padding: 26px 28px 28px;
       border: 1px solid #fff;
       color: #fff;
-      background: rgba(0,0,255,.94);
-      box-shadow: 0 0 0 1px rgba(0,0,255,.7);
+      background: rgb(var(--museum-blue-red) 0 255 / .94);
+      box-shadow: 0 0 0 1px rgb(var(--museum-blue-red) 0 255 / .7);
       overflow: auto;
       transform: translate(-50%,-50%);
       pointer-events: auto;
@@ -214,7 +257,7 @@
       height: 32px;
       border: 1px solid #fff;
       border-radius: 50%;
-      background: rgba(0,0,255,.75);
+      background: rgb(var(--museum-blue-red) 0 255 / .75);
       transform: translate(-50%, -50%);
     }
     #mobile-movement-actions {
@@ -235,7 +278,7 @@
       -webkit-user-select: none;
     }
     .mobile-movement-action.active {
-      color: #00f;
+      color: var(--blue);
       background: #fff;
     }
     @media (pointer: coarse) {
@@ -244,7 +287,7 @@
       #actions { bottom: max(18px, env(safe-area-inset-bottom)); }
     }
     @media (max-width: 640px) {
-      #location { top: 18px; right: 18px; left: auto; bottom: auto; text-align: right; }
+      #location { right: 18px; left: auto; bottom: auto; text-align: right; }
       #coordinates {
         width: 132px;
         overflow: hidden;
@@ -257,6 +300,24 @@
         display: flex;
         bottom: max(174px, calc(env(safe-area-inset-bottom) + 162px));
       }
+    }
+    @media (max-width: 640px) and (orientation: portrait) {
+      #masthead {
+        top: max(14px, env(safe-area-inset-top));
+        right: 12px;
+      }
+      #masthead a,
+      #masthead .museum-suffix {
+        font-size: 26px;
+      }
+      #location {
+        top: max(60px, calc(env(safe-area-inset-top) + 48px));
+        right: max(12px, env(safe-area-inset-right));
+        max-width: calc(100vw - 24px);
+        font-size: 8px;
+        line-height: 1.35;
+      }
+      #location::after { margin-top: 4px; }
     }
   </style>
   <script type="importmap">
@@ -341,12 +402,31 @@
 
     const BLUE = 0x0000ff;
     const WHITE = 0xffffff;
+    const museumBlueStart=new THREE.Color("#0000ff");
+    const museumBlueEnd=new THREE.Color("#2200ff");
+    const museumBlueCurrent=new THREE.Color("#0000ff");
+    const museumBlueMaterials=new Set();
+    const museumBlueTextureUniform={value:museumBlueStart.clone()};
+    const museumBlueBirdUniform={value:museumBlueStart.clone()};
+    let museumBlueInventoryReady=false;
+    function museumViewportSize() {
+      return {
+        width:Math.max(1,document.documentElement.clientWidth||innerWidth),
+        height:Math.max(1,document.documentElement.clientHeight||innerHeight)
+      };
+    }
+    const initialMuseumViewport=museumViewportSize();
     RectAreaLightUniformsLib.init();
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffffff);
     scene.fog = new THREE.FogExp2(0xffffff, 0.0022);
 
-    const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.05, 1100);
+    const camera = new THREE.PerspectiveCamera(
+      68,
+      initialMuseumViewport.width/initialMuseumViewport.height,
+      0.05,
+      1100
+    );
     camera.position.set(0, 1.68, 0);
     const rig = new THREE.Group();
     const entranceSpawn = new THREE.Vector3(0,.1,88);
@@ -398,7 +478,11 @@
     document.body.dataset.xrDevicePreset=xrRuntimePreset.name;
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(1);
-    renderer.setSize(innerWidth, innerHeight);
+    renderer.setSize(
+      initialMuseumViewport.width,
+      initialMuseumViewport.height,
+      false
+    );
     renderer.shadowMap.enabled = false;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -410,6 +494,55 @@
     renderer.domElement.tabIndex = 0;
     renderer.domElement.setAttribute("aria-label","Interactive museum viewport");
     document.body.prepend(renderer.domElement);
+
+    function animateMuseumBlueTextureMaterial(material,key) {
+      material.onBeforeCompile=shader => {
+        shader.uniforms.museumBlue=museumBlueTextureUniform;
+        shader.fragmentShader=`uniform vec3 museumBlue;\n${shader.fragmentShader}`;
+        shader.fragmentShader=shader.fragmentShader.replace(
+          "#include <map_fragment>",
+          `
+            #include <map_fragment>
+            float museumBlueMask=
+              smoothstep(.48,.9,diffuseColor.b)*
+              (1.0-smoothstep(.08,.38,max(diffuseColor.r,diffuseColor.g)));
+            diffuseColor.rgb=mix(
+              diffuseColor.rgb,museumBlue,museumBlueMask
+            );
+          `
+        );
+      };
+      material.customProgramCacheKey=()=>`museum-blue-texture-${key}-v1`;
+      material.needsUpdate=true;
+      return material;
+    }
+
+    function updateMuseumBluePalette(time) {
+      if (!museumBlueInventoryReady) {
+        scene.traverse(object => {
+          const materials=Array.isArray(object.material)
+            ?object.material
+            :(object.material?[object.material]:[]);
+          materials.forEach(material => {
+            if (material.color?.getHex()===BLUE) {
+              museumBlueMaterials.add(material);
+            }
+          });
+        });
+        museumBlueInventoryReady=true;
+        renderer.domElement.dataset.museumBlueSurfaces=String(
+          museumBlueMaterials.size
+        );
+      }
+      const cycle=(time%10000)/10000;
+      const blend=cycle<.5?cycle*2:(1-cycle)*2;
+      museumBlueCurrent.lerpColors(museumBlueStart,museumBlueEnd,blend);
+      museumBlueMaterials.forEach(material => {
+        material.color.copy(museumBlueCurrent);
+      });
+      museumBlueTextureUniform.value.copy(museumBlueCurrent);
+      museumBlueBirdUniform.value.copy(museumBlueCurrent);
+    }
 
     const blueMaterial = new THREE.MeshLambertMaterial({ color:BLUE, side:THREE.DoubleSide });
     const glassMaterial = new THREE.MeshLambertMaterial({
@@ -942,9 +1075,15 @@
         texture.anisotropy=1;
         texture.minFilter=THREE.LinearMipmapLinearFilter;
         texture.magFilter=THREE.LinearFilter;
-        plaqueMaterialCache.set(cacheKey,new THREE.MeshBasicMaterial({
-          map:texture,transparent:true,toneMapped:false
-        }));
+        plaqueMaterialCache.set(
+          cacheKey,
+          animateMuseumBlueTextureMaterial(
+            new THREE.MeshBasicMaterial({
+              map:texture,transparent:true,toneMapped:false
+            }),
+            "plaque"
+          )
+        );
       }
       return new THREE.Mesh(
         new THREE.PlaneGeometry(width,height),
@@ -1824,6 +1963,10 @@
     // Gaudí-inspired vertical massing returns to the front, framing the
     // fragmented entrance while leaving the Guggenheim spiral legible behind.
     const sagradaFacade=new THREE.Group();
+    // Keep the cathedral towers outside the gallery envelope. Moving the
+    // complete assembly toward the entrance preserves their spacing, lean,
+    // breathing, and finial motion while clearing the interior art walls.
+    sagradaFacade.position.z=5.5;
     scene.add(sagradaFacade);
     cathedralTower(-34,45,42,6.4,-.012,sagradaFacade);
     // Preserve the complete inner-left tower but omit the single lower face
@@ -1847,7 +1990,8 @@
     // corridor marked for removal. Primary facade towers remain intact.
     document.body.dataset.branchingSideButtresses="removed";
     document.body.dataset.firstFloorCathedralClearance=
-      "inner-left-tower-preserved-gallery-facing-base-side-open";
+      "facade-forward-5.5-inner-left-gallery-facing-base-side-open";
+    document.body.dataset.cathedralFacadeForwardOffset="5.5";
 
     // A distant arc of crystalline mountain architecture rises behind the
     // archive. Broad overlapping core masses provide real volume from every
@@ -3915,9 +4059,12 @@
       const slopeLength=Math.hypot(depth,slopeRise);
       const panel=new THREE.Mesh(
         new THREE.PlaneGeometry(width-.18,slopeLength-.14),
-        new THREE.MeshBasicMaterial({
-          map:texture,toneMapped:false,side:THREE.DoubleSide
-        })
+        animateMuseumBlueTextureMaterial(
+          new THREE.MeshBasicMaterial({
+            map:texture,toneMapped:false,side:THREE.DoubleSide
+          }),
+          "visitor-guide"
+        )
       );
       const panelAngle=-Math.atan2(depth,slopeRise);
       const panelNormal=new THREE.Vector3(
@@ -3945,7 +4092,7 @@
       new THREE.CylinderGeometry(
         archiveDepartureRadius,archiveDepartureRadius,.08,12
       ),
-      BLUE,
+      blueMaterial,
       [spiralCenter.x,.06,spiralCenter.z],
       [0,startAngle+.5*Math.PI*2/spiralSides,0]
     );
@@ -5269,9 +5416,12 @@
       texture.colorSpace=THREE.SRGBColorSpace;
       texture.minFilter=THREE.LinearMipmapLinearFilter;
       texture.magFilter=THREE.LinearFilter;
-      const material=new THREE.MeshBasicMaterial({
-        map:texture,transparent:true,toneMapped:false,side:THREE.DoubleSide
-      });
+      const material=animateMuseumBlueTextureMaterial(
+        new THREE.MeshBasicMaterial({
+          map:texture,transparent:true,toneMapped:false,side:THREE.DoubleSide
+        }),
+        "artwork-label"
+      );
       return material;
     }
     function disposeArtworkLabel(label) {
@@ -6156,39 +6306,12 @@
         )*43758.5453;
         return (value-Math.floor(value))*2-1;
       };
-      const cathedralConflictPoint={x:-17,z:43};
-      const distanceToWallSegment=wall => {
-        const dx=wall.b.x-wall.a.x;
-        const dz=wall.b.z-wall.a.z;
-        const lengthSquared=dx*dx+dz*dz||1;
-        const t=THREE.MathUtils.clamp((
-          (cathedralConflictPoint.x-wall.a.x)*dx+
-          (cathedralConflictPoint.z-wall.a.z)*dz
-        )/lengthSquared,0,1);
-        return Math.hypot(
-          cathedralConflictPoint.x-(wall.a.x+dx*t),
-          cathedralConflictPoint.z-(wall.a.z+dz*t)
-        );
-      };
-      // The restored inner-left cathedral tower overlaps one first-floor art
-      // wall. Keep the architecture and gallery wall, but reserve that entire
-      // wall as an artwork-free buffer so no frame or label is compromised.
-      const obstructedFirstFloorWall=proceduralArtWalls
-        .filter(wall=>wall.level===0&&wall.collection==="art")
-        .map(wall=>({wall,distance:distanceToWallSegment(wall)}))
-        .sort((a,b)=>a.distance-b.distance)[0]||null;
-      const artworkFreeWallIds=new Set(
-        obstructedFirstFloorWall?[obstructedFirstFloorWall.wall.id]:[]
-      );
       const artWallPlan=proportionalWallPlan(
-        proceduralArtWalls.filter(wall=>
-          wall.collection==="art"&&!artworkFreeWallIds.has(wall.id)
-        ),
+        proceduralArtWalls.filter(wall=>wall.collection==="art"),
         archiveInventory.art
       );
       const plannedMountAllocation={art:{},after:{},photo:{}};
       proceduralArtWalls.forEach((wall,wallIndex) => {
-        if (artworkFreeWallIds.has(wall.id)) return;
         const set=mountSets[wall.collection];
         const dx=wall.b.x-wall.a.x;
         const dz=wall.b.z-wall.a.z;
@@ -6306,9 +6429,7 @@
         [...artworkWallLayouts.values()].map(layout=>layout.level+1)
       )].sort((a,b)=>a-b).join(",");
       document.body.dataset.firstFloorArtworkFreeWall=
-        obstructedFirstFloorWall
-          ?`${obstructedFirstFloorWall.wall.id}-nearest-cathedral-tower`
-          :"none-found";
+        "none-facade-shifted-forward";
       window.museumExpansionPlan.artworkWallPacking={
         strategy:"aspect-aware-justified-masonry",
         walls:artworkWallLayouts.size,
@@ -6853,6 +6974,7 @@
     const birdMaterial=new THREE.ShaderMaterial({
       side:THREE.DoubleSide,
       extensions:{derivatives:true},
+      uniforms:{museumBlue:museumBlueBirdUniform},
       vertexShader:`
         attribute vec3 barycentric;
         varying vec3 vBarycentric;
@@ -6862,6 +6984,7 @@
         }
       `,
       fragmentShader:`
+        uniform vec3 museumBlue;
         varying vec3 vBarycentric;
         void main() {
           vec3 edgeWidth=fwidth(vBarycentric);
@@ -6873,7 +6996,7 @@
           float interior=min(min(inset.x,inset.y),inset.z);
           gl_FragColor=mix(
             vec4(1.0,1.0,1.0,1.0),
-            vec4(0.0,0.0,1.0,1.0),
+            vec4(museumBlue,1.0),
             interior
           );
         }
@@ -7136,10 +7259,13 @@
     artworkGloveTexture.magFilter=THREE.LinearFilter;
     artworkGloveTexture.generateMipmaps=false;
     const artworkGloveSprite=new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map:artworkGloveTexture,transparent:true,depthTest:false,
-        depthWrite:false,toneMapped:false
-      })
+      animateMuseumBlueTextureMaterial(
+        new THREE.SpriteMaterial({
+          map:artworkGloveTexture,transparent:true,depthTest:false,
+          depthWrite:false,toneMapped:false
+        }),
+        "artwork-glove"
+      )
     );
     artworkGloveSprite.name="artwork-glove-cursor";
     artworkGloveSprite.renderOrder=10002;
@@ -8239,11 +8365,14 @@
       return texture;
     }
     function xrPanelButton(label,x,y,width,action,parent=xrControlDeck) {
-      const material=new THREE.MeshBasicMaterial({
-        map:xrLabelTexture(label),
-        transparent:true,
-        side:THREE.DoubleSide
-      });
+      const material=animateMuseumBlueTextureMaterial(
+        new THREE.MeshBasicMaterial({
+          map:xrLabelTexture(label),
+          transparent:true,
+          side:THREE.DoubleSide
+        }),
+        "xr-label"
+      );
       const button=new THREE.Mesh(
         new THREE.PlaneGeometry(width,.11),
         material
@@ -9175,6 +9304,7 @@
 
     function animate(time) {
       const dt = Math.min(clock.getDelta(), .05);
+      updateMuseumBluePalette(time);
       monitorXRPerformance(dt);
       updateMuseumSoundfield(time*.001);
       const xrMotionStride=xrPerformanceEmergency
@@ -9986,16 +10116,26 @@
     renderer.setAnimationLoop(animate);
     window.museumStartupComplete=true;
 
-    addEventListener("resize", () => {
-      camera.aspect = innerWidth/innerHeight;
+    function syncMuseumViewport() {
+      const viewport=museumViewportSize();
+      camera.aspect = viewport.width/viewport.height;
       camera.updateProjectionMatrix();
       if (enlargedArtworkSurface) {
         sizeArtworkViewer(enlargedArtworkSurface);
       }
       positionArtworkGlove(viewerCursorX,viewerCursorY);
-      renderer.setSize(innerWidth,innerHeight);
+      renderer.setSize(viewport.width,viewport.height,false);
       renderer.setPixelRatio(1);
+      renderer.domElement.dataset.viewport=
+        `${viewport.width}x${viewport.height}`;
+    }
+    addEventListener("resize",syncMuseumViewport);
+    addEventListener("orientationchange",()=>{
+      requestAnimationFrame(syncMuseumViewport);
+      setTimeout(syncMuseumViewport,180);
     });
+    window.visualViewport?.addEventListener("resize",syncMuseumViewport);
+    syncMuseumViewport();
 
     // Fail softly when a GPU context is interrupted by a headset browser.
     renderer.domElement.addEventListener("webglcontextlost", e => {
@@ -10013,8 +10153,5 @@
     });
   </script>
 
-  <!-- discovery-footer: generated -->
-  <nav class="contextual-links" aria-label="Explore related sections"><a href="https://strauh.al/art">strauh.al/art</a> / <a href="https://strauh.al/pagination/page-001">strauh.al/pagination/page-001</a> / <a href="https://strauh.al/knowledge_base">strauh.al/knowledge_base</a> / <a href="https://strauh.al/brain">strauh.al/brain</a> / <a href="https://strauh.al/about">strauh.al/about</a></nav>
-  <!-- /discovery-footer -->
 </body>
 </html>

@@ -389,9 +389,6 @@ OR
                 // Wrap in body to ensure parsing works for fragments
                 const doc = parser.parseFromString(`<body>${rawInput}
 
-  <!-- discovery-footer: generated -->
-  <nav class="contextual-links" aria-label="Explore related sections"><a href="https://strauh.al/art">strauh.al/art</a> / <a href="https://strauh.al/pagination/page-001">strauh.al/pagination/page-001</a> / <a href="https://strauh.al/knowledge_base">strauh.al/knowledge_base</a> / <a href="https://strauh.al/brain">strauh.al/brain</a> / <a href="https://strauh.al/about">strauh.al/about</a></nav>
-  <!-- /discovery-footer -->
 </body>`, 'text/html');
                 const links = doc.querySelectorAll('a');
                 
