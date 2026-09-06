@@ -2626,5 +2626,587 @@
     "new": "photography/IMG_0268.png",
     "label": "Chairs beside a Bright Window",
     "sha256": "67f0aeedcd0d7c9569ac3557d2ea29798edbc075b1260aa75ac9ed69c89de25b"
+  },
+  {
+    "old": "1900s/photograph_of_printed_text_on_a_beige_page_signed_mervyn_levy_london_1965.jpeg",
+    "new": "photography/photograph_of_printed_text_on_a_beige_page_signed_mervyn_levy_london_1965.jpeg",
+    "label": "Photograph of printed text on a beige page, signed Mervyn Levy, London 1965",
+    "sha256": "7c82a3c5362307e281d084097c0f8d57ca1b35078d9201105987418ef2a3a0d1"
+  },
+  {
+    "old": "2000s/Photograph - Multiple Slides Hanging in a Window, One Showing a Couple.jpeg",
+    "new": "photography/Photograph - Multiple Slides Hanging in a Window, One Showing a Couple.jpeg",
+    "label": "Photograph of a Woman in a Black Dress and a Man in a Blue Shirt Seated on a Bench by Terry Richardson (2000)",
+    "sha256": "6337233782361b886211637f694ffe06d5f1a0bbc734fdffa146db3f92766d02"
+  },
+  {
+    "old": "2000s/Photograph - Explosion at World Trade Center South Tower, September 11, 2001 by Sean Adair.jpeg",
+    "new": "photography/Photograph - Explosion at World Trade Center South Tower, September 11, 2001 by Sean Adair.jpeg",
+    "label": "Photograph of the World Trade Center South Tower impact on September 11, 2001 by Sean Adair (2001)",
+    "sha256": "f0d9dd1e8da66f6e85cc19ffd3599098242947a57cb90b56772edd4109211d93"
+  },
+  {
+    "old": "2000s/Photograph - Photograph of a Screen Displaying a Text Post and eBay Listing.jpg",
+    "new": "photography/Photograph - Photograph of a Screen Displaying a Text Post and eBay Listing.jpg",
+    "label": "Photograph of a screen displaying a text post from an online forum (2014)",
+    "sha256": "ccd2da489870cf1e92a4cdaa2a888b6097b5adf1c1b0b3957a2dfa54f8a959e3"
+  },
+  {
+    "old": "2000s/Photograph - Ceremony of Separation.jpeg",
+    "new": "photography/Photograph - Ceremony of Separation.jpeg",
+    "label": "Photograph of a model wearing a large black textured garment in a white studio (2015)",
+    "sha256": "b12477fe728b3c1bf1f2160c168089d452043a7e481f30083369e55e1f32df12"
+  },
+  {
+    "old": "2000s/Photograph - Microphone and Laptop in Anechoic Chamber.png",
+    "new": "photography/Photograph - Microphone and Laptop in Anechoic Chamber.png",
+    "label": "Photograph Microphone and Laptop in Anechoic Chamber",
+    "sha256": "ffa1f53e48dcc72a5daac414a4c6de09482bb8c75d9d1c6a9b64202bfea4df6c"
+  },
+  {
+    "old": "2000s/Photograph - Blue And White Shiba Inu Dog Wearing Red Harness.jpg",
+    "new": "photography/Photograph - Blue And White Shiba Inu Dog Wearing Red Harness.jpg",
+    "label": "Photograph of a Blue and White Shiba Inu Dog Wearing a Red Harness (2025)",
+    "sha256": "a64c4740cb0e1ebe716d7716f5ef73fe71c48e82497e0dbeebc4909d2a5d4390"
+  },
+  {
+    "old": "2000s/Image - Smiling Woman With Feet Up Above Computer Icon Sketches by Susan Kare.jpg",
+    "new": "photography/Image - Smiling Woman With Feet Up Above Computer Icon Sketches by Susan Kare.jpg",
+    "label": "Composite image featuring a photograph of a smiling woman sitting with her feet up in an office above sketches of early computer icons on graph paper (2025)",
+    "sha256": "6de3d4d4f4ab73edf27766cb4800a4006c56855024f4c1703a5ba2562315c560"
+  },
+  {
+    "old": "2000s/Crystal Castles (II) (2010).png",
+    "new": "photography/Crystal Castles (II) (2010).png",
+    "label": "Photograph of two figures in traditional attire and sneakers standing before a corrugated metal door (2025)",
+    "sha256": "53d1b7cf8c559ca5ff5a49b8642df8780b3c162856cb539cae0cf6464dfff2b6"
+  },
+  {
+    "old": "2000s/Mezzanine by Nick Knight (1998).jpeg",
+    "new": "photography/Mezzanine by Nick Knight (1998).jpeg",
+    "label": "Black and White Photograph of a Large Beetle Viewed from Below (2025)",
+    "sha256": "895c554fee44a14275419f679c2a1b56f1f1a92e5f153cd523283d6ca9d2ac8a"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of New Uniform Suburban Housing Development by ONX Homes.jpeg",
+    "new": "photography/Photograph - Aerial View of New Uniform Suburban Housing Development by ONX Homes.jpeg",
+    "label": "Aerial Photograph of a Large, Uniform Suburban Housing Development (2025)",
+    "sha256": "fcdba2278262af7023649c1743170e7f9e914f0d35e47ced6d7de66c091149a2"
+  },
+  {
+    "old": "2000s/Photograph - Sepia-Toned Photograph of Starling Murmuration Forming Wave Shape.jpeg",
+    "new": "photography/Photograph - Sepia-Toned Photograph of Starling Murmuration Forming Wave Shape.jpeg",
+    "label": "Sepia Photograph of a Starling Murmuration Forming a Wave Shape (2025)",
+    "sha256": "1f9c1641d7c0c832c610bca12e5ea47c4e9d2e069193e601ae5d29abc54d7a66"
+  },
+  {
+    "old": "2000s/Photograph - Back of Head with Colorful Swirling Abstract Hair Dye.jpeg",
+    "new": "photography/Photograph - Back of Head with Colorful Swirling Abstract Hair Dye.jpeg",
+    "label": "Photograph of a person's head with a colorful, swirling, abstract hair dye pattern",
+    "sha256": "1d6771ae84a8363b74935be3b51bd25b6c3894bd20efe2e0369da285a2935111"
+  },
+  {
+    "old": "2000s/Image - White Column, Potted Plant, And Detached Leaves On Wall.jpeg",
+    "new": "photography/Image - White Column, Potted Plant, And Detached Leaves On Wall.jpeg",
+    "label": "Photograph of an Indoor Installation Featuring a White Column, a Potted Plant, and Detached Leaves on a Wall",
+    "sha256": "e8ba52cc378d9b223bf244f6c06d8a6fdcfc7371e1227d9187fa69973cc4fd13"
+  },
+  {
+    "old": "2000s/Photograph - Hong Kong-Zhuhai-Macao Bridge.jpeg",
+    "new": "photography/Photograph - Hong Kong-Zhuhai-Macao Bridge.jpeg",
+    "label": "Photograph of a wide bridge lined with white streetlights leading to a tunnel entrance",
+    "sha256": "fda53297158886e08e901a2c6cde2a90dd8b786a4bd8812f8ce577390511c135"
+  },
+  {
+    "old": "2000s/Photograph - Black Speaker and Green Translucent Cube with Wire.png",
+    "new": "photography/Photograph - Black Speaker and Green Translucent Cube with Wire.png",
+    "label": "Photograph Black Speaker and Green Translucent Cube with Wire",
+    "sha256": "7c4a8c61dfeec3eb879d4fc703f4575bfe188695b8a767d0cba48134536eddb6"
+  },
+  {
+    "old": "2000s/Photograph - Elderly Woman Sitting on Bench with Reflections in Glass.jpeg",
+    "new": "photography/Photograph - Elderly Woman Sitting on Bench with Reflections in Glass.jpeg",
+    "label": "Candid Photograph of an Elderly Woman Sitting on a Bench with Reflections in Glass",
+    "sha256": "9fd201d20659ee345186863921415db6aae3a00eb73c3a68172361df571f4e18"
+  },
+  {
+    "old": "2000s/Photograph - Blue Parakeet Balancing on a Toy Skateboard.jpeg",
+    "new": "photography/Photograph - Blue Parakeet Balancing on a Toy Skateboard.jpeg",
+    "label": "Photograph Blue Parakeet Balancing on a Toy Skateboard",
+    "sha256": "bced6104ae1cfb4b995c787bb22eb102c755283ea961ad17001eeccdcb336e1f"
+  },
+  {
+    "old": "2000s/Document - Pink And Purple Event Poster With Portrait Photos.jpeg",
+    "new": "photography/Document - Pink And Purple Event Poster With Portrait Photos.jpeg",
+    "label": "Event Poster with Pink and Purple Background and Portrait Photos for 'GRAD PRIN TALK'",
+    "sha256": "d51c6d1a19017414befce41141f51a1e06edd2bffa7b064a684083a84d200efe"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of a Bald Person Covering Face.jpeg",
+    "new": "photography/Photograph - Black and White Photograph of a Bald Person Covering Face.jpeg",
+    "label": "Black and White Photograph of a Bald Person Covering Their Face with Hands",
+    "sha256": "3122b83e97e0b5701e88d2e4b85cd09ba8f7f3ecf9a3a1eb03d9c70ccdbc2251"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Photograph Of Person Covering Face With Hands.jpeg",
+    "new": "photography/Photograph - Black And White Photograph Of Person Covering Face With Hands.jpeg",
+    "label": "Black and White Photograph of a Person Covering Their Face with Hands",
+    "sha256": "429a1f26ba0250b8d6ced36dbe0d3bf0797787de89474870322b6b5c52fac845"
+  },
+  {
+    "old": "2000s/Photograph - Balenciaga Reusable Shopping Bag with Green Vegetable Print.jpeg",
+    "new": "photography/Photograph - Balenciaga Reusable Shopping Bag with Green Vegetable Print.jpeg",
+    "label": "Reusable Shopping Bag with Photographic Print of Green Vegetables and Balenciaga Logo",
+    "sha256": "d83b0d2b0574f200f658a1fbab76fb1e4065a27df9ee20713e8564d75a34fb21"
+  },
+  {
+    "old": "2000s/Photograph - Photograph of a Display Case Showing a Clenched Hand Image.jpeg",
+    "new": "photography/Photograph - Photograph of a Display Case Showing a Clenched Hand Image.jpeg",
+    "label": "Photograph of a Clenched Hand Holding Blue and White Material Against a Dark Background",
+    "sha256": "33f5439b82f30b4c8aaa7585ad70bbf3ff9bb34f2802361b4cea77cda3aa3e32"
+  },
+  {
+    "old": "2000s/Photograph - Blurry Color Photograph of Hair Bun in Slide Mount.jpeg",
+    "new": "photography/Photograph - Blurry Color Photograph of Hair Bun in Slide Mount.jpeg",
+    "label": "Blurry Color Photograph of the Back of a Head with Hair Bun, Displayed in a Slide Mount",
+    "sha256": "131489b39ad55b839cfdf4188319b06671dae0ddd440eea45b30a87aa3ee85da"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Photograph Of A Fencer From Behind.jpeg",
+    "new": "photography/Photograph - Black And White Photograph Of A Fencer From Behind.jpeg",
+    "label": "Black and White Photograph of a Fencer Wearing a Mask, Viewed from the Back",
+    "sha256": "7486406ac9cd59cac26db993ea97775ab90c363465b0cdc0d2cf50c3f10e59cd"
+  },
+  {
+    "old": "2000s/Photograph - Photograph of Digital Map Showing United Airplane Near Chicago.jpeg",
+    "new": "photography/Photograph - Photograph of Digital Map Showing United Airplane Near Chicago.jpeg",
+    "label": "Photograph of a Digital Display Showing a United Airplane Icon on a Map Near Chicago and Milwaukee",
+    "sha256": "9c44c4582c2110fb1343eec17dee37fcdc0b827d40effefd70e2467fe6bafc6a"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photos Illustrating Martial Arts Technique in Book.jpeg",
+    "new": "photography/Photograph - Black and White Photos Illustrating Martial Arts Technique in Book.jpeg",
+    "label": "Black and White Photographic Sequence (10 images) Illustrating a Martial Arts Technique (Ten Chi Nage) in an Open Book",
+    "sha256": "27e9634531f06eb599a5d9327162019f87d0408e5b84111387d5f31796c3e7f1"
+  },
+  {
+    "old": "2000s/Photograph - Foggy Forest Edge with Field of Purple Flowers.jpeg",
+    "new": "photography/Photograph - Foggy Forest Edge with Field of Purple Flowers.jpeg",
+    "label": "Photograph of a Foggy Forest Edge and Field of Purple Flowers",
+    "sha256": "5fc69104fb82158dd7614ca647775286a10e890e5b4063e69e55f64ffd4e0033"
+  },
+  {
+    "old": "2000s/Photograph - Two Children Playing in Water from a Fire Hydrant.jpeg",
+    "new": "photography/Photograph - Two Children Playing in Water from a Fire Hydrant.jpeg",
+    "label": "Black and White Photograph of Two Children Playing in Water from a Fire Hydrant",
+    "sha256": "a138130262496c7c134a4371328903b48ea1596b025d1bfff909d5c3a66b7ad2"
+  },
+  {
+    "old": "2000s/Photograph - Person Submerged Underwater with Pink and Purple Tones.jpeg",
+    "new": "photography/Photograph - Person Submerged Underwater with Pink and Purple Tones.jpeg",
+    "label": "Photograph of a person submerged underwater with pink and purple tones",
+    "sha256": "ae623030d46ae521c2ed422aa4e8fbc8de701041858014a607b31013e33b3dc4"
+  },
+  {
+    "old": "2000s/photograph_of_an_outdoor_plaza_with_adobe_buildings_trees_a_kinetic_sculpture_and_a_white_pickup_truck_under_a_blue_sky.mov",
+    "new": "photography/photograph_of_an_outdoor_plaza_with_adobe_buildings_trees_a_kinetic_sculpture_and_a_white_pickup_truck_under_a_blue_sky.mov",
+    "label": "Photograph of an outdoor plaza with adobe buildings, trees, a kinetic sculpture, and a white pickup truck under a blue sky",
+    "sha256": "6c906cf8033b8605a2ce5c2a6556330cca4010fd4185cded6b797aa6162cb7fb"
+  },
+  {
+    "old": "2000s/Document - Black And White Portraits Of Christopher And Gordon Schumacher.jpeg",
+    "new": "photography/Document - Black And White Portraits Of Christopher And Gordon Schumacher.jpeg",
+    "label": "Black and White Photographs of Christopher N. Schumacher and Gordon Schumacher on a Printed Page",
+    "sha256": "78ce23cc536783550e845e7e832c330e475b394dfb166f23a41706d5682f7df5"
+  },
+  {
+    "old": "2000s/Photograph - Layered Abstract Photograph with Distorted Figures in Blue and White.jpeg",
+    "new": "photography/Photograph - Layered Abstract Photograph with Distorted Figures in Blue and White.jpeg",
+    "label": "Layered Abstract Photograph with Figures in Blue and White",
+    "sha256": "d2c18edefdf9db8e393e0199abbd0365b976af26a62572c74fc20706f72a991d"
+  },
+  {
+    "old": "2000s/Photograph - Split Image Of Messy Liquor Store Aisle And Raccoon In Bathroom.png",
+    "new": "photography/Photograph - Split Image Of Messy Liquor Store Aisle And Raccoon In Bathroom.png",
+    "label": "Two photographs: one of a liquor store aisle with spilled bottles, and one of a raccoon lying on a bathroom floor next to a toilet",
+    "sha256": "813c920edc4f35c60b0401e011af61eea5b6232dd63f731a554f571af3800c54"
+  },
+  {
+    "old": "2000s/Photograph - Close-Up Of Human Eye With Severe Conjunctival Injection.jpg",
+    "new": "photography/Photograph - Close-Up Of Human Eye With Severe Conjunctival Injection.jpg",
+    "label": "Close-up Photograph of a Human Eye Showing Severe Conjunctival Injection",
+    "sha256": "0cada4ca53f86996949f4ce0eb164c91e0bdb5cccb9fee5b8c7bc11a26f7fb74"
+  },
+  {
+    "old": "2000s/Image - Stick Figures Comparing Artistic Ceilings of Photography Versus Other Arts.png",
+    "new": "photography/Image - Stick Figures Comparing Artistic Ceilings of Photography Versus Other Arts.png",
+    "label": "Black and white stick figure drawing comparing the artistic ceiling of photography to drawing, painting, and writing using two staircases",
+    "sha256": "8316d068852e0a5212a5f08f932c9d844905d043e6baa3b9940ce4aa5d1c4d81"
+  },
+  {
+    "old": "2000s/Screenshot - Cloud Atlas.jpg",
+    "new": "photography/Screenshot - Cloud Atlas.jpg",
+    "label": "Staged photograph of two men surrounded by floating and broken porcelain in an antique shop setting",
+    "sha256": "306c50b522a986b449ba36acb38da74512641f201418ad73b131553ed10236dd"
+  },
+  {
+    "old": "2000s/Photograph - Hooded Figure on Box with Wires and Soldier.jpeg",
+    "new": "photography/Photograph - Hooded Figure on Box with Wires and Soldier.jpeg",
+    "label": "Photograph of a hooded figure in a dark poncho standing on a cardboard box, holding wires, in a yellow room with a soldier nearby",
+    "sha256": "2b0612c6c45b5da3682b4f5100de5fc3d9f031c6040443b69063b359151a0ec0"
+  },
+  {
+    "old": "2000s/Photograph - The Hooded Man.jpg",
+    "new": "photography/Photograph - The Hooded Man.jpg",
+    "label": "Photograph The Hooded Man",
+    "sha256": "8946b3c698a1e20482a26b35362d7d814374a3bacd9996cf2790a7f81a18c89e"
+  },
+  {
+    "old": "2000s/Photograph - Two Dark Wood Display Cabinets with Geometric Shelves.jpg",
+    "new": "photography/Photograph - Two Dark Wood Display Cabinets with Geometric Shelves.jpg",
+    "label": "Photograph Two Dark Wood Display Cabinets with Geometric Shelves",
+    "sha256": "9820afe3e02a26caafe8fa18d13352b91634c490a482217b801c0fba9e97561e"
+  },
+  {
+    "old": "2000s/Photograph - Close-Up View of a Colorful Microchip Die.jpg",
+    "new": "photography/Photograph - Close-Up View of a Colorful Microchip Die.jpg",
+    "label": "Photograph Close Up View of a Colorful Microchip Die",
+    "sha256": "c066290f756600bfda54ae5ad513517b0eacc1b2e5e80e654dd96ba807a94efc"
+  },
+  {
+    "old": "2000s/Illustration - Document with Text and Grid of Black and White Photographs of a Coyote.jpg",
+    "new": "photography/Illustration - Document with Text and Grid of Black and White Photographs of a Coyote.jpg",
+    "label": "Illustration Document with Text and Grid of Black and White Photographs of a Coyote",
+    "sha256": "a422b5090372ffb7033e14575b2f5964c77715c4ed10eb7bbfe277f51fbe2d97"
+  },
+  {
+    "old": "2000s/Photograph - Multiple Vintage Computer Monitors Displaying Abstract Geometric Wireframe Graphics.jpeg",
+    "new": "photography/Photograph - Multiple Vintage Computer Monitors Displaying Abstract Geometric Wireframe Graphics.jpeg",
+    "label": "Photograph Multiple Vintage Computer Monitors Displaying Abstract Geometric Wireframe Graphics",
+    "sha256": "2d306f40f3d999de187561a6b4e7e533e9347e182c0a5610a1eccbd6398f016b"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of a Woman Posing in an Empty Room.jpeg",
+    "new": "photography/Photograph - Black and White Photograph of a Woman Posing in an Empty Room.jpeg",
+    "label": "Black and White Photograph of a Woman Posing in an Empty Room",
+    "sha256": "c9caee3e250417edbe62080647471f99c4c6efa0c209dde1116518bb5ce303db"
+  },
+  {
+    "old": "2000s/Document - Conversation Between Andrew Bolton and Rei Kawakubo by Andrew Bolton and Rei Kawakubo.jpeg",
+    "new": "photography/Document - Conversation Between Andrew Bolton and Rei Kawakubo by Andrew Bolton and Rei Kawakubo.jpeg",
+    "label": "Photograph of printed text featuring a conversation between Andrew Bolton and Rei Kawakubo",
+    "sha256": "a42e44491745a44b7e9f6f90ee69a08774bdb242460d0c1e3ac8c4a959df76bc"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of People Sitting on Floor.jpeg",
+    "new": "photography/Photograph - Black and White Photograph of People Sitting on Floor.jpeg",
+    "label": "Black and white photograph of people sitting on the floor facing a window",
+    "sha256": "7dc3b8eec24efe8b903628d137a79242309e8b3bb18a02edf2018f15866d03f0"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Many Men in Robes Seated in Auditorium.jpeg",
+    "new": "photography/Photograph - Black and White Photograph of Many Men in Robes Seated in Auditorium.jpeg",
+    "label": "Black and White Photograph of Many Men in Dark Robes Seated in an Auditorium",
+    "sha256": "67ddef9b597bb8d51af6027e98d853e3bf6364a765401a9430f94be4e7c60d03"
+  },
+  {
+    "old": "2000s/Photograph - Soldiers Oversee Detained Men on Dirt Mounds in War-Damaged City.jpeg",
+    "new": "photography/Photograph - Soldiers Oversee Detained Men on Dirt Mounds in War-Damaged City.jpeg",
+    "label": "Photograph of Detained Men on Dirt Mounds in a War-Damaged City",
+    "sha256": "bf4657387734bd553ce03a65aab4e0a649d0f1b1a0ed73ccd00356e5051fe483"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Photograph Of Female Torso In Straps.jpeg",
+    "new": "photography/Photograph - Black And White Photograph Of Female Torso In Straps.jpeg",
+    "label": "Black and White Photograph of a Female Torso in Straps by Patty Carroll",
+    "sha256": "b78e4337fe2455d2529198d64cb7950591d0f11d219f550fed7364eb4896f9a3"
+  },
+  {
+    "old": "2000s/Document - Document Page with Photograph of Dark Suit and Abstract Panels.jpeg",
+    "new": "photography/Document - Document Page with Photograph of Dark Suit and Abstract Panels.jpeg",
+    "label": "Black and white photograph of a dark suit hanging between two vertical panels featuring abstract black shapes",
+    "sha256": "9a92136b75491ef8b4b67ca2a6435825b24fe7168e65568b0de4696e20b62906"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Photograph Of Woman In Empty Room.jpeg",
+    "new": "photography/Photograph - Black And White Photograph Of Woman In Empty Room.jpeg",
+    "label": "Black and White Photograph of a Woman Standing in an Empty Room",
+    "sha256": "faea5b7d6d3644612b6b86d81a1616f46c67027953481656c103118cf9b0c7cd"
+  },
+  {
+    "old": "2000s/Photograph - Dense Urban Skyline at Dusk Under Hazy Sky.jpeg",
+    "new": "photography/Photograph - Dense Urban Skyline at Dusk Under Hazy Sky.jpeg",
+    "label": "Photograph of a dense urban skyline at dusk under a hazy sky",
+    "sha256": "500821b9a7902b8e9861b9874c65d76ecfda0b5755ac4aab1aa5112d49801e37"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Colorful Houses on Snowy Hillside.jpg",
+    "new": "photography/Photograph - Aerial View of Colorful Houses on Snowy Hillside.jpg",
+    "label": "Aerial Photograph of a Dense Village of Colorful Houses on a Snowy Hillside",
+    "sha256": "931aff2981657319181084d83d252542f9e7c25a92f49bfcbc3900286a212ba7"
+  },
+  {
+    "old": "1900s/colorized_photograph_of_a_crowded_street_in_a_financial_district_showing_tall_buildings_and_people_in_early_20th_century_attire.jpg",
+    "new": "photography/colorized_photograph_of_a_crowded_street_in_a_financial_district_showing_tall_buildings_and_people_in_early_20th_century_attire.jpg",
+    "label": "Colorized photograph of a crowded street in a financial district, showing tall buildings and people in early 2000s attire",
+    "sha256": "12c4be432b267c30a85fd2c515c83aefcac890f8aa273967b00deb682ee530fc"
+  },
+  {
+    "old": "2000s/Photograph - Miniature Zen Garden With Zyn Nicotine Pouch Container by Creative Display Works.jpeg",
+    "new": "photography/Photograph - Miniature Zen Garden With Zyn Nicotine Pouch Container by Creative Display Works.jpeg",
+    "label": "Photograph of a miniature Zen garden arrangement featuring a ZYN nicotine pouch container",
+    "sha256": "11b9fa699bb5b9a97ab755a1e49522b7bac8aadb1aa73d43826fb057b16790b3"
+  },
+  {
+    "old": "2000s/Photograph - Photograph of Islamic Tilework with Scalloped Medallion and Hexagonal Tiles.jpeg",
+    "new": "photography/Photograph - Photograph of Islamic Tilework with Scalloped Medallion and Hexagonal Tiles.jpeg",
+    "label": "Photograph of Islamic Tilework Featuring a Central Scalloped Medallion with Arabesque Patterns on a Background of Turquoise Hexagonal Tiles",
+    "sha256": "2f242420c46b49314bdb36f4b64baa977ff30f07b1175a393dea3ebed1b8eaf9"
+  },
+  {
+    "old": "2000s/Photograph - Great Mosque, Minaret and Courtyard.jpeg",
+    "new": "photography/Photograph - Great Mosque, Minaret and Courtyard.jpeg",
+    "label": "Photograph of a tall, square minaret and surrounding courtyard arcades under a blue sky",
+    "sha256": "fc01f327c020314dba767ec52f9fbfc77b81380ec3798859bd78a8ff4593c7a8"
+  },
+  {
+    "old": "2000s/Photograph - Interior Archway with Intricate Muqarnas and Colorful Floral Tilework.jpeg",
+    "new": "photography/Photograph - Interior Archway with Intricate Muqarnas and Colorful Floral Tilework.jpeg",
+    "label": "Photograph of an Interior Archway with Intricate Muqarnas and Colorful Floral Tilework",
+    "sha256": "2f56379de2b10eeca9a79de545b07dc9e5c078d220b89a535edca7a73f109d84"
+  },
+  {
+    "old": "2000s/Screenshot - Screenshot of a Chrome Chair Frame Holding an Open Laptop.jpeg",
+    "new": "photography/Screenshot - Screenshot of a Chrome Chair Frame Holding an Open Laptop.jpeg",
+    "label": "Photograph of a Chrome Chair Frame Holding an Open Laptop Near a Window",
+    "sha256": "4b822fb43e00b8ab126073cba765153a20be388c5f7bde515f63f2db755d00ef"
+  },
+  {
+    "old": "2000s/Screenshot - Social Media Post With Four Women In Halloween Costumes.jpeg",
+    "new": "photography/Screenshot - Social Media Post With Four Women In Halloween Costumes.jpeg",
+    "label": "Digital photograph of four women in evening wear and costumes, displayed in a social media screenshot",
+    "sha256": "8b2f19fc4540dd84d3acf0a6ade8f755ad699bf822423e81e4ac8a5cbb391556"
+  },
+  {
+    "old": "2000s/Photograph - Leucistic Axolotl In Clear Plastic Container With Label.jpeg",
+    "new": "photography/Photograph - Leucistic Axolotl In Clear Plastic Container With Label.jpeg",
+    "label": "Photograph of a Leucistic Axolotl in a Clear Plastic Container with Label",
+    "sha256": "707ffb46a5276aec4a2011cfc32c5a4eacac2c32f27c854d3fa6426db18a3b94"
+  },
+  {
+    "old": "2000s/Screenshot - Three People Sitting Around Table in Studio Setting.jpeg",
+    "new": "photography/Screenshot - Three People Sitting Around Table in Studio Setting.jpeg",
+    "label": "Photograph of three people sitting on chairs around a table in a studio setting",
+    "sha256": "7efe9104aeecffc169c1150f4a0f68b14d2578b6bf48f6045a9fdef5d26a3184"
+  },
+  {
+    "old": "2000s/Photograph - Interior Study with Arched Windows Overlooking City and Water by Mac Baconai.jpeg",
+    "new": "photography/Photograph - Interior Study with Arched Windows Overlooking City and Water by Mac Baconai.jpeg",
+    "label": "Photograph of an Interior Study with Arched Windows Overlooking a City Skyline and Water",
+    "sha256": "0f6de96ef737ea619e75444b25d343d1f244c018c877377bf5f8816f3dc22769"
+  },
+  {
+    "old": "2000s/Screenshot - Social Media Post About OpenAI Whistleblower News.jpeg",
+    "new": "photography/Screenshot - Social Media Post About OpenAI Whistleblower News.jpeg",
+    "label": "Photograph of a man in a black shirt standing against a concrete wall illuminated by diagonal light",
+    "sha256": "4140edf6edca1c2565d6bfe762fc24be4b97a087477e5e7449bc3a7e89f3c911"
+  },
+  {
+    "old": "2000s/Image - Adam Sandler Poster Above Extensive Collection of Click DVDs.jpeg",
+    "new": "photography/Image - Adam Sandler Poster Above Extensive Collection of Click DVDs.jpeg",
+    "label": "Photograph of a collection of 'Click' movie merchandise and DVDs beneath a German promotional poster featuring Adam Sandler",
+    "sha256": "8de40381794d645c3747598cd25574947a399276178cd05c9b378099253c6b72"
+  },
+  {
+    "old": "2000s/Photograph - Scratched Silver Apple Laptop on White Background.jpeg",
+    "new": "photography/Photograph - Scratched Silver Apple Laptop on White Background.jpeg",
+    "label": "Photograph of a Closed, Scratched Silver Laptop with Apple Logo",
+    "sha256": "2363d99b42ea976a2706dfa875d47a87efd95faeaaa51cbbd90f62a817b29a28"
+  },
+  {
+    "old": "2000s/Photograph - Two Children by Racetrack Fence, One Wearing 'Don't California My Tennessee' Shirt.jpeg",
+    "new": "photography/Photograph - Two Children by Racetrack Fence, One Wearing 'Don't California My Tennessee' Shirt.jpeg",
+    "label": "Photograph of two children standing by a chain-link fence at a dirt racetrack, one wearing a 'Don't California My Tennessee' shirt",
+    "sha256": "be2fabad3e9e67f19dde5651cd73ef0c2d310479b0b44e0761f8f8ac54fbdcc5"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Starling Murmuration Forming Abstract Shapes.jpeg",
+    "new": "photography/Photograph - Black and White Starling Murmuration Forming Abstract Shapes.jpeg",
+    "label": "Black and white photograph of a starling murmuration forming abstract shapes by Søren Solkær",
+    "sha256": "b812f018f4922229e41d2466008a6eb2bff4147b539868e0a9494f171ab819f8"
+  },
+  {
+    "old": "2000s/Photograph - Large Murmuration of Birds Against a Pale Blue and Orange Sky.jpeg",
+    "new": "photography/Photograph - Large Murmuration of Birds Against a Pale Blue and Orange Sky.jpeg",
+    "label": "Photograph of a large murmuration of birds against a pale blue and orange sky",
+    "sha256": "91c1ca4793a589704da817eddf9a91263ffe9da96a9826c4fd682bf2c5ef609e"
+  },
+  {
+    "old": "2000s/Illustration - Black And White Photograph Of Woman With Scribbled Lines.jpg",
+    "new": "photography/Illustration - Black And White Photograph Of Woman With Scribbled Lines.jpg",
+    "label": "Illustration Black And White Photograph Of Woman With Scribbled Lines",
+    "sha256": "37fb8b81e4f4dfdb6ba2e00a77b3cf250713af27b7920d3fd9cf5a9e7813fa9e"
+  },
+  {
+    "old": "2000s/Photograph - Person Wearing a Printed Banner in an Art-Filled Room.webp",
+    "new": "photography/Photograph - Person Wearing a Printed Banner in an Art-Filled Room.webp",
+    "label": "Photograph Person Wearing a Printed Banner in an Art Filled Room",
+    "sha256": "d881b72fa158144dfda8af33e6f3fbe5348ce186c0064b12dc95fc1d990c45c3"
+  },
+  {
+    "old": "unsorted/Illustration - Vaporwave Collage with John Lennon Bust, Photo, and Japanese Text.png",
+    "new": "photography/Illustration - Vaporwave Collage with John Lennon Bust, Photo, and Japanese Text.png",
+    "label": "Digital Collage with Bust Sculpture, Black and White Photo, and Pink Checkered Floor",
+    "sha256": "d649ed75883c92f9c9936bf7103f5841d8cf4e40bc6320cfa634c86d361cc082"
+  },
+  {
+    "old": "unsorted/Document - Pencil Drawing and Photograph of Fragmented Male Marble Torso.jpg",
+    "new": "photography/Document - Pencil Drawing and Photograph of Fragmented Male Marble Torso.jpg",
+    "label": "Drawing and Photograph of a Fragmented Male Marble Torso",
+    "sha256": "8dbc7902d5c1f96f95ddd60b1ff75493f04ad9bef92a85120553f54591ca0a03"
+  },
+  {
+    "old": "unsorted/Screenshot - Social Media Post With Text And Suburban Street Photograph.png",
+    "new": "photography/Screenshot - Social Media Post With Text And Suburban Street Photograph.png",
+    "label": "Screenshot of a social media post featuring text and a photograph of a suburban street on a sunny day",
+    "sha256": "1d1a30a17c539ce9a5cbac4376b3606f1cb455436ab9acd1f905e9ea21301051"
+  },
+  {
+    "old": "unsorted/Image - Cat With Muscular Human Arms Standing On Patio.jpg",
+    "new": "photography/Image - Cat With Muscular Human Arms Standing On Patio.jpg",
+    "label": "Digitally altered photograph of a cat with muscular human arms standing on a patio",
+    "sha256": "7e3036ccc9c21354138e8f5d1b2144cb2005abb341bfb2af27fb8830ddb2038f"
+  },
+  {
+    "old": "unsorted/Screenshot - Two Men, One With White Face Paint, Holding Laptop by Iain Softley.jpeg",
+    "new": "photography/Screenshot - Two Men, One With White Face Paint, Holding Laptop by Iain Softley.jpeg",
+    "label": "Photograph of two individuals in a dark room holding a laptop, one wearing white face paint and dramatic makeup",
+    "sha256": "b28a2e4ef01d15dfe15e67ca5199df8c6f25dc402862827031706dc35048b8df"
+  },
+  {
+    "old": "unsorted/Screenshot - Aerial View of Police Officers on Modern Patio with Pool by KTLA.jpeg",
+    "new": "photography/Screenshot - Aerial View of Police Officers on Modern Patio with Pool by KTLA.jpeg",
+    "label": "Aerial Photograph of Two Police Officers on a Modern Patio with Pool and Outdoor Bar",
+    "sha256": "24c49b58f68f398151e604a20839e00e25280d249113af5a96a9c927ebab6a09"
+  },
+  {
+    "old": "unsorted/Screenshot - Two Facebook Profiles With Matching Kissing Photos.jpeg",
+    "new": "photography/Screenshot - Two Facebook Profiles With Matching Kissing Photos.jpeg",
+    "label": "Screenshot Two Facebook Profiles With Matching Kissing Photos",
+    "sha256": "079d03ff1f57705b7fa8c03cf3279bc0b45a8b1fdd10c618dcb7d96d99d48138"
+  },
+  {
+    "old": "unsorted/Image - Man Hanging Onto Back Of 'Boing!' Delivery Truck.jpeg",
+    "new": "photography/Image - Man Hanging Onto Back Of 'Boing!' Delivery Truck.jpeg",
+    "label": "Photograph of a man hanging onto the back of a delivery truck labeled \"BOING!\"",
+    "sha256": "00eda838f7c4de908f21b9677f495889158c1ef5f9c9bb34bea2ab6fcc455197"
+  },
+  {
+    "old": "unsorted/Screenshot - Social Media Post Featuring Vanilla Ice in American Flag Jacket.jpeg",
+    "new": "photography/Screenshot - Social Media Post Featuring Vanilla Ice in American Flag Jacket.jpeg",
+    "label": "Photograph of a man with a high fade haircut wearing an American flag jacket",
+    "sha256": "9d2e1eb3345979674b61aa4a03c02072f6d9cdbb40225e8b7cf30d83f342ba04"
+  },
+  {
+    "old": "unsorted/Document - Black and White Photo of Math Teachers Protesting Calculator Use by Associated Press.jpeg",
+    "new": "photography/Document - Black and White Photo of Math Teachers Protesting Calculator Use by Associated Press.jpeg",
+    "label": "Document Black and White Photo of Math Teachers Protesting Calculator Use by Associated Press",
+    "sha256": "4a055345c049483acac9f19df0614c1b85035e4e937d0e83c7b27140d7d0a145"
+  },
+  {
+    "old": "unsorted/Document - Magazine Article Page with Photo and Abstract Artwork.jpeg",
+    "new": "photography/Document - Magazine Article Page with Photo and Abstract Artwork.jpeg",
+    "label": "Document Magazine Article Page with Photo and Abstract Artwork",
+    "sha256": "5c56290c56037bcc75f43b1d177307bd4cb134b3053b31158e53b7bc7f2aff99"
+  },
+  {
+    "old": "unsorted/Document - Newspaper Clipping With Halftone Photo Of A Man And Text.jpg",
+    "new": "photography/Document - Newspaper Clipping With Halftone Photo Of A Man And Text.jpg",
+    "label": "Document Newspaper Clipping With Halftone Photo Of A Man And Text",
+    "sha256": "d713c420d4f709d4b18c44d6b3738a245b3fde719b7781333ddaca459dd96d3b"
+  },
+  {
+    "old": "unsorted/Document - Newspaper Clipping With Halftone Photo Of A Man In Uniform.jpg",
+    "new": "photography/Document - Newspaper Clipping With Halftone Photo Of A Man In Uniform.jpg",
+    "label": "Document Newspaper Clipping With Halftone Photo Of A Man In Uniform",
+    "sha256": "d713c420d4f709d4b18c44d6b3738a245b3fde719b7781333ddaca459dd96d3b"
+  },
+  {
+    "old": "unsorted/Document - Two Brazilian Passports with Photos of Kim Jong-un and Kim Jong-il.jpeg",
+    "new": "photography/Document - Two Brazilian Passports with Photos of Kim Jong-un and Kim Jong-il.jpeg",
+    "label": "Document Two Brazilian Passports with Photos of Kim Jong un and Kim Jong il",
+    "sha256": "7a1a5b7563903f5d8c6ebabbc5c902a81151c5946b0937815e4b1d29d39ca0c2"
+  },
+  {
+    "old": "unsorted/NAC_CassetteImprintTemplate_U_forPHOTOSHOP_SIDE1.pdf",
+    "new": "photography/NAC_CassetteImprintTemplate_U_forPHOTOSHOP_SIDE1.pdf",
+    "label": "NAC_CassetteImprintTemplate_U_forPHOTOSHOP_SIDE1.pdf",
+    "sha256": "b28e90baa37234bc19cf2b10a5342b86b89543decf828074030771131638ee84"
+  },
+  {
+    "old": "unsorted/NAC_CassetteImprintTemplate_U_forPHOTOSHOP_SIDE2.pdf",
+    "new": "photography/NAC_CassetteImprintTemplate_U_forPHOTOSHOP_SIDE2.pdf",
+    "label": "NAC_CassetteImprintTemplate_U_forPHOTOSHOP_SIDE2.pdf",
+    "sha256": "663ea0152b95e1aa7fac93e64d907ee9ff208567be0008877305a725dc8b5db3"
+  },
+  {
+    "old": "unsorted/Photograph - Grey Fabric with Pixelated Anti-Surveillance Pattern.jpeg",
+    "new": "photography/Photograph - Grey Fabric with Pixelated Anti-Surveillance Pattern.jpeg",
+    "label": "Photograph Grey Fabric with Pixelated Anti Surveillance Pattern",
+    "sha256": "570afdfd05bf1e1a685144068b7c42906ef0d9eb1f556e3d44b0d3e1a02172fc"
+  },
+  {
+    "old": "unsorted/Photograph - Tangled Wires on an Electronic Patch Panel.jpeg",
+    "new": "photography/Photograph - Tangled Wires on an Electronic Patch Panel.jpeg",
+    "label": "Photograph Tangled Wires on an Electronic Patch Panel",
+    "sha256": "48deee5b0d57a4226d2278a3546f205327464957b5dbe5eabbbc36098634e172"
+  },
+  {
+    "old": "unsorted/Photograph - Two People in City with Japanese Text, Comme des Garçons Logo.jpeg",
+    "new": "photography/Photograph - Two People in City with Japanese Text, Comme des Garçons Logo.jpeg",
+    "label": "Photograph Two People in City with Japanese Text, Comme des Garçons Logo",
+    "sha256": "a37f4a1d0fd274b0cd37e71c8870d5738cdd8046a4bcf3233a3cb339c19fb1a2"
+  },
+  {
+    "old": "unsorted/Screenshot - About Adobe Photoshop 1.0.7 Dialog on Macintosh Desktop by Thomas Knoll, John Knoll, Steve Guttman, Russell Brown.png",
+    "new": "photography/Screenshot - About Adobe Photoshop 1.0.7 Dialog on Macintosh Desktop by Thomas Knoll, John Knoll, Steve Guttman, Russell Brown.png",
+    "label": "Screenshot About Adobe Photoshop 1.0.7 Dialog on Macintosh Desktop by Thomas Knoll, John Knoll, Steve Guttman, Russell Brown",
+    "sha256": "dcb9085719111499ba9531b86317f38327f00448dc95c277242482c551499741"
+  },
+  {
+    "old": "unsorted/Screenshot - Adobe Genuine Service Alert Window For Old Photoshop Version.jpg",
+    "new": "photography/Screenshot - Adobe Genuine Service Alert Window For Old Photoshop Version.jpg",
+    "label": "Screenshot Adobe Genuine Service Alert Window For Old Photoshop Version",
+    "sha256": "e27b5fb10f8e2a641d8ac4d920631e1800185996ee4e58f43e888abb399edea2"
+  },
+  {
+    "old": "unsorted/Screenshot - Black And White Photo Of Young Thomas Pynchon With Quote.png",
+    "new": "photography/Screenshot - Black And White Photo Of Young Thomas Pynchon With Quote.png",
+    "label": "Screenshot Black And White Photo Of Young Thomas Pynchon With Quote",
+    "sha256": "6a69d1180d0e35bba8d7a810e5a78cd3bbe1b09767d46b5b17ca7a3dfec57f5c"
+  },
+  {
+    "old": "unsorted/Screenshot - Text About Extreme Ironing With Photo Of Person Ironing On Cliff.jpg",
+    "new": "photography/Screenshot - Text About Extreme Ironing With Photo Of Person Ironing On Cliff.jpg",
+    "label": "Screenshot Text About Extreme Ironing With Photo Of Person Ironing On Cliff",
+    "sha256": "0c573ec0d5b132c79ef08984c0a05f37d1f657de9db1187c540ba4ea54c9e560"
+  },
+  {
+    "old": "2000s/Photograph - Minimalist Studio Setup with Concrete Blocks, Computer, Turntable, Books.jpeg",
+    "new": "photography/Photograph - Minimalist Studio Setup with Concrete Blocks, Computer, Turntable, Books.jpeg",
+    "label": "Photograph Minimalist Studio Setup with Concrete Blocks, Computer, Turntable, Books",
+    "sha256": "16d0d097cac7e4b76b60a97b62dba663f4f56a31dabd8c579ce4d4b0d0f36983"
+  },
+  {
+    "old": "2000s/Photograph - White Apple iMac G4 Computer on White Background.jpeg",
+    "new": "photography/Photograph - White Apple iMac G4 Computer on White Background.jpeg",
+    "label": "Photograph White Apple iMac G4 Computer on White Background",
+    "sha256": "6d0f750b4b4e3dc653b4442b03be81bbef5bbc14a4deb3cbfa91a5d40204a05f"
+  },
+  {
+    "old": "unsorted/Photograph - Black And White Halftone Print Of A Chimpanzee.jpeg",
+    "new": "photography/Photograph - Black And White Halftone Print Of A Chimpanzee.jpeg",
+    "label": "Photograph Black And White Halftone Print Of A Chimpanzee",
+    "sha256": "cd44ebb871cde1ef652b87a3f9764998d0a5cb8f4fbfc97d8a5b683873ae00af"
   }
 ]
