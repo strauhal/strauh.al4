@@ -1,0 +1,2630 @@
+[
+  {
+    "old": "1800s/black_and_white_photograph_of_the_steel_framework_of_a_large_domed_building_under_construction_1892.jpg",
+    "new": "photography/black_and_white_photograph_of_the_steel_framework_of_a_large_domed_building_under_construction_1892.jpg",
+    "label": "Black and White Photograph of the Steel Framework of a Large Domed Building Under Construction (1892)",
+    "sha256": "1ff2d7e2381575cb004e1709dc1ecf4a1a3d0932f2055e41e7d46bfb168d6cdf"
+  },
+  {
+    "old": "1800s/black_and_white_photograph_of_a_large_classical_building_electricity_building_under_construction_with_extensive_scaffolding_viewed_from_across_a_waterway_1892.jpg",
+    "new": "photography/black_and_white_photograph_of_a_large_classical_building_electricity_building_under_construction_with_extensive_scaffolding_viewed_from_across_a_waterway_1892.jpg",
+    "label": "Black and white photograph of a large classical building (Electricity Building) under construction with extensive scaffolding, viewed from across a waterway (1892)",
+    "sha256": "e76efe87fa1ea42e266350b80d84bfd8aee037a5cc35f799deded65be3922dcb"
+  },
+  {
+    "old": "1800s/sepia_photograph_of_the_court_of_honor_with_the_statue_of_the_republic_world_s_columbian_exposition_1893.jpg",
+    "new": "photography/sepia_photograph_of_the_court_of_honor_with_the_statue_of_the_republic_world_s_columbian_exposition_1893.jpg",
+    "label": "Sepia Photograph of the Court of Honor with the Statue of The Republic, World's Columbian Exposition (1893)",
+    "sha256": "e8cf0dbb0dab8fc3cbf63f39bf3f3cac833a3c88d6770df40a45631dea144c59"
+  },
+  {
+    "old": "1800s/black_and_white_photograph_of_a_grand_architectural_complex_and_fountains_by_a_waterway_1893.jpg",
+    "new": "photography/black_and_white_photograph_of_a_grand_architectural_complex_and_fountains_by_a_waterway_1893.jpg",
+    "label": "Black and White Photograph of a Grand Architectural Complex and Fountains by a Waterway (1893)",
+    "sha256": "350137b6de5ac340eaacd751bb4c010893a8e0b03c0eefd2778dc92a9f954e93"
+  },
+  {
+    "old": "1800s/black_and_white_photograph_of_a_large_crowd_walking_toward_a_central_domed_building_flanked_by_neoclassical_exhibition_halls_1893.jpg",
+    "new": "photography/black_and_white_photograph_of_a_large_crowd_walking_toward_a_central_domed_building_flanked_by_neoclassical_exhibition_halls_1893.jpg",
+    "label": "Black and white photograph of a large crowd walking toward a central domed building flanked by neoclassical exhibition halls (1893)",
+    "sha256": "4240323ce45cc6d2cfabe2d92416fb8b39c09bd93ba50f546b2ad7d0d392723e"
+  },
+  {
+    "old": "1800s/black_and_white_photograph_of_a_crowded_bridge_leading_to_a_large_domed_neoclassical_building_1893.jpg",
+    "new": "photography/black_and_white_photograph_of_a_crowded_bridge_leading_to_a_large_domed_neoclassical_building_1893.jpg",
+    "label": "Black and White Photograph of a Crowded Bridge Leading to a Large Domed Neoclassical Building (1893)",
+    "sha256": "d4677a43587c839f2883fd1091c64bfa0da3a7dd2f813f467d4334187eaec1b2"
+  },
+  {
+    "old": "1800s/black_and_white_photograph_of_large_neoclassical_exhibition_buildings_and_a_domed_structure_by_a_canal_1893.jpg",
+    "new": "photography/black_and_white_photograph_of_large_neoclassical_exhibition_buildings_and_a_domed_structure_by_a_canal_1893.jpg",
+    "label": "Black and White Photograph of Large Neoclassical Exhibition Buildings and a Domed Structure by a Canal (1893)",
+    "sha256": "33636b9d7e7279074036610b05fb414fd7b83bce6864d774a6d4d904426cc41e"
+  },
+  {
+    "old": "1900s/photograph_of_a_person_revealing_a_tattoo_reading_r_mutt_1917_on_their_torso.jpg",
+    "new": "photography/photograph_of_a_person_revealing_a_tattoo_reading_r_mutt_1917_on_their_torso.jpg",
+    "label": "Photograph of a person revealing a tattoo reading \"R. MUTT 1917\" on their torso",
+    "sha256": "6c45a54b5bb3240b9256f7fe4c1c112c53c6df15f9e74798fcafd96a52c8824b"
+  },
+  {
+    "old": "1900s/black_and_white_photograph_of_military_personnel_fleeing_a_large_burning_balloon_1918.jpg",
+    "new": "photography/black_and_white_photograph_of_military_personnel_fleeing_a_large_burning_balloon_1918.jpg",
+    "label": "Black and white photograph of military personnel fleeing a large, burning balloon (1918)",
+    "sha256": "3d4a47936650696b4063582c50025b32dbec22e3aeaae7141a5fc6bad1bee6d2"
+  },
+  {
+    "old": "1900s/black_and_white_photograph_of_frieder_nake_holding_two_computer_generated_drawings_1966.jpg",
+    "new": "photography/black_and_white_photograph_of_frieder_nake_holding_two_computer_generated_drawings_1966.jpg",
+    "label": "Black and White Photograph of Frieder Nake Holding Two Computer-Generated Drawings (1966)",
+    "sha256": "991de808445ab2e2daa693466b408087645a10925ebc6719edda36c2fe582ada"
+  },
+  {
+    "old": "1900s/photograph_of_pirates_autumn_winter_198182_by_sachiko_kuru_1981.jpeg",
+    "new": "photography/photograph_of_pirates_autumn_winter_198182_by_sachiko_kuru_1981.jpeg",
+    "label": "Photograph of Pirates, autumn/winter 1981–82 by Sachiko Kuru (1981)",
+    "sha256": "7826cb1f8158fbc774b60683683562a53dcaebe381352fd5254492feb0ae9963"
+  },
+  {
+    "old": "1900s/photograph_of_bias_cutting_spring_summer_1986_by_peter_lindbergh_1986.jpeg",
+    "new": "photography/photograph_of_bias_cutting_spring_summer_1986_by_peter_lindbergh_1986.jpeg",
+    "label": "Photograph of Bias Cutting, spring/summer 1986 by Peter Lindbergh (1986)",
+    "sha256": "189e7605e760b7a32cf4f7884efe82b022409daa1dbc4148d6d994a2a83c6cba"
+  },
+  {
+    "old": "1900s/Joseph-Beuys-Plastische-Theorie-1972-Photo-by-J-Blanc.png",
+    "new": "photography/Joseph-Beuys-Plastische-Theorie-1972-Photo-by-J-Blanc.png",
+    "label": "Joseph-Beuys-Plastische-Theorie-1972-Photo-by-J-Blanc",
+    "sha256": "5308e1c70e3523666acbec40b6f01b23550ececc7a6abc75c6dbafc1f7c3a430"
+  },
+  {
+    "old": "2000s/Photograph - People Walking on Patterned Pavement at Night by Rinko Kawauchi.jpg",
+    "new": "photography/Photograph - People Walking on Patterned Pavement at Night by Rinko Kawauchi.jpg",
+    "label": "Untitled (from the series Utatane) by Rinko Kawauchi (2001)",
+    "sha256": "5c737b89e2b7a5dfb6f37a65b14c6c8bd05ea4daf8b61755f47408ecb78c68e6"
+  },
+  {
+    "old": "2000s/Photograph - Soft Focus Close-Up of Two Pink Roses.jpeg",
+    "new": "photography/Photograph - Soft Focus Close-Up of Two Pink Roses.jpeg",
+    "label": "Roses, Gaeta (2004)",
+    "sha256": "4fdadf15ded28148949b4525dca43c0dcfb43db6dfba8e053e0827e952f4db50"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Favela Next to Luxury Condominium by Tuca Vieira.png",
+    "new": "photography/Photograph - Aerial View of Favela Next to Luxury Condominium by Tuca Vieira.png",
+    "label": "Paraisópolis and Morumbi by Tuca Vieira (2004)",
+    "sha256": "d366f3d3c753a4f3fb3649228f8243b699e2e13b9e5946723623462787befc55"
+  },
+  {
+    "old": "2000s/Photograph - Three People Planking on a Wall Next to Stairs.jpg",
+    "new": "photography/Photograph - Three People Planking on a Wall Next to Stairs.jpg",
+    "label": "Exploration de la gravité by Philippe Ramette (2006)",
+    "sha256": "dc8cce71db011b21c1a70f1f265585a4cb6aa9dab2e1c6b69f048f391fcff05f"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Suburban Houses and Green Lawns.jpg",
+    "new": "photography/Photograph - Aerial View of Suburban Houses and Green Lawns.jpg",
+    "label": "Subdivision, 5000 by Andreas Gursky (2006)",
+    "sha256": "53dd3d9d6845da7f8937f3ed5621de9aa7f04a6161df9a9f73c47573417ab0c7"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Densely Packed Buildings in Cairo's Garbage City.jpeg",
+    "new": "photography/Photograph - Aerial View of Densely Packed Buildings in Cairo's Garbage City.jpeg",
+    "label": "Cairo by Andreas Gursky (2007)",
+    "sha256": "c2cac9c8fd656b7c93ed7dad3807491990e53ef73a4012e56b031f0c42550a5d"
+  },
+  {
+    "old": "2000s/Photograph - Streaks of Light Across Dark Sky Above Silhouetted Trees.jpg",
+    "new": "photography/Photograph - Streaks of Light Across Dark Sky Above Silhouetted Trees.jpg",
+    "label": "Aurora Borealis by Bence Bakonyi (2011)",
+    "sha256": "12b73cd2233354648491c3a0a0683c6d0f4022388abc972a3102855a189dfa4a"
+  },
+  {
+    "old": "2000s/Photograph - Sino-French Science Park Church by Shanghai Dachuan Architects.jpeg",
+    "new": "photography/Photograph - Sino-French Science Park Church by Shanghai Dachuan Architects.jpeg",
+    "label": "Reading Between the Lines by Gijs Van Vaerenbergh (2011)",
+    "sha256": "c3f1708e81bbad4c17f8a3977fb02502d001e7a0032366e4a8d86a967c4bbf87"
+  },
+  {
+    "old": "2000s/Photograph - Modern Transparent Chair with Wooden Seat and Back Slats.jpeg",
+    "new": "photography/Photograph - Modern Transparent Chair with Wooden Seat and Back Slats.jpeg",
+    "label": "Ghost Chair by Nendo (2012)",
+    "sha256": "02d3cf633a78fe4af5f0c58c46dc25d12feb2164041a09bac5662195d7d82d11"
+  },
+  {
+    "old": "2000s/Photograph - Syrian Rebel in Suit Holds Rifle in Aleppo Street by Goran Tomasevic.jpg",
+    "new": "photography/Photograph - Syrian Rebel in Suit Holds Rifle in Aleppo Street by Goran Tomasevic.jpg",
+    "label": "Free Syrian Army fighter in a suit holds an AK-47 rifle in Aleppo by Goran Tomasevic (2012)",
+    "sha256": "4a33b8855853f0f6e01565ce07a6d59d9e41385bcab185cbfd526d1291d4f151"
+  },
+  {
+    "old": "2000s/Photograph - Brutalist Concrete Monument Overlooking City With Lone Figure.jpg",
+    "new": "photography/Photograph - Brutalist Concrete Monument Overlooking City With Lone Figure.jpg",
+    "label": "Prilep, Macedonia by Valentin Jeck (2012)",
+    "sha256": "b0b561d93da9db8890f6d12a1609d530cc645527aaa08ed7af5ef9fbb3f008d3"
+  },
+  {
+    "old": "2000s/Photograph - Snow-capped Mountain Over Dark, Blurry Foreground with Light Reflections.jpg",
+    "new": "photography/Photograph - Snow-capped Mountain Over Dark, Blurry Foreground with Light Reflections.jpg",
+    "label": "Untitled (from the series Ametsuchi) by Rinko Kawauchi (2012)",
+    "sha256": "ee991165adbf3079ddb7fc30ed87a0a7534aa533005937b0058cd38791b4b32c"
+  },
+  {
+    "old": "2000s/Photograph - Willem Dafoe Posing With Portrait Of Himself In Gallery.png",
+    "new": "photography/Photograph - Willem Dafoe Posing With Portrait Of Himself In Gallery.png",
+    "label": "The Great Gatsby by Alex Prager (2013)",
+    "sha256": "1efc2ee684c6db5c6e00b5e2b688bd935114917fb843f7c5dd94c33d108bc7ed"
+  },
+  {
+    "old": "2000s/Photograph - Purple-Toned Street Scene with Buildings and Streaking Lights.jpg",
+    "new": "photography/Photograph - Purple-Toned Street Scene with Buildings and Streaking Lights.jpg",
+    "label": "Krakow, Poland by Tomasz Wiech (2013)",
+    "sha256": "13a475f4a400cbcac9840662e4004a8ab712664a4e51b04bc1d407973be5c172"
+  },
+  {
+    "old": "2000s/Photograph - Liquor Store at Dusk, Tall Trees, Mountains, Red Car by Nick Carver.png",
+    "new": "photography/Photograph - Liquor Store at Dusk, Tall Trees, Mountains, Red Car by Nick Carver.png",
+    "label": "4 Bros Liquor #4, San Bernardino, CA by Todd Hido (2013)",
+    "sha256": "a78018bb8a3f578e9999a7e75dcf5d68e5de3c0644e42a12796d1778de55f750"
+  },
+  {
+    "old": "2000s/Photograph - Girls on the swings, Surprise Creek Hutterite colony, Montana by William Albert Allard.jpeg",
+    "new": "photography/Photograph - Girls on the swings, Surprise Creek Hutterite colony, Montana by William Albert Allard.jpeg",
+    "label": "Swinging by Laura Pannack (2014)",
+    "sha256": "efe728246ebfb084e5edccc434d19a5365c3513f60500514f5d3c92cadafc1a1"
+  },
+  {
+    "old": "2000s/Photograph - Large Sheet of Dried Ivy Peeling Off Brick Building.jpg",
+    "new": "photography/Photograph - Large Sheet of Dried Ivy Peeling Off Brick Building.jpg",
+    "label": "The Skin of the City by The Glue Society (2014)",
+    "sha256": "8c47a1d8aa05297d4e473c120e6672f3f52e44cd3d1f8f696ed3f0efe7e7ee68"
+  },
+  {
+    "old": "2000s/Photograph - Donald Trump And Kim Jong Un At DMZ, Photographers Present.webp",
+    "new": "photography/Photograph - Donald Trump And Kim Jong Un At DMZ, Photographers Present.webp",
+    "label": "Photograph Donald Trump And Kim Jong Un At DMZ, Photographers Present",
+    "sha256": "9cceee38db579db5992e347f11d7fa71752cc54422cadf70405e99bdad9cd46e"
+  },
+  {
+    "old": "2000s/Photograph - Modern Concrete Building Resembling Open Book Amidst Green Landscape.jpg",
+    "new": "photography/Photograph - Modern Concrete Building Resembling Open Book Amidst Green Landscape.jpg",
+    "label": "T-Art Center by Zhu Pei (2019)",
+    "sha256": "a595df42b347af98106decc728d0ff356e77f2f56f543c92512a642dd6e9c2aa"
+  },
+  {
+    "old": "2000s/Photograph - Modern Light Installation in Grand Ornate Hall with Painted Ceiling.jpg",
+    "new": "photography/Photograph - Modern Light Installation in Grand Ornate Hall with Painted Ceiling.jpg",
+    "label": "Infinity by Refik Anadol (2019)",
+    "sha256": "eb88b4e166634480a573b82ed455c7684b07bb7a6a650f09e600d092e2bb5499"
+  },
+  {
+    "old": "2000s/Photograph - Hand Holding Sketchbook with Fishing Boat Drawing and Real Boats.jpg",
+    "new": "photography/Photograph - Hand Holding Sketchbook with Fishing Boat Drawing and Real Boats.jpg",
+    "label": "Ink Sketch of Fishing Boats Docked at a Port (2023)",
+    "sha256": "e551baeaaf897e42a4d6900233502b1fd375d5584d88557f90739c3d88cf7acd"
+  },
+  {
+    "old": "2000s/Photograph - Lockheed A-12.jpg",
+    "new": "photography/Photograph - Lockheed A-12.jpg",
+    "label": "Photograph of a black U.S. Air Force reconnaissance jet flying above clouds (2025)",
+    "sha256": "03e0b2e8ebafd3c40fd4ea7481d0f8a4c01378e087edea4cdebb858c52d3dcc6"
+  },
+  {
+    "old": "2000s/Photograph - Neoclassical Exposition Grounds with Central Basin, Viewed from Statue.jpg",
+    "new": "photography/Photograph - Neoclassical Exposition Grounds with Central Basin, Viewed from Statue.jpg",
+    "label": "Black and white photograph of a neoclassical exposition grounds surrounding a central basin, viewed over the shoulder of a statue of a draped female figure holding a staff and an eagle-topped orb (2025)",
+    "sha256": "1392cacde9d37b4410e03a3099c04f8e5ef0c8007a7931e732c0db664b966161"
+  },
+  {
+    "old": "2000s/Photograph - Grand Neoclassical Building with Flags and Street Lamps.jpg",
+    "new": "photography/Photograph - Grand Neoclassical Building with Flags and Street Lamps.jpg",
+    "label": "Black and White Photograph of a Large Neoclassical Exhibition Hall with Flags and Street Lamps (2025)",
+    "sha256": "f4a2dbe96f8cda3669af1c259f7843fc79f605679e3f7a58deedac325b22b98b"
+  },
+  {
+    "old": "2000s/Photograph - World's Columbian Exposition.jpg",
+    "new": "photography/Photograph - World's Columbian Exposition.jpg",
+    "label": "Black and White Photograph of a Grand Exposition featuring White Neoclassical Buildings, a Central Canal, and Statues (2025)",
+    "sha256": "9f05734b7dc8e16801c86d92310b85ad7f945640318dbaf55495bb486ec14df8"
+  },
+  {
+    "old": "2000s/Photograph - Snowy Hillside with Bare Trees, Building, and Black Railing.jpg",
+    "new": "photography/Photograph - Snowy Hillside with Bare Trees, Building, and Black Railing.jpg",
+    "label": "Photograph of a snowy hillside with bare trees, a building, and a black railing (2025)",
+    "sha256": "b86f4c1dc3c4eea2b408c1c76470fe15eb1b06e5bbcdb3461c186af5fbd9e42e"
+  },
+  {
+    "old": "2000s/Photograph - Large Weathered Wooden House With Balcony And Overgrown Vegetation.jpg",
+    "new": "photography/Photograph - Large Weathered Wooden House With Balcony And Overgrown Vegetation.jpg",
+    "label": "Photograph of a large, weathered wooden house with a balcony and overgrown vegetation (2025)",
+    "sha256": "c5d36e8aff862e9b30ae6607b36338c1a5cbb7e80cb839f3a3ff458f30aadf5e"
+  },
+  {
+    "old": "2000s/Photograph - Ferris Wheel at the World's Columbian Exposition.jpg",
+    "new": "photography/Photograph - Ferris Wheel at the World's Columbian Exposition.jpg",
+    "label": "Black and white photograph of a large metal Ferris wheel surrounded by exposition buildings with smoke rising from a chimney (2025)",
+    "sha256": "e8ca6285335d1681e47b864b3d16649d8f72621ad7b6fcaa59c3f0e93685a097"
+  },
+  {
+    "old": "2000s/Photograph - Elevated Train and Buildings at 1893 Chicago World's Fair.jpg",
+    "new": "photography/Photograph - Elevated Train and Buildings at 1893 Chicago World's Fair.jpg",
+    "label": "Black and White Photograph of a Cityscape with an Elevated Train, Residential Buildings, and Large Exposition Structures near a Shoreline (2025)",
+    "sha256": "3ee46a984ac8a1f5a73302579f000eef4c81011421b8a2c767ade5c240c2406c"
+  },
+  {
+    "old": "2000s/Photograph - World's Columbian Exposition, Administration Building and Palace of Mechanic Arts.jpg",
+    "new": "photography/Photograph - World's Columbian Exposition, Administration Building and Palace of Mechanic Arts.jpg",
+    "label": "Sepia Photograph of a Large Domed Neoclassical Building and the Palace of Mechanic Arts, with Crowds and a Bridge (2025)",
+    "sha256": "db8c515b5fb5c3775dcd2dac68fff0e72f58c34b87a4230be2d3508e971285ba"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Classical Exposition Buildings Along Waterway.jpg",
+    "new": "photography/Photograph - Black and White Photograph of Classical Exposition Buildings Along Waterway.jpg",
+    "label": "Black and white photograph of large classical exposition buildings along a waterway with bridges and crowds (2025)",
+    "sha256": "b1d002de2044ba88d5a62fcf3cafa5be724e168da52746e36ad0836e7f908878"
+  },
+  {
+    "old": "2000s/Photograph - High-Angle Black and White Photograph of a Grand Exposition Complex.jpg",
+    "new": "photography/Photograph - High-Angle Black and White Photograph of a Grand Exposition Complex.jpg",
+    "label": "Black and white photograph of a large fairground complex with classical architecture and a central lagoon, viewed from a high angle (2025)",
+    "sha256": "c7cca93200dd85f8fd45db27a95648ba17a0a21036bc5c2b43cc34b8b3545c21"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Aerial View of Exposition Grounds, Elevated Railway, and Lake.jpg",
+    "new": "photography/Photograph - Black and White Aerial View of Exposition Grounds, Elevated Railway, and Lake.jpg",
+    "label": "Black and white photograph of a large amusement park or exposition grounds featuring a circular building and an elevated railway over water near a shoreline (2025)",
+    "sha256": "42a3baba249f9b30bbc9d611ed7819554906d38cb61184ca8c77ff8a2974a03f"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of a Grand Neoclassical Exhibition Building.jpg",
+    "new": "photography/Photograph - Black and White Photograph of a Grand Neoclassical Exhibition Building.jpg",
+    "label": "Black and White Photograph of a Large Neoclassical Exhibition Building with Central Dome and Equestrian Statue (2025)",
+    "sha256": "9590c739949aec66324a8e2e32c82b0bb6f0578879b5d8c7d4d0696b44a804bc"
+  },
+  {
+    "old": "2000s/Photograph - Sepia Photograph of Neoclassical Buildings Along Waterway with Rocky Foreground.jpg",
+    "new": "photography/Photograph - Sepia Photograph of Neoclassical Buildings Along Waterway with Rocky Foreground.jpg",
+    "label": "Sepia Photograph of Neoclassical Exposition Buildings along a Waterway with a Rocky Foreground (2025)",
+    "sha256": "6b96e836c0b62eea3021b6b12d94b2f7b1ff1b0ca147bfc15a3de64a76ea0fb3"
+  },
+  {
+    "old": "2000s/Photograph - Long Colonnade with Coffered Ceiling, Designed by Albert Speer.jpg",
+    "new": "photography/Photograph - Long Colonnade with Coffered Ceiling, Designed by Albert Speer.jpg",
+    "label": "Black and White Photograph of a Long Colonnade with Coffered Ceiling (2025)",
+    "sha256": "73f2444e33b1d7b110a26511e99b7429dc47cb76c2e46e5c9e4eb4264ec6acf8"
+  },
+  {
+    "old": "2000s/Photograph - Classical Exposition Building Across Water, Framed by Tree Foliage.jpg",
+    "new": "photography/Photograph - Classical Exposition Building Across Water, Framed by Tree Foliage.jpg",
+    "label": "Black and white photograph of a classical exposition building across water, framed by tree foliage (2025)",
+    "sha256": "d1c8f7a791145b5b8c089c2be15a1745083bb0256639f9930ef7455ec6c67b6c"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Classical Exhibition Buildings Along a Waterway.jpg",
+    "new": "photography/Photograph - Black and White Photograph of Classical Exhibition Buildings Along a Waterway.jpg",
+    "label": "Black and White Photograph of Classical Exhibition Buildings along a Waterway (2025)",
+    "sha256": "3bba5dc706d8fdd4a3f392836f537c1362b02274fcdbc4240b4d515cde649959"
+  },
+  {
+    "old": "2000s/Photograph - Crowded Lagoon Area in Front of Neoclassical Exhibition Halls.jpg",
+    "new": "photography/Photograph - Crowded Lagoon Area in Front of Neoclassical Exhibition Halls.jpg",
+    "label": "Black and White Photograph of a Crowded Lagoon Area in Front of Neoclassical Exhibition Halls Flying Flags (2025)",
+    "sha256": "9c8f8c10f76980a2101c8b9f2443b3338fedb77f6ad4dcae15e01ce43d53262b"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of a Classical Building Under Construction.jpg",
+    "new": "photography/Photograph - Black and White Photograph of a Classical Building Under Construction.jpg",
+    "label": "Black and white photograph of a large, classical-style building under construction, showing scaffolding and dirt in the foreground (2025)",
+    "sha256": "f5d360f8de95c74dd533cf7f0eeac5fa18b78d7403d39e0409e087b2e87d0ed5"
+  },
+  {
+    "old": "2000s/Photograph - Sepia Photograph of Grand Neoclassical Exhibition Building and Waterway.jpg",
+    "new": "photography/Photograph - Sepia Photograph of Grand Neoclassical Exhibition Building and Waterway.jpg",
+    "label": "Sepia Photograph of a Grand Neoclassical Exhibition Building and Waterway (2025)",
+    "sha256": "332e93ac5ee86e67aa18cf4c64e5f05b93f9b3bc12b47011adcac8894a3a1fb7"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Gondolas on Canal, Grand Buildings.jpg",
+    "new": "photography/Photograph - Black and White Photograph of Gondolas on Canal, Grand Buildings.jpg",
+    "label": "Black and White Photograph of Gondolas on a Canal in Front of Large Exposition Buildings (2025)",
+    "sha256": "b30e97c560cb09baaa8f7638cd48614f22ed1cb5d48d3f4b2fdecbda6f12a72e"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Portrait of Clara Bow Resting Chin on Hands.jpg",
+    "new": "photography/Photograph - Black and White Portrait of Clara Bow Resting Chin on Hands.jpg",
+    "label": "Black and white portrait of a woman with short dark hair and heavy makeup resting her chin on her hands (2025)",
+    "sha256": "34e6826989a7ff122a8ca82b338e576bd1d7c1778415f36a641bca2c4c8d7f3f"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of a Large Exhibition Hall Interior.jpg",
+    "new": "photography/Photograph - Black and White Photograph of a Large Exhibition Hall Interior.jpg",
+    "label": "Black and White Photograph of a Large Exhibition Hall Interior with Paintings, Sculptures, and Architectural Models (2025)",
+    "sha256": "c84acd4ef4653bdace3782739a1a9e1982e71e2989b9f962fd08b1b8b1d16720"
+  },
+  {
+    "old": "2000s/Photograph - Interior View of an Art Exhibition Room with Sculptures and Paintings.jpg",
+    "new": "photography/Photograph - Interior View of an Art Exhibition Room with Sculptures and Paintings.jpg",
+    "label": "Interior view of an art exhibition room labeled 'ITALIA', displaying numerous sculptures and paintings (2025)",
+    "sha256": "1e957ddb1864eb6140342a2a79b850f9b71d81d1ca84638248e4a3826c547ba2"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of a Courtyard with Fountain and Colonnade.jpg",
+    "new": "photography/Photograph - Black and White Photograph of a Courtyard with Fountain and Colonnade.jpg",
+    "label": "Black and White Photograph of a Courtyard with a Classical Colonnade and a Large Figurative Fountain (2025)",
+    "sha256": "0bf0bdd91822a590f58cb5e6146668a70ac85c2302e2d81a7fa5ba63937aa453"
+  },
+  {
+    "old": "2000s/Photograph - Chimpanzee In Yellow Shirt Playing Video Game Under 'USER' Sign.jpg",
+    "new": "photography/Photograph - Chimpanzee In Yellow Shirt Playing Video Game Under 'USER' Sign.jpg",
+    "label": "Photograph of a chimpanzee wearing a yellow shirt and playing a video game under a sign reading \"USER\" (2025)",
+    "sha256": "1bedf1de43c5ca804afd768566ba8e49671ea463bc16d1505e228906a1547bbc"
+  },
+  {
+    "old": "2000s/Photograph - Ornate Exhibition Buildings Reflected in Water with Arched Bridge.jpg",
+    "new": "photography/Photograph - Ornate Exhibition Buildings Reflected in Water with Arched Bridge.jpg",
+    "label": "Black and white photograph of a large, ornate exhibition building complex with domes and arched colonnades reflected in a body of water (2025)",
+    "sha256": "4855ae64bf5bc25b77d7021cf26857bc4e73b5a9d6c763e1fc84178d32a971c5"
+  },
+  {
+    "old": "2000s/Photograph - Large Classical Revival Building with Dome and Bridge Over Canal.jpg",
+    "new": "photography/Photograph - Large Classical Revival Building with Dome and Bridge Over Canal.jpg",
+    "label": "Black and White Photograph of a Large Classical Revival Building with a Central Dome and Bridge over a Canal (2025)",
+    "sha256": "84583a7c5703f13a929a6290f7957bf842087afce303f7a56b40e6e468d0fc79"
+  },
+  {
+    "old": "2000s/Photograph - Long Architectural Corridor with Fluted Columns and Coffered Ceiling.jpg",
+    "new": "photography/Photograph - Long Architectural Corridor with Fluted Columns and Coffered Ceiling.jpg",
+    "label": "Black and white photograph of a long architectural corridor lined with fluted columns and a coffered ceiling (2025)",
+    "sha256": "9fe32f9bd102836936a90e035496ab9a3058489efb507668917fa4815e386d2a"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Classical Tower and Dome from Rooftop.jpg",
+    "new": "photography/Photograph - Black and White Photograph of Classical Tower and Dome from Rooftop.jpg",
+    "label": "Black and White Photograph of a Classical Tower and Dome Structure with a Ladder, seen from a Rooftop (2025)",
+    "sha256": "a77ddbf107d2b1cb5af3adea4ce96d621c4c1977f98677f9b390ddc2c01bc0c1"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Grand Neoclassical Building with Columbus Inscription.jpg",
+    "new": "photography/Photograph - Black and White Photograph of Grand Neoclassical Building with Columbus Inscription.jpg",
+    "label": "Black and White Photograph of a Grand Neoclassical Building Entrance with an Archway, Columns, Statues, and an Inscription about Christopher Columbus, with People and Horse-Drawn Carts in the Foreground (2025)",
+    "sha256": "37a86ce595e8aa90fa67cd916e7084baad245c95cc4d6048d0dc2546a975bfe3"
+  },
+  {
+    "old": "2000s/Photograph - Vintage Photograph of Classical Sculpture on Building Facade with Seated Group.jpg",
+    "new": "photography/Photograph - Vintage Photograph of Classical Sculpture on Building Facade with Seated Group.jpg",
+    "label": "Vintage Photograph of a Sculpture Depicting a Female Figure with a Torch and Two Male Figures Subduing a Creature, Set into a Classical Building Facade, with a Group of People Seated at the Base (2025)",
+    "sha256": "8e8bef79aab9540349acfdb882db262177ad3ee09c6fd529c3f36c7acd169bb4"
+  },
+  {
+    "old": "2000s/Photograph - Grand Neoclassical Buildings Along a Waterway with Bridges and Statues.jpg",
+    "new": "photography/Photograph - Grand Neoclassical Buildings Along a Waterway with Bridges and Statues.jpg",
+    "label": "Black and White Photograph of a Grand Neoclassical Exposition Site Featuring a Central Waterway, Bridges, and Statues (2025)",
+    "sha256": "87e93326f831920c236efdf5f9eb83310e09c9e08118a38475658d69723ace7f"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of World's Columbian Exposition, 1893.jpg",
+    "new": "photography/Photograph - Black and White Photograph of World's Columbian Exposition, 1893.jpg",
+    "label": "Black and white photograph of a large sailing ship docked next to a classical building with statues (2025)",
+    "sha256": "c863aa84819f750ac1555f1a18f4bcabf3585d4753c1fcc7a1860598bd58658e"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Grand Neoclassical Building with Crowds.jpg",
+    "new": "photography/Photograph - Black and White Photograph of Grand Neoclassical Building with Crowds.jpg",
+    "label": "Black and white photograph of a grand neoclassical building entrance with columns, statues, flags, and crowds of people (2025)",
+    "sha256": "3892605571e8171f908e34e53357ef28930d83ca2bd1105ab610fc78c8b3d560"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Photograph Of Classical Building Reflected In Water.jpg",
+    "new": "photography/Photograph - Black And White Photograph Of Classical Building Reflected In Water.jpg",
+    "label": "Black and White Photograph of a Classical Building Across a Body of Water Framed by Tree Branches (2025)",
+    "sha256": "0c8b8f02d44c4b0a24d6b946848e2a4ef9109d91c231b3bad4baff084842470e"
+  },
+  {
+    "old": "2000s/Photograph - Construction Worker on Skyscraper Beam Overlooking Chrysler Building.jpg",
+    "new": "photography/Photograph - Construction Worker on Skyscraper Beam Overlooking Chrysler Building.jpg",
+    "label": "Black and White Photograph of a Construction Worker on a Skyscraper Beam Overlooking the Chrysler Building (2025)",
+    "sha256": "78b702f3dfb28e1d2d1fe973166a6b4b9dcb092af198d37b8def756a1caef352"
+  },
+  {
+    "old": "2000s/Photograph - Statue of The Republic Overlooking World's Columbian Exposition Grounds.jpg",
+    "new": "photography/Photograph - Statue of The Republic Overlooking World's Columbian Exposition Grounds.jpg",
+    "label": "Black and White Photograph of a Statue Overlooking a Waterway Towards a Large Domed Building (2025)",
+    "sha256": "d123f9d860b26eff17e39b87e7babc9270040a1cf9d0a9bda2964d69b08bf9f6"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of the Administration Building at a World's Fair.jpg",
+    "new": "photography/Photograph - Black and White Photograph of the Administration Building at a World's Fair.jpg",
+    "label": "Administration Building (2025)",
+    "sha256": "72d3dd500a790058cde56ae2682bc06be162ea55c880c222197c1e83a9c69701"
+  },
+  {
+    "old": "2000s/Photograph - Four Members of The Weavers Folk Group with Instruments.jpg",
+    "new": "photography/Photograph - Four Members of The Weavers Folk Group with Instruments.jpg",
+    "label": "Pete Seeger, Woody Guthrie, Alan Lomax, and Bess Lomax Hawes (2025)",
+    "sha256": "3d82aeab7c81d2334a7eca24b1717a27bdd4a92aa465aec41ae66a541b392146"
+  },
+  {
+    "old": "2000s/Photograph - Three Men in Shirts and Ties Walking on City Sidewalk.jpg",
+    "new": "photography/Photograph - Three Men in Shirts and Ties Walking on City Sidewalk.jpg",
+    "label": "Black and White Photograph of Three Men in Shirts and Ties Walking on a City Sidewalk (2025)",
+    "sha256": "3584046dee2e012ac48fb994eb72ab38bf44f41983001779657d17d08931c531"
+  },
+  {
+    "old": "2000s/Photograph - Five People In Eclectic Clothing In A Wooded Hillside.jpg",
+    "new": "photography/Photograph - Five People In Eclectic Clothing In A Wooded Hillside.jpg",
+    "label": "Photograph of five people in eclectic clothing standing in a wooded hillside (2025)",
+    "sha256": "89bf7179cd8c14008be10d25e59708bde33b45f0c65ae51088d66a5e4490f5d3"
+  },
+  {
+    "old": "2000s/Photograph - Tattooed Man MC Ride and Young Girl Sitting on Stage.jpg",
+    "new": "photography/Photograph - Tattooed Man MC Ride and Young Girl Sitting on Stage.jpg",
+    "label": "Photograph of a tattooed man and a young girl sitting on a stage platform near drums (2025)",
+    "sha256": "135d7441dfbb2afcc3099286b97d6ca193963c61f561f182214ee323bfd069c8"
+  },
+  {
+    "old": "2000s/Photograph - Pope John Paul II Waving To A Crowd.jpg",
+    "new": "photography/Photograph - Pope John Paul II Waving To A Crowd.jpg",
+    "label": "Black and White Photograph of an Elderly Man in White Robes Waving to a Crowd (2025)",
+    "sha256": "79b7b07fc2dff864fcc8ea3f399fee1aaac183be4c1455870e1560812bbc597f"
+  },
+  {
+    "old": "2000s/Image - Digitally Altered Photograph of a Crying Cat Disintegrating.jpg",
+    "new": "photography/Image - Digitally Altered Photograph of a Crying Cat Disintegrating.jpg",
+    "label": "Digitally Edited Photograph of a Black and White Cat Disintegrating into Triangles (2025)",
+    "sha256": "21f969957f08cffe36382f54eff35924a0c05a4f2a627a4af359a773c5ff732a"
+  },
+  {
+    "old": "2000s/Photograph - Photograph of M.C. Escher's Gravestone with Tessellating Bird Design.jpg",
+    "new": "photography/Photograph - Photograph of M.C. Escher's Gravestone with Tessellating Bird Design.jpg",
+    "label": "Grave slab decoration featuring black and white tessellating bird and geometric patterns (2025)",
+    "sha256": "11fee4d13851fe79c29542cbbfe0c70dcc190b7b062d2d1134bb953c4370cc14"
+  },
+  {
+    "old": "2000s/Photograph - Research Paper Title Slide Projected in Auditorium.jpeg",
+    "new": "photography/Photograph - Research Paper Title Slide Projected in Auditorium.jpeg",
+    "label": "Photograph of a research paper title slide projected onto a large screen in a dark auditorium (2025)",
+    "sha256": "60e09189d6b9733ff89c4d162481888d29a1939d8c1b70396249f8d5ef475863"
+  },
+  {
+    "old": "2000s/Photograph - Duomo di Milano.jpeg",
+    "new": "photography/Photograph - Duomo di Milano.jpeg",
+    "label": "Photograph of the Ornate Gothic Spires and Rooftop of a Cathedral (2025)",
+    "sha256": "08d7149a9021e3f0888135979f3d913075dee023e8b993e980b957b411a985e4"
+  },
+  {
+    "old": "2000s/Photograph - Osaka Castle Overlooking Night Baseball Game.jpeg",
+    "new": "photography/Photograph - Osaka Castle Overlooking Night Baseball Game.jpeg",
+    "label": "G3Nb-I7WsAAZna7.jpeg (2025)",
+    "sha256": "dee10931304e32e47a3afe7784d65f7d5cbf7dd24c6838a3e5d8f2f2f81c177d"
+  },
+  {
+    "old": "2000s/Photograph - Two Silhouetted Performers on Foggy Stage, One Hanging Upside Down.jpeg",
+    "new": "photography/Photograph - Two Silhouetted Performers on Foggy Stage, One Hanging Upside Down.jpeg",
+    "label": "Photograph of two silhouetted performers on a foggy stage, one hanging upside down (2025)",
+    "sha256": "bbdf013acaf4be3323c1524becaf4b13224b5a77d925938c9a10edc314c9f865"
+  },
+  {
+    "old": "2000s/Image - Black and White Photo of Deleuze, Guattari, and Michael Cera.jpeg",
+    "new": "photography/Image - Black and White Photo of Deleuze, Guattari, and Michael Cera.jpeg",
+    "label": "Black and White Photograph of Three People Seated at a Table in Front of a Chalkboard (2025)",
+    "sha256": "924a95863a1819247527caf2ff78e9a64187d848d3a8937b17cce318566c7951"
+  },
+  {
+    "old": "2000s/Photograph - Muted Toned Image of Suburban Houses and Garages.png",
+    "new": "photography/Photograph - Muted Toned Image of Suburban Houses and Garages.png",
+    "label": "G46vt-YbQAcSnCK.png (2025)",
+    "sha256": "d563b1a7713ecc8aefbc6c9d2d50bbc5cf5090bfffed1c6ee076e246017cf6d0"
+  },
+  {
+    "old": "2000s/Photograph - Two People in Traditional Attire Against Corrugated Wall.png",
+    "new": "photography/Photograph - Two People in Traditional Attire Against Corrugated Wall.png",
+    "label": "G47GQwUXQAAmDPJ 2.png (2025)",
+    "sha256": "6b825db78cc7639f85b26d1578abf6c2ea72125eff1be71456552f83efbd7bb6"
+  },
+  {
+    "old": "2000s/Photograph - Donald Trump and Official View Trump Mugshot T-Shirt Display.jpeg",
+    "new": "photography/Photograph - Donald Trump and Official View Trump Mugshot T-Shirt Display.jpeg",
+    "label": "G4coSGXW4AA8gh4 2.jpeg (2025)",
+    "sha256": "58b0f425b975ccc8ea8ba3c092ad1eaadaf455ef6066d3b2c1673bcdbf1baccc"
+  },
+  {
+    "old": "2000s/Photograph - Donald Trump and Man Examine Trump Merchandise Display.jpeg",
+    "new": "photography/Photograph - Donald Trump and Man Examine Trump Merchandise Display.jpeg",
+    "label": "Photograph of Donald Trump and a Man Examining a Shelf Display of Merchandise (2025)",
+    "sha256": "b55228ded26d5569b9387ee825bc46c556dd74d522e569acb86508762da982d2"
+  },
+  {
+    "old": "2000s/Photograph - Pablo Picasso Posing In His Studio With Paintings.jpeg",
+    "new": "photography/Photograph - Pablo Picasso Posing In His Studio With Paintings.jpeg",
+    "label": "Abstract painting depicting two stylized figures, one blue and one green, kneeling (2025)",
+    "sha256": "9a3d2274fa4bb09e9393e77607d4016498a1ef2f6ad3673f970d1aa21d2777f0"
+  },
+  {
+    "old": "2000s/Photograph - Five Men, One in Wheelchair, Against Tiled Wall.jpeg",
+    "new": "photography/Photograph - Five Men, One in Wheelchair, Against Tiled Wall.jpeg",
+    "label": "Photograph of five men, one in a wheelchair, standing against a tiled wall (2025)",
+    "sha256": "d7195101152891cb1630b40a15218b8e3c8c16ee774b3ea24c97facc4460f203"
+  },
+  {
+    "old": "2000s/Photograph - Slavoj Žižek and Woman in Black Leather Coat in Green Tiled Bathroom.jpeg",
+    "new": "photography/Photograph - Slavoj Žižek and Woman in Black Leather Coat in Green Tiled Bathroom.jpeg",
+    "label": "Photograph of a bearded man and a woman in a black coat standing next to a toilet in a green tiled room (2025)",
+    "sha256": "1967304ea1359b47a3b37d0ff595c8db0c3eeea7c050afb31e20749c42eb7ca4"
+  },
+  {
+    "old": "2000s/Photograph - Artist in Studio with Large Abstract Painting and Forest View.jpeg",
+    "new": "photography/Photograph - Artist in Studio with Large Abstract Painting and Forest View.jpeg",
+    "label": "Large Abstract Painting with Red, Black, Blue, and Yellow Swirls (2025)",
+    "sha256": "b449e954a6c9990e6866d5c595366e993a18350fb58f6a99bae46f5f3e093c63"
+  },
+  {
+    "old": "2000s/Photograph - Room with Mattress, Crucifix, Books, Rifle, DJ Controller on Floor.jpeg",
+    "new": "photography/Photograph - Room with Mattress, Crucifix, Books, Rifle, DJ Controller on Floor.jpeg",
+    "label": "G5WtDwRWoAA-9HE.jpeg (2025)",
+    "sha256": "79ae1b0106530c68b338ebd17559696fd524b16d639d153c648ebaaca6f1aef2"
+  },
+  {
+    "old": "2000s/Photograph - Two Men With Contrasting Skin Tones Facing Each Other.jpeg",
+    "new": "photography/Photograph - Two Men With Contrasting Skin Tones Facing Each Other.jpeg",
+    "label": "Black and White Conceptual Photograph of Two Men Facing Each Other (2025)",
+    "sha256": "15fea45a88903e8e1080ab4700ac5a819238a126c1f07a0aacb0295e1ca83f62"
+  },
+  {
+    "old": "2000s/Photograph - Train Crossing Trestle Bridge Above Red Barn and Mountains.jpeg",
+    "new": "photography/Photograph - Train Crossing Trestle Bridge Above Red Barn and Mountains.jpeg",
+    "label": "Photograph of a Train Crossing a Trestle Bridge Above a Red Barn and Forest with Large Mountains in the Background (2025)",
+    "sha256": "bd4ef0370cefbb740fd9c7db261d16089ae453a3520471c0ddf5824a4975442f"
+  },
+  {
+    "old": "2000s/Photograph - Two Figures in Canoe on Sparkling Water at Sunset.jpeg",
+    "new": "photography/Photograph - Two Figures in Canoe on Sparkling Water at Sunset.jpeg",
+    "label": "Photograph of two figures in a canoe on sparkling water at sunset (2025)",
+    "sha256": "92d736abed3cab41ba1567b4c73d447e869b5309b99dfd12fb6ce2bf21a4d009"
+  },
+  {
+    "old": "2000s/Photograph - Winding Road Through Sunlit Forest with Hazy Light.jpeg",
+    "new": "photography/Photograph - Winding Road Through Sunlit Forest with Hazy Light.jpeg",
+    "label": "Photograph of a Winding Road Through a Sunlit Forest",
+    "sha256": "7dc76244339543be8638259c625a7e350035c0ec9ececd5c96cc4908067233bc"
+  },
+  {
+    "old": "2000s/Photograph - Free Jazz by Jim Marshall.jpeg",
+    "new": "photography/Photograph - Free Jazz by Jim Marshall.jpeg",
+    "label": "Black and White Photograph of Musicians on Stage with Motion Blur",
+    "sha256": "c0c556b21dd4206a4aba60b3cf7a8f30f4269ce1a908101338289df21deec881"
+  },
+  {
+    "old": "2000s/Photograph - Man Dining Alone with Projected Silhouette of Woman.jpeg",
+    "new": "photography/Photograph - Man Dining Alone with Projected Silhouette of Woman.jpeg",
+    "label": "Photograph of a Man Dining Alone with a Projected Silhouette of a Woman",
+    "sha256": "41dbb913a6b48a8bc23a0bd90affdfcd9f75148a6d952d77cc106b1d1e70292f"
+  },
+  {
+    "old": "2000s/Photograph - Keychain Shaped Like Software Toolbar Hanging From Keys.jpeg",
+    "new": "photography/Photograph - Keychain Shaped Like Software Toolbar Hanging From Keys.jpeg",
+    "label": "Photograph of a keychain shaped like a software toolbar",
+    "sha256": "612eecb04844bbb93f3badb93192dcb7490fb93d38cf325881b7c1d146a5762b"
+  },
+  {
+    "old": "2000s/Photograph - The ceiling of Shah Mosque in Isfahan, Iran.jpeg",
+    "new": "photography/Photograph - The ceiling of Shah Mosque in Isfahan, Iran.jpeg",
+    "label": "Highly Symmetrical Image of Blue and White Geometric Tiling on a Vaulted Ceiling",
+    "sha256": "e8c6cda2e592fde9992103a63515b846945641d0555029e386422e6bbb56f1a0"
+  },
+  {
+    "old": "2000s/Photograph - Vintage Macintosh Computer with MIDI Keyboard and Mouse.jpeg",
+    "new": "photography/Photograph - Vintage Macintosh Computer with MIDI Keyboard and Mouse.jpeg",
+    "label": "Photograph of a Vintage Macintosh Computer with a Piano Keyboard and Mouse",
+    "sha256": "64730400bd36b0dadc5d25fc00f666b8627a851b7411db47555a149f1dbb5746"
+  },
+  {
+    "old": "2000s/Photograph - White Headset with Apple Logo and Black Wristband Keypad.jpeg",
+    "new": "photography/Photograph - White Headset with Apple Logo and Black Wristband Keypad.jpeg",
+    "label": "Photograph of a white headset with an orange earpiece and a black wristband with a keypad",
+    "sha256": "bb1ba4078e79054e32df162dfd727a707520749de6c4daac591cbff1867b7f32"
+  },
+  {
+    "old": "2000s/Photograph - Gray Apple Flip Phone Concept, Shown Open and Closed. by Frog Design.jpeg",
+    "new": "photography/Photograph - Gray Apple Flip Phone Concept, Shown Open and Closed. by Frog Design.jpeg",
+    "label": "Photograph of a conceptual gray Apple flip phone design",
+    "sha256": "1a8f8d97f94fd3ad1a757b27ee4fcd2ca6abd48c877234def8539f0c24d6ce4a"
+  },
+  {
+    "old": "2000s/Photograph - Person Holding Colorful Modular Apple Computer Prototype by Hartmut Esslinger - Frog Design.jpeg",
+    "new": "photography/Photograph - Person Holding Colorful Modular Apple Computer Prototype by Hartmut Esslinger - Frog Design.jpeg",
+    "label": "Photograph of a person holding a colorful modular computer prototype",
+    "sha256": "e368ae30f23829c3eebcf751ce7c8c81041f4f3d5538456b9dbfaade19af28a9"
+  },
+  {
+    "old": "2000s/Photograph - Woman Using Conceptual Apple Computer System.jpeg",
+    "new": "photography/Photograph - Woman Using Conceptual Apple Computer System.jpeg",
+    "label": "Color photograph of a woman using a conceptual computer system against a black background",
+    "sha256": "7655e6934c6cd2c553a6e10cb19192c5083688343c117ecfae8606e6da2896b3"
+  },
+  {
+    "old": "2000s/Photograph - Vintage Apple PenLite Prototype Computer Displaying Classic OS.jpeg",
+    "new": "photography/Photograph - Vintage Apple PenLite Prototype Computer Displaying Classic OS.jpeg",
+    "label": "Photograph of a vintage Apple Macintosh Portable computer displaying the classic operating system interface",
+    "sha256": "05a2c1f0c275a2c6a5bfea39b402422af6c7a185da2e470e6854ebd1a9560181"
+  },
+  {
+    "old": "2000s/Photograph - CD-R Disc Wall Decor with Plant and Skincare Products.jpeg",
+    "new": "photography/Photograph - CD-R Disc Wall Decor with Plant and Skincare Products.jpeg",
+    "label": "Photograph CD R Disc Wall Decor with Plant and Skincare Products",
+    "sha256": "b14f540d81b3d55bfd9c8ffdf242cbdd59d6ada34bd2c318ac1bc630eca8b01c"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Chicago City Grid at Night.jpeg",
+    "new": "photography/Photograph - Aerial View of Chicago City Grid at Night.jpeg",
+    "label": "Aerial Photograph of a City Grid at Night with Golden Lights",
+    "sha256": "5a6df3a3397b967612dfd51ff28850dfae841976349ce2e4a0152e2568a908d0"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Chicago City Grid at Night by thefacetpixel.jpeg",
+    "new": "photography/Photograph - Aerial View of Chicago City Grid at Night by thefacetpixel.jpeg",
+    "label": "Aerial Photograph of a City Grid at Night",
+    "sha256": "9e19d8526fce608d48edb11a60a106b7d4f27db5affe3e6bea735fa5518aaee7"
+  },
+  {
+    "old": "2000s/Photograph - Potted Pilea Plant Next to Building Covered in Satellite Dishes.jpeg",
+    "new": "photography/Photograph - Potted Pilea Plant Next to Building Covered in Satellite Dishes.jpeg",
+    "label": "Juxtaposition of a Potted Pilea Plant and Multiple Satellite Dishes on a Building",
+    "sha256": "75370fb245f6f19a639fef14d8fbec3ffe5de12fd17bef551e60ea5d00a09929"
+  },
+  {
+    "old": "2000s/Photograph - Colorful Graffiti Tags on a Large Iceberg in Blue Water.jpeg",
+    "new": "photography/Photograph - Colorful Graffiti Tags on a Large Iceberg in Blue Water.jpeg",
+    "label": "Photograph of Graffiti Tags on a Large Iceberg or Glacier",
+    "sha256": "c64c822b5c1c331ac7c765095163f80e20d276422be65726fd19f7236b1adcf3"
+  },
+  {
+    "old": "2000s/Photograph - Close-Up Of Golden Grain Stalk Against Dual-Toned Background.jpeg",
+    "new": "photography/Photograph - Close-Up Of Golden Grain Stalk Against Dual-Toned Background.jpeg",
+    "label": "Close-up Photograph of a Golden Stalk of Grain Against a Dual-Toned Background",
+    "sha256": "1fc2e64af932abf9210e5d56624dad0fbf0f318c63c602452baa96313180e30a"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Photograph Of Woman In Ocean Waves Near Cliffs.jpeg",
+    "new": "photography/Photograph - Black And White Photograph Of Woman In Ocean Waves Near Cliffs.jpeg",
+    "label": "Black and White Photograph of a Woman Standing in Ocean Waves near Cliffs",
+    "sha256": "702a24cb07fae421327ece8ed7dc80f225ebd2cadcaa2372e9f81e4aa7c5c9dd"
+  },
+  {
+    "old": "2000s/Photograph - Grainy, Blurry Figure with Crescent Shape and Orange Light Leak.jpeg",
+    "new": "photography/Photograph - Grainy, Blurry Figure with Crescent Shape and Orange Light Leak.jpeg",
+    "label": "Grainy, blurry photograph of a figure with a crescent shape and light leak",
+    "sha256": "4d3c01cf13e3d5bb8b35926250c0ece02f5e19d8d78b3af5cd7ff66a9b9fe70f"
+  },
+  {
+    "old": "2000s/Photograph - Blurry Yellow Lily-Like Flower With Horizontal Streaks.jpeg",
+    "new": "photography/Photograph - Blurry Yellow Lily-Like Flower With Horizontal Streaks.jpeg",
+    "label": "Blurry Photograph of a Yellow Lily-like Flower with Horizontal Streaks",
+    "sha256": "fd03ca2df96bc29c593d2bfe69b11e2cc6ed799fa803deb8ec2b89935c56d7ee"
+  },
+  {
+    "old": "2000s/Photograph - Grainy Abstract Light and Shadow Through Window, Blue and Orange.jpeg",
+    "new": "photography/Photograph - Grainy Abstract Light and Shadow Through Window, Blue and Orange.jpeg",
+    "label": "Abstract photograph of light and shadow through a window, showing blue and orange colors",
+    "sha256": "04b91772a886d3c1e63797c0f6605446372cb97594626da92b7163015bfeb351"
+  },
+  {
+    "old": "2000s/Photograph - Photograph of Hand Holding Sketchbook with Drawing of Butchers.jpeg",
+    "new": "photography/Photograph - Photograph of Hand Holding Sketchbook with Drawing of Butchers.jpeg",
+    "label": "Photograph Photograph of Hand Holding Sketchbook with Drawing of Butchers",
+    "sha256": "ad8a0ca1c741d7e380c1a05ac521761a141437f0bdaa11c7801e4eae7fc1220d"
+  },
+  {
+    "old": "2000s/Photograph - DJ Turntables on Fire with a Hand.jpeg",
+    "new": "photography/Photograph - DJ Turntables on Fire with a Hand.jpeg",
+    "label": "Photograph DJ Turntables on Fire with a Hand",
+    "sha256": "157bd83fa37838402c76d21fba6990891b50fff4a7be45010f5aaaf1d4a5e204"
+  },
+  {
+    "old": "2000s/Photograph - Grid of Small Birds Flying Against Cloudy Blue Sky.jpeg",
+    "new": "photography/Photograph - Grid of Small Birds Flying Against Cloudy Blue Sky.jpeg",
+    "label": "Photographic Grid of Small Birds Flying Against a Cloudy Blue Sky",
+    "sha256": "f83498f53bb0441f7f45299a5ba84a84b0fe3d9bc992e55afc00ef0de28e3979"
+  },
+  {
+    "old": "2000s/Photograph - Young Man in Plaid Scarf Reading Documents.jpeg",
+    "new": "photography/Photograph - Young Man in Plaid Scarf Reading Documents.jpeg",
+    "label": "Black and White Photograph of a Young Man in a Plaid Scarf Reading Documents",
+    "sha256": "455105469dfc0759909c1458bcad48fa637b969b98a922889825d0d1565a2fdc"
+  },
+  {
+    "old": "2000s/Photograph - Person in Dark Clothing and Red Beret Pointing at 'EMO TRANS' Sign.jpeg",
+    "new": "photography/Photograph - Person in Dark Clothing and Red Beret Pointing at 'EMO TRANS' Sign.jpeg",
+    "label": "Photograph of a person in dark clothing and a red beret pointing at an EMO TRANS sign",
+    "sha256": "2e531c66f4483ebd9d464885053d0a25eb8a116685b47f78ba25107a3fe90351"
+  },
+  {
+    "old": "2000s/Photograph - Concrete Table Shaped Like Aphex Twin Logo.jpeg",
+    "new": "photography/Photograph - Concrete Table Shaped Like Aphex Twin Logo.jpeg",
+    "label": "Photograph Concrete Table Shaped Like Aphex Twin Logo",
+    "sha256": "fdf53f7b39fe58d1a7a816d2a5637b4d274369cc3ec2ed66b27107e076107142"
+  },
+  {
+    "old": "2000s/Photograph - Interior of a Luxury Retail Store with Checkered Floor and Handbags.jpeg",
+    "new": "photography/Photograph - Interior of a Luxury Retail Store with Checkered Floor and Handbags.jpeg",
+    "label": "Photograph of a Luxury Retail Store Interior with Checkered Floor and Handbag Displays",
+    "sha256": "f836a35f151ed323fea9eba6733ac0b4e6e74695335b0ff4b5479f2cc83f401f"
+  },
+  {
+    "old": "2000s/Photograph - Mr. Cigarette Mascot Giving Cigarette to Hospital Patient.jpg",
+    "new": "photography/Photograph - Mr. Cigarette Mascot Giving Cigarette to Hospital Patient.jpg",
+    "label": "Black and White Photograph of a Person in a Cigarette Costume Visiting a Hospital Patient",
+    "sha256": "1d837e2a78d29ae3eda775b6fcac9af331e457f673db57f301ffafcae64e0ff0"
+  },
+  {
+    "old": "2000s/Photograph - Street Scene With AI Ad And Person Sitting On Sidewalk.webp",
+    "new": "photography/Photograph - Street Scene With AI Ad And Person Sitting On Sidewalk.webp",
+    "label": "Photograph of a Street Scene with an Advertisement for AI Employees and a Person Sitting on the Sidewalk",
+    "sha256": "f769ebce2cbf3893a19aa2d037d40b26621d729869c914f6cea8c058d9a4fc7e"
+  },
+  {
+    "old": "2000s/Photograph - Parking Lot with Adobe Buildings, Cars, and Abstract Sculpture.jpeg",
+    "new": "photography/Photograph - Parking Lot with Adobe Buildings, Cars, and Abstract Sculpture.jpeg",
+    "label": "White Abstract Outdoor Sculpture near Adobe-Style Building",
+    "sha256": "28d6bed5c1d7fb2c5ddfbc156c44e221514267616e48feea738f2b70e6c74d89"
+  },
+  {
+    "old": "2000s/Photograph - Line Drawing Tattoo of Two Nude Figures Dancing.jpeg",
+    "new": "photography/Photograph - Line Drawing Tattoo of Two Nude Figures Dancing.jpeg",
+    "label": "Line Drawing Tattoo of Two Nude Figures Dancing, One with Horns and a Tail",
+    "sha256": "88ef7d16037a73da78e38dc64210d3ffa8dec21f7c46fbf50997ff5b5d65dd36"
+  },
+  {
+    "old": "2000s/Photograph - Andy Warhol and Two Men Using Early Personal Computer.jpeg",
+    "new": "photography/Photograph - Andy Warhol and Two Men Using Early Personal Computer.jpeg",
+    "label": "Black and white photograph of three men interacting with an early personal computer",
+    "sha256": "131f6bb2368fd7fd694bed43f88571da12105276766fface88469418a178001b"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photo of Andy Warhol and Three Men.jpeg",
+    "new": "photography/Photograph - Black and White Photo of Andy Warhol and Three Men.jpeg",
+    "label": "Black and White Photograph of Andy Warhol and Three Other Men in an Indoor Setting",
+    "sha256": "a4827ef50a6c9de8a12cdc27cf91f5c34d1ef2a30329a05e71f326763953e386"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Densely Packed Cairo Cityscape.jpeg",
+    "new": "photography/Photograph - Aerial View of Densely Packed Cairo Cityscape.jpeg",
+    "label": "Aerial Photograph of a Densely Packed Cityscape",
+    "sha256": "dd983d07c1d75cf2a1fbec235722cf1965c765338f0723d88f6df805597a7a2d"
+  },
+  {
+    "old": "2000s/Photograph - Mads Mikkelsen Smoking While Walking at Milan Fashion Week.jpg",
+    "new": "photography/Photograph - Mads Mikkelsen Smoking While Walking at Milan Fashion Week.jpg",
+    "label": "Photograph of two men in black coats walking on an urban street",
+    "sha256": "74bae5fcac8417e25f65a295fa192c792c3aa48a83f35a66d3307ae8c3d5b39c"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of a Hawk Pierced by an Arrow.jpeg",
+    "new": "photography/Photograph - Black and White Photograph of a Hawk Pierced by an Arrow.jpeg",
+    "label": "Black and White Photograph of a Hawk Perched on a Wire Pierced by an Arrow",
+    "sha256": "fd1dde928757f8a86405b834533b91987d0d723162135d1ae09dbf9cd4c86c23"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of a Road Intersection with Long Shadows.jpeg",
+    "new": "photography/Photograph - Aerial View of a Road Intersection with Long Shadows.jpeg",
+    "label": "Aerial View of a Road Intersection with Long Shadows",
+    "sha256": "427c907cefb39d3d1d0bd2b078dc2b703cfe8a9ef5ac007f4c10daeb8adafdd3"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of a Curved Gridded Concrete Wall.png",
+    "new": "photography/Photograph - Black and White Photograph of a Curved Gridded Concrete Wall.png",
+    "label": "Black and white photograph of a curved, gridded concrete wall",
+    "sha256": "15a02a5ab2156170ffd987963741eed329e807641ebd1c94f9ba1bdc982bc252"
+  },
+  {
+    "old": "2000s/Photograph - Woman Painting Large Geometric Pointillist Artwork.jpeg",
+    "new": "photography/Photograph - Woman Painting Large Geometric Pointillist Artwork.jpeg",
+    "label": "Large Geometric Pointillist Painting with Repeating Kaleidoscopic Patterns in Yellow, Orange, Red, and Blue",
+    "sha256": "1293a8cca811ac940ea479ae4b03005be195b7a00b794afbebe2828577ede5c5"
+  },
+  {
+    "old": "2000s/Photograph - Dense Black Cables Covering Building Facade and Utility Pole in Dhaka.jpeg",
+    "new": "photography/Photograph - Dense Black Cables Covering Building Facade and Utility Pole in Dhaka.jpeg",
+    "label": "Photograph of a dense mass of black cables covering a building facade and utility pole in an urban area",
+    "sha256": "6b2e036594925b6f9df8da60c5b7719d1952d1ceaed8c667c640dec5958f8b2d"
+  },
+  {
+    "old": "2000s/Photograph - Crowded Street in Old Delhi with Tangled Electrical Wires.jpeg",
+    "new": "photography/Photograph - Crowded Street in Old Delhi with Tangled Electrical Wires.jpeg",
+    "label": "Photograph of a crowded street in a city with tangled electrical wires and commercial signs",
+    "sha256": "7b4a7ad673ebe1c2af76168564a642fb1380c6128aee589fd2877a3744fe0607"
+  },
+  {
+    "old": "2000s/Photograph - Two Pilots in Orange Pressure Suits Next to Black Aircraft.jpeg",
+    "new": "photography/Photograph - Two Pilots in Orange Pressure Suits Next to Black Aircraft.jpeg",
+    "label": "Photograph of two pilots in orange pressure suits standing next to the tail of a black aircraft",
+    "sha256": "347c51c4dada11b5aabf8b4d7b47bc9f2f656c49910f8a69bd4163a97bab8bf9"
+  },
+  {
+    "old": "2000s/Photograph - Red Digital Display With Motion Blur And Keypad.jpeg",
+    "new": "photography/Photograph - Red Digital Display With Motion Blur And Keypad.jpeg",
+    "label": "Photograph of Red Digital Display with Motion Blur",
+    "sha256": "bca6c693656f096c7627b42e3e374009703377e85eff14e7746e2438f6876913"
+  },
+  {
+    "old": "2000s/Photograph - People Cross Bridge Over Massive Garbage Pile in Urban Area.png",
+    "new": "photography/Photograph - People Cross Bridge Over Massive Garbage Pile in Urban Area.png",
+    "label": "Photograph of a bridge over a large pile of garbage in a densely built urban area, rendered mostly in monochrome with selective color accents",
+    "sha256": "11aa005d61cefe20b39172b59ef5a26d65833486b1ebb2d24a7f69e4cabe3a42"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Dense City Surrounding a Large Hill.jpeg",
+    "new": "photography/Photograph - Aerial View of Dense City Surrounding a Large Hill.jpeg",
+    "label": "Aerial Photograph of a Dense City Surrounding a Large Hill",
+    "sha256": "d5dfe62117a76adddc9bf53a7d9bc4c56f8ca5c0315e128e80e06808e9381414"
+  },
+  {
+    "old": "2000s/Photograph - XPENG Iron by XPENG.webp",
+    "new": "photography/Photograph - XPENG Iron by XPENG.webp",
+    "label": "White robotic arm with lace-like forearm texture held by a human hand",
+    "sha256": "bf23c30e654590cd8f688343cc7ecceedaeff46551ae1bff7a28585ca190ef2e"
+  },
+  {
+    "old": "2000s/Photograph - Old Main Library, Cincinnati.jpg",
+    "new": "photography/Photograph - Old Main Library, Cincinnati.jpg",
+    "label": "Colorized Photograph of a Grand Library Interior with Spiral Staircase and Checkered Floor",
+    "sha256": "7a49428b49fbb61beda0253dec1ae6945ddc322a4a637ab2cdf7dbb194945a80"
+  },
+  {
+    "old": "2000s/Photograph - Silhouette of a Person Standing on Reflective Golden Swirling Surface.jpg",
+    "new": "photography/Photograph - Silhouette of a Person Standing on Reflective Golden Swirling Surface.jpg",
+    "label": "Silhouette of a figure standing on a dark surface reflecting swirling golden light",
+    "sha256": "cf4a70de69e63ecd519a12448cc80231027b4b6d929834bd4b59ed93e9539e2a"
+  },
+  {
+    "old": "2000s/Photograph - Cozy Room With Armchairs Facing Foggy Forested Mountains.jpg",
+    "new": "photography/Photograph - Cozy Room With Armchairs Facing Foggy Forested Mountains.jpg",
+    "label": "Interior View of Two Armchairs and a Table Facing a Window Overlooking Foggy Forested Mountains",
+    "sha256": "c4dfb30987f2917321233e5688c3399032858af99b8312e50575d211d219c2cb"
+  },
+  {
+    "old": "2000s/Photograph - Orange Cat in Backpack Wearing Earbuds on Subway.png",
+    "new": "photography/Photograph - Orange Cat in Backpack Wearing Earbuds on Subway.png",
+    "label": "Photograph of an orange cat in a backpack wearing earbuds next to a man on a subway bench",
+    "sha256": "bd1faac2a1d24bf2c65e6ad9e1d0068e428cfc8b44f0e67448968856d5f99ef9"
+  },
+  {
+    "old": "2000s/Photograph - Woman Wearing Sunglasses and Pink Crop Top with Text.jpg",
+    "new": "photography/Photograph - Woman Wearing Sunglasses and Pink Crop Top with Text.jpg",
+    "label": "Photograph of a woman wearing sunglasses and a pink crop top with the text 'They don't build statues of critics'",
+    "sha256": "a1c75c8d63a4c0c8041f59160fead64011fff054654e6ae5f66a40d839313fb1"
+  },
+  {
+    "old": "2000s/Photograph - Kanye West Among Models in Monochromatic Clothing.jpg",
+    "new": "photography/Photograph - Kanye West Among Models in Monochromatic Clothing.jpg",
+    "label": "Photograph of a man in a dark hoodie standing center among models in monochromatic clothing",
+    "sha256": "f90a9e33c787ac92b68d021892ea0d6b90b43b547b546d97bf04225a259e2a04"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Stepped Hotel Panorama Building.jpg",
+    "new": "photography/Photograph - Black And White Stepped Hotel Panorama Building.jpg",
+    "label": "Black and White Photograph of the Stepped Hotel Panorama Building",
+    "sha256": "9d3efe3fac2ccbb24342d595b58d737e0e86e6f57a784af753ce302932107191"
+  },
+  {
+    "old": "2000s/Photograph - Road Covered In Red Liquid From Overturned Truck Under Overpass.jpg",
+    "new": "photography/Photograph - Road Covered In Red Liquid From Overturned Truck Under Overpass.jpg",
+    "label": "Photograph of a Road Covered in Spilled Red Liquid Under an Overpass with an Overturned Truck",
+    "sha256": "3ef3e19387a921ebfa22c20124e920ef7c9a7d3085faf67245db1e06762905a1"
+  },
+  {
+    "old": "2000s/Photograph - Wasp Floating on Blue Water with Shadow.jpg",
+    "new": "photography/Photograph - Wasp Floating on Blue Water with Shadow.jpg",
+    "label": "Photograph of a Wasp Floating on Blue Water with Shadow",
+    "sha256": "d49c4c7097dbbcf6c9e4cd76713821f9e210aa680752c65041ad8518382156d5"
+  },
+  {
+    "old": "2000s/Photograph - Dramatic Orange And Red Sunset Over Suburban Street With Mountain.jpg",
+    "new": "photography/Photograph - Dramatic Orange And Red Sunset Over Suburban Street With Mountain.jpg",
+    "label": "Photograph of a dramatic orange and red sunset over a suburban street with a snow-capped mountain visible above the houses",
+    "sha256": "6756eaf4449d2338f7b45c252facc143edbbc692e20928a5e40c698df66bb34b"
+  },
+  {
+    "old": "2000s/Photograph - Person In Conical Hat Mending Green Fishing Nets.jpg",
+    "new": "photography/Photograph - Person In Conical Hat Mending Green Fishing Nets.jpg",
+    "label": "Photograph of a person in a conical hat mending green fishing nets",
+    "sha256": "f9833451829b15c6d524b40967d136d90d2c3cacde2eafe7ad3eab604f132938"
+  },
+  {
+    "old": "2000s/Photograph - Close-Up Of A Dirty Eyeglass Lens With Smudges.jpg",
+    "new": "photography/Photograph - Close-Up Of A Dirty Eyeglass Lens With Smudges.jpg",
+    "label": "Close-up Photograph of a Dirty Eyeglass Lens",
+    "sha256": "b0e8b046d09bb0ba7dd4114d5a34db53f3f347085a2e504d23f37600d728bc9f"
+  },
+  {
+    "old": "2000s/Photograph - Brutalist Silence Co-working Space by Claus Brechenmacher & Reiner Baumann Photography.jpg",
+    "new": "photography/Photograph - Brutalist Silence Co-working Space by Claus Brechenmacher & Reiner Baumann Photography.jpg",
+    "label": "Photograph Brutalist Silence Co working Space by Claus Brechenmacher & Reiner Baumann Photography",
+    "sha256": "43267b3b1a1e1e53c2c38dc5e334364378949aed9edf8483aba6bb5095fe70f7"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Landscape With Sun Rays Over Cracked Earth.jpg",
+    "new": "photography/Photograph - Black And White Landscape With Sun Rays Over Cracked Earth.jpg",
+    "label": "Photograph Black And White Landscape With Sun Rays Over Cracked Earth",
+    "sha256": "8f0d41441112a15ad9645a314275f6f8462d624df58b7eb2afdc1aedda48308c"
+  },
+  {
+    "old": "2000s/Photograph - Crocheted Fried Chicken Drumsticks and Dipping Sauce in Takeout Box.jpeg",
+    "new": "photography/Photograph - Crocheted Fried Chicken Drumsticks and Dipping Sauce in Takeout Box.jpeg",
+    "label": "Photograph Crocheted Fried Chicken Drumsticks and Dipping Sauce in Takeout Box",
+    "sha256": "1e0971a0043931eb281761bf1dae9174d2169e4b8e9afc2991612f0fad4b1e95"
+  },
+  {
+    "old": "2000s/Photograph - Man Standing Next to Abstract Blue and Black Sculpture.jpg",
+    "new": "photography/Photograph - Man Standing Next to Abstract Blue and Black Sculpture.jpg",
+    "label": "Photograph Man Standing Next to Abstract Blue and Black Sculpture",
+    "sha256": "66feb318474e8ef71d92be00dc0dc3c620b5d0d676919fddba385f8fe3d6626f"
+  },
+  {
+    "old": "2000s/Photograph - Man Holding Surfboard In Front Of Stacked Surfboards.jpg",
+    "new": "photography/Photograph - Man Holding Surfboard In Front Of Stacked Surfboards.jpg",
+    "label": "Photograph of a man holding a surfboard in front of a stack of surfboards",
+    "sha256": "eb0cfafbbdf63e6fa1876f9fd560bf46f6de727c65ec3e4a6c472d3031470328"
+  },
+  {
+    "old": "2000s/Photograph - Kurt Cobain and William S. Burroughs by Robert E. Jackson.png",
+    "new": "photography/Photograph - Kurt Cobain and William S. Burroughs by Robert E. Jackson.png",
+    "label": "Color photograph of two men standing outdoors among autumn leaves",
+    "sha256": "d020ec31cf964d2512022d1dea3a8555107bc6c21b9835a0c56130bdc770ac2f"
+  },
+  {
+    "old": "2000s/Photograph - Willem Dafoe Posing Beside Norman Osborn Portrait.jpeg",
+    "new": "photography/Photograph - Willem Dafoe Posing Beside Norman Osborn Portrait.jpeg",
+    "label": "Photograph Willem Dafoe Posing Beside Norman Osborn Portrait",
+    "sha256": "fa5b89cced2486f86c1197892077b65cc51d09e9ff7ec0fbf9e6cf5315b604a8"
+  },
+  {
+    "old": "2000s/Photograph - Shirtless Freddie Mercury Performing On Stage Amidst Smoke And Lights.jpeg",
+    "new": "photography/Photograph - Shirtless Freddie Mercury Performing On Stage Amidst Smoke And Lights.jpeg",
+    "label": "Photograph of a shirtless male singer on stage illuminated by spotlights and smoke, with a backdrop of red and green grid lights",
+    "sha256": "c324ed264cf25c2b9a0c6fd7952fa8719edd0c8548d40f7915008513801b04ae"
+  },
+  {
+    "old": "2000s/Photograph - Isabella Rossellini and David Lynch, His Face Obscured.jpeg",
+    "new": "photography/Photograph - Isabella Rossellini and David Lynch, His Face Obscured.jpeg",
+    "label": "Photograph Isabella Rossellini and David Lynch, His Face Obscured",
+    "sha256": "bf521e1971d15d4b6525c8567e26a450e99af938ab035ca3e480302473e2574e"
+  },
+  {
+    "old": "2000s/Photograph - Minimalist Photograph of a Single Tree in a Desert Landscape.jpeg",
+    "new": "photography/Photograph - Minimalist Photograph of a Single Tree in a Desert Landscape.jpeg",
+    "label": "Minimalist Photograph of a Single Tree in a Desert Landscape",
+    "sha256": "a717f3d9419db12424d2c44227de577b9de9984053cb4fe4fc3bf2220bbedc6c"
+  },
+  {
+    "old": "2000s/Photograph - Modern Glass and Steel Spiral Staircase with Blurred Figure.png",
+    "new": "photography/Photograph - Modern Glass and Steel Spiral Staircase with Blurred Figure.png",
+    "label": "Photograph of a modern spiral staircase made of glass and stainless steel",
+    "sha256": "34fe14341106e7de42aa82635bbf1691bc2178a938990adf6551e467d7d4b9ba"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Photograph Of A Glass Spiral Staircase From Above.jpeg",
+    "new": "photography/Photograph - Black And White Photograph Of A Glass Spiral Staircase From Above.jpeg",
+    "label": "Black and White Photograph of a Glass Spiral Staircase from Above",
+    "sha256": "08e0728a163beb576f7eb26f2b9ac9d48df5dbd6e00f1943dd58b52a5dec449c"
+  },
+  {
+    "old": "2000s/Photograph - Silhouette of Person Suspended on Power Lines at Sunset.jpeg",
+    "new": "photography/Photograph - Silhouette of Person Suspended on Power Lines at Sunset.jpeg",
+    "label": "Photograph of a person suspended on power lines against an orange sunset sky",
+    "sha256": "b4175f3510e373b5810e2fe56b59427720178adad52f4cf8ae5329f75e0008a2"
+  },
+  {
+    "old": "2000s/Photograph - Minimalist White Tunnel With Statue Holding Black Flag.jpg",
+    "new": "photography/Photograph - Minimalist White Tunnel With Statue Holding Black Flag.jpg",
+    "label": "Photograph Minimalist White Tunnel With Statue Holding Black Flag",
+    "sha256": "ec4cbe0e9ab459418e968d6467b44faf37089ae6255565dfd37626ecca34f46b"
+  },
+  {
+    "old": "2000s/Photograph - Alpine Ibex Leaping Across a Deep Chasm.jpeg",
+    "new": "photography/Photograph - Alpine Ibex Leaping Across a Deep Chasm.jpeg",
+    "label": "Photograph Alpine Ibex Leaping Across a Deep Chasm",
+    "sha256": "66c85f4f8946fd20e4e3f9e52f10c38a37a4b79cff73e4e0f0dee8670a96815b"
+  },
+  {
+    "old": "2000s/Photograph - Building on Fire with Flames and Smoke Pouring from Windows.jpeg",
+    "new": "photography/Photograph - Building on Fire with Flames and Smoke Pouring from Windows.jpeg",
+    "label": "Photograph Building on Fire with Flames and Smoke Pouring from Windows",
+    "sha256": "2894e36a0c96edaf1e45c46d975fd05ef478698ca47fdd75d4dc563801bb8475"
+  },
+  {
+    "old": "2000s/Photograph - Abstract Glowing Teal and Maroon Circular Structure.jpeg",
+    "new": "photography/Photograph - Abstract Glowing Teal and Maroon Circular Structure.jpeg",
+    "label": "Abstract image of a glowing teal and maroon circular structure on a black background",
+    "sha256": "2cd694f3af3596fef3fc924c0a22621a0464e637ff5e4114283a3495354e285e"
+  },
+  {
+    "old": "2000s/Photograph - X-ray Image of a USB Flash Drive Circuit Board.jpeg",
+    "new": "photography/Photograph - X-ray Image of a USB Flash Drive Circuit Board.jpeg",
+    "label": "X-ray Image of a USB Flash Drive Circuit Board",
+    "sha256": "36e0da284d967b1a7c538430a5df8ae3411ebf12e33a03865566c57c93299e54"
+  },
+  {
+    "old": "2000s/Photograph - Vaulted Brick Interior Repurposed as Office Space.jpg",
+    "new": "photography/Photograph - Vaulted Brick Interior Repurposed as Office Space.jpg",
+    "label": "Photograph of a large vaulted brick interior repurposed as an office space",
+    "sha256": "a7f4dfa3af4fb046791a26dbdde6751cfa2603f4d965ded27e39ede10a0d1176"
+  },
+  {
+    "old": "2000s/Photograph - Large Vaulted Brick and Concrete Interior Converted into Office Space.jpg",
+    "new": "photography/Photograph - Large Vaulted Brick and Concrete Interior Converted into Office Space.jpg",
+    "label": "Photograph of a large vaulted brick and concrete interior converted into an office space",
+    "sha256": "939357e355fa0a48965af0a24891ca15ecec993faea442d0996e316763c6aac8"
+  },
+  {
+    "old": "2000s/Photograph - Vaulted Brick Room Converted Into Modern Office Space.jpg",
+    "new": "photography/Photograph - Vaulted Brick Room Converted Into Modern Office Space.jpg",
+    "label": "Photograph of a large, vaulted brick room converted into a modern office space with desks and fluorescent lighting",
+    "sha256": "057a723cf874b2bcaca923294d28d96f018bb16fd3c47a15cc8c4ea4e3348cc5"
+  },
+  {
+    "old": "2000s/Photograph - Composite of Studio Interiors, Gallery, Lounge, and Ludens Mascot. by Kojima Productions.jpg",
+    "new": "photography/Photograph - Composite of Studio Interiors, Gallery, Lounge, and Ludens Mascot. by Kojima Productions.jpg",
+    "label": "Composite image of three interior scenes, including a dark gallery, a white office lounge, and a white-suited figure standing in a brightly lit white room",
+    "sha256": "126c9b5f4e0dac71140cb303f2d6e46a92e8983aa11eb34dd2b6beb37e55fa22"
+  },
+  {
+    "old": "2000s/Photograph - Man Painting Wavy Lines On Brick Wall With Roller.jpg",
+    "new": "photography/Photograph - Man Painting Wavy Lines On Brick Wall With Roller.jpg",
+    "label": "Man painting parallel wavy lines in cool colors on a brick wall",
+    "sha256": "ba774211a16fe27b9750a90150bd9892ad7af14c8996eb11a4e5ba52a97e8139"
+  },
+  {
+    "old": "2000s/Photograph - Grainy Black And White Building Facade With Geometric Distortion.jpg",
+    "new": "photography/Photograph - Grainy Black And White Building Facade With Geometric Distortion.jpg",
+    "label": "Black and White Grainy Image of a Repeating Building Facade with Geometric Distortion",
+    "sha256": "a96642271119742dd9ed20616161e4cb1eb2abed3e3e7c48fc2811a177362eb1"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Close-Up Portrait of Stan Brakhage.jpeg",
+    "new": "photography/Photograph - Black and White Close-Up Portrait of Stan Brakhage.jpeg",
+    "label": "Black and White Close-up Portrait of a Man with a Thick Mustache",
+    "sha256": "5611b60bb5df675f90635755eefa973bfda8dbd6359d3294a58030095f787900"
+  },
+  {
+    "old": "2000s/Photograph - Person's Wrist Wearing Bracelet With Technology Logo Charms.jpg",
+    "new": "photography/Photograph - Person's Wrist Wearing Bracelet With Technology Logo Charms.jpg",
+    "label": "Bracelet with enamel charms depicting technology logos worn on a person's wrist",
+    "sha256": "d03e96303368a6c17ed754bd27230162e940aebfdbe36250e13e922fe78f75ad"
+  },
+  {
+    "old": "2000s/Photograph - Large Crowd of Students Painting During Art School Entrance Exam.jpg",
+    "new": "photography/Photograph - Large Crowd of Students Painting During Art School Entrance Exam.jpg",
+    "label": "Photograph of a large crowd of students painting on easels in an indoor venue",
+    "sha256": "88020b8105daffc64bc35724e17faee4447aa312d7ecd6de4e0e1f0aa764dbd7"
+  },
+  {
+    "old": "2000s/Photograph - Self-immolation of Aaron Bushnell.jpg",
+    "new": "photography/Photograph - Self-immolation of Aaron Bushnell.jpg",
+    "label": "Photograph Self immolation of Aaron Bushnell",
+    "sha256": "3b64fca5e52b12b66640a432742bd5b15cf47b69c932e1dfee29807e164ff571"
+  },
+  {
+    "old": "2000s/Photograph - Hundreds of Students Taking Outdoor Examination in China.webp",
+    "new": "photography/Photograph - Hundreds of Students Taking Outdoor Examination in China.webp",
+    "label": "Photograph Hundreds of Students Taking Outdoor Examination in China",
+    "sha256": "07284b0909985ffd10cdef2e7ac295973053173d14ddca351f352338ec1aa116"
+  },
+  {
+    "old": "2000s/Photograph - Messy Interior of Francis Bacon's Art Studio.jpg",
+    "new": "photography/Photograph - Messy Interior of Francis Bacon's Art Studio.jpg",
+    "label": "Photograph Messy Interior of Francis Bacon's Art Studio",
+    "sha256": "06d117859e578699b5dd851a5b09ae6cec81ea3702aa5c11a28f639a33467109"
+  },
+  {
+    "old": "2000s/Photograph - Large Office Space Under Vaulted Brick Arches.jpg",
+    "new": "photography/Photograph - Large Office Space Under Vaulted Brick Arches.jpg",
+    "label": "Photograph of a large office space under vaulted brick arches",
+    "sha256": "1f8c9a5828204cc6af476abb620f13ee652911feedd3ea1aea71805377a6e405"
+  },
+  {
+    "old": "2000s/Photograph - Modern Blue-Tinted Interior with Display Cases and Strip Lighting.jpg",
+    "new": "photography/Photograph - Modern Blue-Tinted Interior with Display Cases and Strip Lighting.jpg",
+    "label": "Photograph Modern Blue Tinted Interior with Display Cases and Strip Lighting",
+    "sha256": "5b69cf98529fabb73d1b8086158c25fdc14f9293aefb751c4ccd28e1cd9c816c"
+  },
+  {
+    "old": "2000s/Photograph - People Viewing Landscape Paintings In A Gallery.jpeg",
+    "new": "photography/Photograph - People Viewing Landscape Paintings In A Gallery.jpeg",
+    "label": "Landscape Painting (one of several similar works visible in a gallery)",
+    "sha256": "2afc5e8b6d05d1a5b191fa4afc7c6cfa9d7fa56a24cf23f2aba5508de8b4c4ca"
+  },
+  {
+    "old": "2000s/Photograph - Museum Gallery Interior with Visitors and Framed Paintings.jpeg",
+    "new": "photography/Photograph - Museum Gallery Interior with Visitors and Framed Paintings.jpeg",
+    "label": "Interior photograph of a museum gallery displaying multiple framed paintings and visitors",
+    "sha256": "9f9867785e295d5e9fede9118c4503224cd2eb0955beb0a1c6918ca7fbc75893"
+  },
+  {
+    "old": "2000s/Photograph - Museum Gallery With Visitors Viewing Artworks.jpeg",
+    "new": "photography/Photograph - Museum Gallery With Visitors Viewing Artworks.jpeg",
+    "label": "Oil Painting of a Coastal Landscape with Figures and Flags (Central Artwork in Gallery)",
+    "sha256": "ac7d52dd9adb008f6c764dc730c50e415b793f6e7d4c7fae996b9b3972db703d"
+  },
+  {
+    "old": "2000s/Photograph - Museum Installation View of Photographs and Text Behind Reflective Glass.jpeg",
+    "new": "photography/Photograph - Museum Installation View of Photographs and Text Behind Reflective Glass.jpeg",
+    "label": "Museum Installation View of a Grid of Photographs and Exhibition Text Behind Reflective Glass",
+    "sha256": "02c8fa632510a002b5e8ed4494d6606fbac928cb1117aa01a4fda2e114aa0581"
+  },
+  {
+    "old": "2000s/Photograph - Two Paintings Displayed on White Gallery Wall with Concrete Floor.jpeg",
+    "new": "photography/Photograph - Two Paintings Displayed on White Gallery Wall with Concrete Floor.jpeg",
+    "label": "Painting of a stylized female figure in pale green tones leaning on a balcony railing with a city background",
+    "sha256": "5d0e32a46eed9d5c2a550e6517423c56d5b4dd950481e94a7a457c5a176d9e11"
+  },
+  {
+    "old": "2000s/Photograph - Misty Mountains and Pine Trees in a Hazy Landscape.jpeg",
+    "new": "photography/Photograph - Misty Mountains and Pine Trees in a Hazy Landscape.jpeg",
+    "label": "Landscape of Misty Mountains and Pine Trees",
+    "sha256": "51dd4d27d6d37b9b652ee7e09a3e823ce2648abed0e2432e8794c6ffb0aa936c"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Figure in Dark Coat with Buckled Strap.jpeg",
+    "new": "photography/Photograph - Black and White Photograph of Figure in Dark Coat with Buckled Strap.jpeg",
+    "label": "Black and White Photograph of a Figure in a Dark Coat with a Buckled Strap Detail",
+    "sha256": "b47b542928187aaae7c7105079fd89d02ab84ee4794aedd05179c0793c0dc87b"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Photograph Of Five Young People Posing On Urban Street.jpeg",
+    "new": "photography/Photograph - Black And White Photograph Of Five Young People Posing On Urban Street.jpeg",
+    "label": "Black and White Photograph of Five Young People Posing on an Urban Street",
+    "sha256": "da8431922b8aa3acbbe8fcbe60c1c4617424906ca83980f99962524059e02850"
+  },
+  {
+    "old": "2000s/Photograph - Grayscale Photograph of a Woman in Oversized Dark Clothing.jpeg",
+    "new": "photography/Photograph - Grayscale Photograph of a Woman in Oversized Dark Clothing.jpeg",
+    "label": "Grayscale Photograph of a Woman in Oversized Dark Clothing",
+    "sha256": "c520da546407276e240afc9cbf4b1544bfac0a53f1fdb9ed06cf9efc2d98fac1"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Woman Holding Sheer White Fabric.jpeg",
+    "new": "photography/Photograph - Black and White Photograph of Woman Holding Sheer White Fabric.jpeg",
+    "label": "Black and white photograph of a woman in a dark dress holding a sheer white sculptural fabric object",
+    "sha256": "d51998d8d8d0169ed880261106c3ec7872acfd7f6e8998c6790e4cee3f69e61f"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photographic Spread of Young Man in Urban Alleyway.jpeg",
+    "new": "photography/Photograph - Black and White Photographic Spread of Young Man in Urban Alleyway.jpeg",
+    "label": "Black and white photographic spread featuring two portraits of a young man in dark clothing standing in a narrow, urban alleyway with Japanese signage",
+    "sha256": "6c04ee0c32c967296e17474473c4ebe013546785b9e4ac2245ba2cec63c3b5e0"
+  },
+  {
+    "old": "2000s/Photograph - Small Car Covered in Rainbow Graffiti Displayed Indoors at Night.jpeg",
+    "new": "photography/Photograph - Small Car Covered in Rainbow Graffiti Displayed Indoors at Night.jpeg",
+    "label": "Small Car Covered in Rainbow Graffiti and Tags, Displayed Indoors",
+    "sha256": "f637728692f98b47132209eeb7faa1690764103e32ddd62d45204b9cb786eabb"
+  },
+  {
+    "old": "2000s/Photograph - Cologne Cathedral.jpeg",
+    "new": "photography/Photograph - Cologne Cathedral.jpeg",
+    "label": "Aerial Photograph of a Large Gothic Cathedral in a Hazy Cityscape",
+    "sha256": "cb3fb6fd71ae98aed20fa00982f1aa8b3cabfa2cf2fc6799184b7f32bff2282a"
+  },
+  {
+    "old": "2000s/Photograph - Five Young Men in Varsity Jackets Posing Outdoors.jpeg",
+    "new": "photography/Photograph - Five Young Men in Varsity Jackets Posing Outdoors.jpeg",
+    "label": "Photograph of five young men in red and cream varsity jackets with 'N' logo posing outdoors",
+    "sha256": "459ce6d6e21a773d724bbc260b289999bf9d22ebaef8cdc1ca69872562533d1d"
+  },
+  {
+    "old": "2000s/Photograph - Modern Lounge with Floor-to-Ceiling Windows and Terrazzo Floor.jpeg",
+    "new": "photography/Photograph - Modern Lounge with Floor-to-Ceiling Windows and Terrazzo Floor.jpeg",
+    "label": "Interior view of a modern building lounge with floor-to-ceiling windows, terrazzo floor, and five upholstered wooden chairs arranged around small tables",
+    "sha256": "2294e38fa490de2d9ceeb103943a510293d8f726c4ac98bac38c54644306b198"
+  },
+  {
+    "old": "2000s/Photograph - Close-Up Of Orange Pleated Fabric Texture.jpeg",
+    "new": "photography/Photograph - Close-Up Of Orange Pleated Fabric Texture.jpeg",
+    "label": "Close-up Photograph of Orange Pleated Fabric Texture",
+    "sha256": "88a174cee1409f35c46e378dca091adbf1320a8be8bbf37e96c9b4b73724d244"
+  },
+  {
+    "old": "2000s/Photograph - Minimalist Art Gallery With Abstract Paintings And Black Sculpture.jpeg",
+    "new": "photography/Photograph - Minimalist Art Gallery With Abstract Paintings And Black Sculpture.jpeg",
+    "label": "Photograph of a Minimalist Art Gallery Installation featuring Abstract Paintings and a Central Black Sculpture",
+    "sha256": "f9f1d0cf1654da06ffeeddf44bdf07c30fb3f06cf02593380e4306ed81602c29"
+  },
+  {
+    "old": "2000s/Photograph - Art Installation with Framed Drawings and Smaller Pieces.jpeg",
+    "new": "photography/Photograph - Art Installation with Framed Drawings and Smaller Pieces.jpeg",
+    "label": "Installation featuring a diptych of large vertical framed drawings with sparse black line sketches of organic forms, alongside three smaller framed pieces",
+    "sha256": "7b895655a35236c9858525c71bb12e1bb7af200ea402a981ee82b8bfde6ba9c3"
+  },
+  {
+    "old": "2000s/Photograph - Installation View of Gallery with Black and White Patterned Artworks.jpeg",
+    "new": "photography/Photograph - Installation View of Gallery with Black and White Patterned Artworks.jpeg",
+    "label": "Installation View of Gallery with Black and White Patterned Artworks",
+    "sha256": "2092b9b7c1ed457bcddb785b9c2c22a49faa20a7269666c3dbfac8890024624d"
+  },
+  {
+    "old": "2000s/Photograph - Gallery Interior with Wooden Artwork, Mirrored Section, and Hand Photo.jpeg",
+    "new": "photography/Photograph - Gallery Interior with Wooden Artwork, Mirrored Section, and Hand Photo.jpeg",
+    "label": "Modular wooden artwork with mirrored section reflecting legs, a photographic insert of a hand, and a dark panel",
+    "sha256": "5c72a47ec1672d7b101e5f05c46bbfe9a14c0c8801ab55a45dc39e6dd6412996"
+  },
+  {
+    "old": "2000s/Photograph - Interior View of a Modern Art Gallery or Office Space.jpeg",
+    "new": "photography/Photograph - Interior View of a Modern Art Gallery or Office Space.jpeg",
+    "label": "Small framed print or photograph featuring dense yellow, green, and brown abstract or organic shapes",
+    "sha256": "e669df4090762329ec2c77943c633728fc3367a71ba146af3223f291c91a09c1"
+  },
+  {
+    "old": "2000s/Photograph - Art Gallery with Abstract Paintings and Sculptural Wall Piece.jpeg",
+    "new": "photography/Photograph - Art Gallery with Abstract Paintings and Sculptural Wall Piece.jpeg",
+    "label": "Large Abstract Painting with Dark Blue Ribbed Forms on a Yellow Background",
+    "sha256": "ceadb57b108534560bb3f0258afa4661affa199a98eacdfc90226c26ea0a93a4"
+  },
+  {
+    "old": "2000s/Photograph - Installation View of a Long White Gallery Space with Abstract Paintings.jpeg",
+    "new": "photography/Photograph - Installation View of a Long White Gallery Space with Abstract Paintings.jpeg",
+    "label": "Installation View of a Long White Gallery Space with Four Vertical Abstract Paintings",
+    "sha256": "af437f5f9759b0d3cf3f72c5aec7fc6152fbc43226e7d35fdb8d42c9f980e80a"
+  },
+  {
+    "old": "2000s/Photograph - Person Viewing Art Installation in a Modern Gallery.jpeg",
+    "new": "photography/Photograph - Person Viewing Art Installation in a Modern Gallery.jpeg",
+    "label": "Nine framed black and white prints depicting draped fabric folds in a grid installation",
+    "sha256": "efca657c8dafb47eb5595fc278fc77f68bcba351fcea8e7d66f4b67296e0f48f"
+  },
+  {
+    "old": "2000s/Photograph - Museum Gallery Corner with Three Framed Landscape Paintings.jpeg",
+    "new": "photography/Photograph - Museum Gallery Corner with Three Framed Landscape Paintings.jpeg",
+    "label": "Oil Painting of a Waterfall in a Dark Landscape",
+    "sha256": "f4bf1e8009d5de70bf346788cdbf2c5fd5717ff22dc04d714b2a580118b0aab2"
+  },
+  {
+    "old": "2000s/Photograph - Architectural Model of a Modern Brown Building on Landscaped Base.jpeg",
+    "new": "photography/Photograph - Architectural Model of a Modern Brown Building on Landscaped Base.jpeg",
+    "label": "Architectural Model of a Modern Brown Building on a Landscaped Base",
+    "sha256": "d33b4b145ab076293842324adc5bb13d9a1bd4345ed5c23ec2ba7338dee300d5"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Mont-Saint-Michel Abbey and Town on Island.jpg",
+    "new": "photography/Photograph - Aerial View of Mont-Saint-Michel Abbey and Town on Island.jpg",
+    "label": "Aerial Photograph of a Medieval Abbey and Town on a Rocky Island Surrounded by Water",
+    "sha256": "b1f4e4aea27fd5ca69611de0d13a9fe1630670637fbf59dc97c6530b52904c6c"
+  },
+  {
+    "old": "2000s/Photograph - Historic Hotel Surrounded By Snowy Pine Trees And Mountains At Dusk.jpg",
+    "new": "photography/Photograph - Historic Hotel Surrounded By Snowy Pine Trees And Mountains At Dusk.jpg",
+    "label": "Photograph of a large, historic hotel surrounded by snowy pine trees and mountains at dusk",
+    "sha256": "68dbb4bead0143ee8118c3fe5c4f2fe85f22a91d970996504b05995a24411ab3"
+  },
+  {
+    "old": "2000s/Photograph - Busy Black And White City Intersection With Streetcars And Sunkist Billboard.jpg",
+    "new": "photography/Photograph - Busy Black And White City Intersection With Streetcars And Sunkist Billboard.jpg",
+    "label": "Black and White Photograph of a Busy City Intersection with Streetcars and a Sunkist Billboard",
+    "sha256": "1c1cb582f47691cbb2089572d5553efdbe116160665e25cfc20513b8bc50cfb7"
+  },
+  {
+    "old": "2000s/Photograph - Alhambra.jpg",
+    "new": "photography/Photograph - Alhambra.jpg",
+    "label": "Photograph of a large historic fortress complex on a hill with snow-capped mountains in the background at sunset",
+    "sha256": "464e566eba64042109152168be9064782e255ee7dd5c0715e095f58d727b55a4"
+  },
+  {
+    "old": "2000s/Photograph - Village and Grazing Cows in Rolling Green Hills Under Blue Sky.jpg",
+    "new": "photography/Photograph - Village and Grazing Cows in Rolling Green Hills Under Blue Sky.jpg",
+    "label": "Photograph of a Village and Grazing Cows in Rolling Green Hills under a Blue Sky",
+    "sha256": "7e31521fab355e7d74855fa6509639ae144eeeafe55e2eaf0b92758726e22c90"
+  },
+  {
+    "old": "2000s/Photograph - Colorful Coastal Town on Turquoise Bay with Jetty.jpg",
+    "new": "photography/Photograph - Colorful Coastal Town on Turquoise Bay with Jetty.jpg",
+    "label": "Photograph of a colorful coastal town on a turquoise bay with a small jetty",
+    "sha256": "5cbd3357fc690e2b0b5b2182da216db6bd6ff1a1423f322f217b625b7bc5fcfc"
+  },
+  {
+    "old": "2000s/Photograph - Ornate Blue and Gold Vaulted Ceiling in a Grand Basilica.jpg",
+    "new": "photography/Photograph - Ornate Blue and Gold Vaulted Ceiling in a Grand Basilica.jpg",
+    "label": "Ornate Church Interior with Blue Vaulted Ceiling, Gold Trim, and Central Altar",
+    "sha256": "e48266eb07537b265ed67c9da842ca6bba8721fd604171a56d8e2069a4420f33"
+  },
+  {
+    "old": "2000s/Photograph - Neo-Gothic Building with Dome and Spires Along a Blue River.jpg",
+    "new": "photography/Photograph - Neo-Gothic Building with Dome and Spires Along a Blue River.jpg",
+    "label": "Photograph of a large Neo-Gothic building with a central dome and spires along a blue river under a pale blue sky",
+    "sha256": "bb9584df8bfbd2d41584072d21ab7ad7b26b76429bff4d38d8531abf6a557aba"
+  },
+  {
+    "old": "2000s/Photograph - Minimalist Concrete Interior with Skylight and Scenic Window View by Claus Brechenmacher & Reiner Baumann.jpg",
+    "new": "photography/Photograph - Minimalist Concrete Interior with Skylight and Scenic Window View by Claus Brechenmacher & Reiner Baumann.jpg",
+    "label": "Concrete Interior Room with Skylight, Modular Seating, and Large Window View of Pine Trees and Water",
+    "sha256": "2f23d2d817d0ec60d50bc486ba6d5a32ff15974d85b96bfb725d25045d4f6ed3"
+  },
+  {
+    "old": "2000s/Photograph - Elaborate Gothic Fan Vault Ceiling and Stained Glass Windows.jpg",
+    "new": "photography/Photograph - Elaborate Gothic Fan Vault Ceiling and Stained Glass Windows.jpg",
+    "label": "Photograph of an elaborate Perpendicular Gothic fan vault ceiling and stained glass windows",
+    "sha256": "9e67f1ed53cf8c06aa930bc778e6cf87e569b48f1d069bc71783511b7ae0d0b2"
+  },
+  {
+    "old": "2000s/Photograph - Dramatic Sunbeams Inside Grand Central Terminal, Black and White.jpg",
+    "new": "photography/Photograph - Dramatic Sunbeams Inside Grand Central Terminal, Black and White.jpg",
+    "label": "Black and White Photograph of Grand Central Terminal Interior with Dramatic Sunbeams",
+    "sha256": "cd364358e9a4d3320c41a1be61b250b9a4462b68a34b093baadc6b0dffeeefaf"
+  },
+  {
+    "old": "2000s/Photograph - Cliff House, San Francisco.jpg",
+    "new": "photography/Photograph - Cliff House, San Francisco.jpg",
+    "label": "Sepia Photograph of a Large Victorian Building on a Rocky Cliff Above a Beach",
+    "sha256": "d373584e2106e0ca6c16a9ee67b100ec8ae9633be0410a63ef0d1e38e5b99d02"
+  },
+  {
+    "old": "2000s/Photograph - Airplane Approaching Smoking World Trade Center Tower.jpg",
+    "new": "photography/Photograph - Airplane Approaching Smoking World Trade Center Tower.jpg",
+    "label": "Grainy Photograph of an Airplane and a Smoking Skyscraper",
+    "sha256": "813bb87e1af419260c0249ee04d0c764c2c53f7dd9f56e654af84f03e7ac7b38"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Photograph of Soldiers Running Through Smoke.jpg",
+    "new": "photography/Photograph - Black and White Photograph of Soldiers Running Through Smoke.jpg",
+    "label": "Black and White Photograph of Soldiers in Helmets and Gas Masks Running Through Smoke on a Grassy Field",
+    "sha256": "2d3ba2295ca9cd21a4d6baa0d187a6a65cf9f9ad2afdf3ad2fca802c22e5026a"
+  },
+  {
+    "old": "2000s/Photograph - Red Car and Motorcycle Facing Mount St. Helens Eruption by Richard Lasher.jpg",
+    "new": "photography/Photograph - Red Car and Motorcycle Facing Mount St. Helens Eruption by Richard Lasher.jpg",
+    "label": "Color Photograph/Collage of a Red Car and Motorcycle Facing a Massive Volcanic Ash Cloud",
+    "sha256": "13bc5d89e03cb6fba4671970f3e442b8d7bd229aa75f663e405afad25c93a3cd"
+  },
+  {
+    "old": "2000s/Photograph - High-Angle View of Tanks and Troops in Tiananmen Square.jpg",
+    "new": "photography/Photograph - High-Angle View of Tanks and Troops in Tiananmen Square.jpg",
+    "label": "High Angle Photograph of Military Vehicles Moving Down a Wide Avenue Lined with Trees",
+    "sha256": "8410a42415fc6c116c29a22509841df3591093eb837e109c9f612ca7c9281eb7"
+  },
+  {
+    "old": "2000s/Photograph - Fisheye Photograph of Two Young People in Alternative Fashion.png",
+    "new": "photography/Photograph - Fisheye Photograph of Two Young People in Alternative Fashion.png",
+    "label": "Fisheye Photograph of Two Young People in Alternative Fashion on a Crowded Tokyo Street",
+    "sha256": "00106059123aa4f34cb72b27b6d6cc68186b3d2434729ba58b7c3b90bd715cae"
+  },
+  {
+    "old": "2000s/Photograph - Woman in Black Veil Holding Small Fish to Neck.jpg",
+    "new": "photography/Photograph - Woman in Black Veil Holding Small Fish to Neck.jpg",
+    "label": "Color Photograph of a Woman in a Black Veil Holding a Small Fish to Her Neck",
+    "sha256": "05eb02530953c3d8994be69ef23b1eb6760639ea626d81d7d9d237c6bcc98c17"
+  },
+  {
+    "old": "2000s/Photograph - Field of Rusty Red British Telephone Booths in Merstham, Surrey.jpg",
+    "new": "photography/Photograph - Field of Rusty Red British Telephone Booths in Merstham, Surrey.jpg",
+    "label": "Photograph of a Field of Rusty Red British Telephone Booths",
+    "sha256": "cfc53bbc4223766ffcc80cefee42ba101c267c5dd88833cf75f6539de25cac08"
+  },
+  {
+    "old": "2000s/Photograph - Luigi Mangione's Arrest.webp",
+    "new": "photography/Photograph - Luigi Mangione's Arrest.webp",
+    "label": "Photograph of a handcuffed man in an orange jumpsuit escorted by police.",
+    "sha256": "cc2e6141dd3cdcbd4102c4d4cce9756ec22a39b343f2dea893f8c2c0af11d5f4"
+  },
+  {
+    "old": "2000s/Photograph - Nighttime Memorial with Flowers, Candles, Teddy Bears, and Red Balloon.webp",
+    "new": "photography/Photograph - Nighttime Memorial with Flowers, Candles, Teddy Bears, and Red Balloon.webp",
+    "label": "Nighttime Photograph of a Memorial with Flowers, Candles, and a Red Heart Balloon",
+    "sha256": "df151383511b5dbd3520e1c80463178e277571cb1767c0a766880accc1cfe8ac"
+  },
+  {
+    "old": "2000s/Photograph - Protester Holds Yellow 'Innocent Until Proven Guilty' Sign for Luigi Mangione.webp",
+    "new": "photography/Photograph - Protester Holds Yellow 'Innocent Until Proven Guilty' Sign for Luigi Mangione.webp",
+    "label": "Photograph of a yellow protest sign reading 'Innocent Until Proven Guilty' held by a demonstrator",
+    "sha256": "4163078f7c54906cf323fe336e932039704929b48e0d305888c8d7f748f971f6"
+  },
+  {
+    "old": "2000s/Photograph - Audience Watching Code on Large Screen in Dark Theater.jpeg",
+    "new": "photography/Photograph - Audience Watching Code on Large Screen in Dark Theater.jpeg",
+    "label": "Photograph of an audience watching a large screen displaying lines of code in a dark theater",
+    "sha256": "312ea15c6a56e6f198ded6737da8a8cce40a992c9312f91614099a8826f31ed6"
+  },
+  {
+    "old": "2000s/Photograph - Luigi Mangione In Orange Jumpsuit Escorted By Police.jpeg",
+    "new": "photography/Photograph - Luigi Mangione In Orange Jumpsuit Escorted By Police.jpeg",
+    "label": "Photograph Luigi Mangione In Orange Jumpsuit Escorted By Police",
+    "sha256": "cf68f6ceaef6291c6a2b3a3a0f6497d9776a0eb45b37bb6b3ac7a68b62793466"
+  },
+  {
+    "old": "2000s/Photograph - Young Man In Orange Jumpsuit Escorted By Police Officers Near Helicopter.jpeg",
+    "new": "photography/Photograph - Young Man In Orange Jumpsuit Escorted By Police Officers Near Helicopter.jpeg",
+    "label": "Photograph of a young man in an orange jumpsuit being escorted by police officers near a helicopter",
+    "sha256": "c225a17765f227c6a73f7db07cf32cca91af1b942eb33d46509e8af6c793b004"
+  },
+  {
+    "old": "2000s/Photograph - Older Person Looking at Laptop Displaying Family Photos.jpeg",
+    "new": "photography/Photograph - Older Person Looking at Laptop Displaying Family Photos.jpeg",
+    "label": "Digital Display of Multiple Personal Photographs on a Laptop Screen",
+    "sha256": "45875ad6f612eec33fbc6aa957b54c52282ed80a9f5b74ea17bcf6795ebc1784"
+  },
+  {
+    "old": "2000s/Photograph - White Brick Building Exterior With Metal Pipes And Windows.jpeg",
+    "new": "photography/Photograph - White Brick Building Exterior With Metal Pipes And Windows.jpeg",
+    "label": "Photograph of White Brick Building Exterior with Metal Conduit Pipes and Windows",
+    "sha256": "e8c846da603c480f87ad1dac029eee099a78694d236e9e3d29f7111b5e02773e"
+  },
+  {
+    "old": "2000s/Photograph - Blonde Woman From Behind Looking At Four Paintings On Wall.jpeg",
+    "new": "photography/Photograph - Blonde Woman From Behind Looking At Four Paintings On Wall.jpeg",
+    "label": "Painting of a blonde woman viewed from behind looking at an old wooden house in a dry field",
+    "sha256": "42d6076b0ef779796a1e13301c8210e49bc8310cd4924f8a86e62d5ad25a9604"
+  },
+  {
+    "old": "2000s/Photograph - ASML EUV Lithography Machine by ASML Holding.jpeg",
+    "new": "photography/Photograph - ASML EUV Lithography Machine by ASML Holding.jpeg",
+    "label": "Photograph of two people in cleanroom suits standing next to large, complex industrial machinery in a cleanroom environment",
+    "sha256": "af04b1944462890955058a7b9633eab41068491a001c854d291db3ddbb0b5a54"
+  },
+  {
+    "old": "2000s/Photograph - Man in Suit Points to Reaching Crowd at Rally.jpeg",
+    "new": "photography/Photograph - Man in Suit Points to Reaching Crowd at Rally.jpeg",
+    "label": "Photograph of a man in a suit pointing toward a crowd reaching out to him, flanked by American flags and blue curtains",
+    "sha256": "8b4a7581cb828d873eff16d1fea7eb108bd81f22678cd6b6a6ba9dfd571db4f3"
+  },
+  {
+    "old": "2000s/Photograph - Person in Yellow Jacket and Goggles Squatting on Road.jpeg",
+    "new": "photography/Photograph - Person in Yellow Jacket and Goggles Squatting on Road.jpeg",
+    "label": "Photograph of a person in a yellow jacket and goggles squatting on an asphalt road with an outstretched hand",
+    "sha256": "cfd1a94c79a286de40c93f608fb258792339eb5951777f4e8850802738b37ec0"
+  },
+  {
+    "old": "2000s/Photograph - Young Steve Jobs Posing in a Tuxedo.jpeg",
+    "new": "photography/Photograph - Young Steve Jobs Posing in a Tuxedo.jpeg",
+    "label": "Instant Photograph of a Young Man in a Tuxedo",
+    "sha256": "381e427aa97c85f621e58a9c082c9f034b0a5b4a61573a59cfe768f0801cc9fb"
+  },
+  {
+    "old": "2000s/Photograph - Gavin Newsom Reading 'Beloved' by Toni Morrison at a Table.jpeg",
+    "new": "photography/Photograph - Gavin Newsom Reading 'Beloved' by Toni Morrison at a Table.jpeg",
+    "label": "Framed Monochromatic Drawing of a Treed Landscape",
+    "sha256": "60e2b142770e75748696ccec1da26122e42c2172596973305c590d4aa5abe947"
+  },
+  {
+    "old": "2000s/Photograph - Playboi Carti Recording In A Studio.jpeg",
+    "new": "photography/Photograph - Playboi Carti Recording In A Studio.jpeg",
+    "label": "Black and white photograph of a man wearing headphones and dark clothes in a room with a textured stone ceiling",
+    "sha256": "a35c61b246ab8451315e375c6f3e6e0cdfa1bac6c552fa72185c2d4f194ba5d1"
+  },
+  {
+    "old": "2000s/Photograph - Colorful, Multi-Tiered South Indian Temple Gopuram Adorned With Deities.jpeg",
+    "new": "photography/Photograph - Colorful, Multi-Tiered South Indian Temple Gopuram Adorned With Deities.jpeg",
+    "label": "Highly detailed, multi-tiered temple tower facade covered in colorful stucco sculptures of Hindu deities",
+    "sha256": "8fa71884677a1a53b6393908ac15168058ed1fdfd1ed194f85d839ee7bbbbeac"
+  },
+  {
+    "old": "2000s/Photograph - Hayao Miyazaki and Hideaki Anno on a Porch with Pig Sign.jpeg",
+    "new": "photography/Photograph - Hayao Miyazaki and Hideaki Anno on a Porch with Pig Sign.jpeg",
+    "label": "Photograph of two men standing on a wooden porch in front of a shingled building with a pig sign",
+    "sha256": "6d1beeb7c2f57d16d009db851e3688fe0c770bf3c04b73739c69ec82f1b90663"
+  },
+  {
+    "old": "2000s/Photograph - Sepia Photograph of a Man with Round Glasses and Goatee.jpeg",
+    "new": "photography/Photograph - Sepia Photograph of a Man with Round Glasses and Goatee.jpeg",
+    "label": "Sepia Photograph of a Man with Round Glasses and a Goatee",
+    "sha256": "2671833a49ab50495bbd0c417540c5a691cba4f0940af91244965d7fcb757b39"
+  },
+  {
+    "old": "2000s/Photograph - Hong Kong Street Scene with Trams and Densely Packed Buildings.jpeg",
+    "new": "photography/Photograph - Hong Kong Street Scene with Trams and Densely Packed Buildings.jpeg",
+    "label": "Photograph of a Hong Kong Tram in front of a Massive Residential Building Facade",
+    "sha256": "e9e7e2bc7d37f35bd70afc2e2627c4e24e09a9fd4fb1e4e26497898fdc8505e8"
+  },
+  {
+    "old": "2000s/Photograph - Aerial View of Train Passing Through Densely Populated Urban Area.jpeg",
+    "new": "photography/Photograph - Aerial View of Train Passing Through Densely Populated Urban Area.jpeg",
+    "label": "Aerial Photograph of a Train Passing Through a Densely Populated Urban Area with High-Rise Buildings in the Background",
+    "sha256": "e20abfa5dbf40fdad27dacd9d3c7e0315f9f0dfa4de0b00b93d2b519130abf85"
+  },
+  {
+    "old": "2000s/Photograph - Three People Taking a Selfie in Intense Orange Light by Thomas Wu.jpeg",
+    "new": "photography/Photograph - Three People Taking a Selfie in Intense Orange Light by Thomas Wu.jpeg",
+    "label": "Photograph of three people taking a selfie in intense orange light",
+    "sha256": "f92234f5c9492a7f928e7cd999a243dabbe3f4d1eccbdac96d7be82f70ccbf6e"
+  },
+  {
+    "old": "2000s/Photograph - Crude 9-11 Themed Tattoo on a Person's Back.jpeg",
+    "new": "photography/Photograph - Crude 9-11 Themed Tattoo on a Person's Back.jpeg",
+    "label": "Tattoo depicting the number 9/11 formed by two towers and a large nine, with falling figures and an airplane",
+    "sha256": "27d0bfb9de0f9520ac445c1a87d0962ec926ab1691b27923cb45b3b3c22ed2fd"
+  },
+  {
+    "old": "2000s/Photograph - Elon Musk Raising Right Arm Towards Cheering Audience.jpeg",
+    "new": "photography/Photograph - Elon Musk Raising Right Arm Towards Cheering Audience.jpeg",
+    "label": "Photograph of a man in a dark suit raising his right arm toward a cheering audience",
+    "sha256": "0948d4f953d5af1169f3da1d467b4bc3241c026aa0de5531a0f815c0b5c01ea3"
+  },
+  {
+    "old": "2000s/Photograph - Man in Turkey Costume Carving Food on Subway Train.jpeg",
+    "new": "photography/Photograph - Man in Turkey Costume Carving Food on Subway Train.jpeg",
+    "label": "Photograph of a man in a turkey costume carving a large piece of food on a subway train",
+    "sha256": "68efb46afd9407f4d0c391e3bd20976016a5530e3e62dd2c1885381e514a0110"
+  },
+  {
+    "old": "2000s/Photograph - Street Cleaner Sweeping Debris Into Heart Shape.jpeg",
+    "new": "photography/Photograph - Street Cleaner Sweeping Debris Into Heart Shape.jpeg",
+    "label": "Photograph of a street cleaner sweeping debris into a heart shape on a paved sidewalk",
+    "sha256": "054d350b666506a903f098a8760b29e1a0cda1769047be8a3498c11c0ff9db04"
+  },
+  {
+    "old": "2000s/Photograph - The Jonestown Massacre.jpeg",
+    "new": "photography/Photograph - The Jonestown Massacre.jpeg",
+    "label": "Aerial photograph of numerous bodies lying on the ground surrounding a large, open-sided structure with a white roof",
+    "sha256": "96cb68586723e8d146cdcd6d722cebcf4793dcc65b84699ea61743e833dd1313"
+  },
+  {
+    "old": "2000s/Photograph - SR-71 Blackbird Aircraft and Crew in Yellow Pressure Suits.jpeg",
+    "new": "photography/Photograph - SR-71 Blackbird Aircraft and Crew in Yellow Pressure Suits.jpeg",
+    "label": "Photograph of two black SR-71 aircraft and crew in yellow pressure suits",
+    "sha256": "1dd27efa924b3c267a4785d2bf45cfebbc68109d4604db1925f161a95d771345"
+  },
+  {
+    "old": "2000s/Photograph - Close-up of Jollibee Mascot Head Next to Child.jpeg",
+    "new": "photography/Photograph - Close-up of Jollibee Mascot Head Next to Child.jpeg",
+    "label": "Photograph of a large red mascot costume head next to a child",
+    "sha256": "7f511f835f320e9bf2e6131476fcbaea07140f95d5f80205915ddc434d0a97d3"
+  },
+  {
+    "old": "2000s/Photograph - Black And White Portrait Of A Man In A Dark Cloak.png",
+    "new": "photography/Photograph - Black And White Portrait Of A Man In A Dark Cloak.png",
+    "label": "Black and White Portrait of a Man in a Dark Cloak",
+    "sha256": "d2590449ebda76182b0f6fc764a3cbb9776aa8a05856e7e5e09a7fd77c04774f"
+  },
+  {
+    "old": "2000s/Photograph - Ornate Stone Archway with Wooden Door Covered in Red Graffiti.jpg",
+    "new": "photography/Photograph - Ornate Stone Archway with Wooden Door Covered in Red Graffiti.jpg",
+    "label": "Photograph Ornate Stone Archway with Wooden Door Covered in Red Graffiti",
+    "sha256": "4d15651acf29b3b896b86a0c54db101f71c1da59c0cc19b07e00cc3a1c166539"
+  },
+  {
+    "old": "2000s/Photograph - House Engulfed In Flames During Wildfire, Silhouetted Trees.webp",
+    "new": "photography/Photograph - House Engulfed In Flames During Wildfire, Silhouetted Trees.webp",
+    "label": "Photograph House Engulfed In Flames During Wildfire, Silhouetted Trees",
+    "sha256": "e55a28e537c9107587321ba9864b4cdfbe0db4fab8ce00203da9c4997d198b57"
+  },
+  {
+    "old": "2000s/Photograph - Interior View of Highly Decorated Mosque Dome and Chandelier.jpg",
+    "new": "photography/Photograph - Interior View of Highly Decorated Mosque Dome and Chandelier.jpg",
+    "label": "Interior view of a highly decorated dome and arches featuring a large golden chandelier with red and green accents",
+    "sha256": "10fc8f6bbad54ececc8adb089289e6256d83c52a3a812ba2f1b357dbb3b41bd4"
+  },
+  {
+    "old": "2000s/Photograph - Bladee Sits Among His Abstract Paintings In Pink Hoodie.jpg",
+    "new": "photography/Photograph - Bladee Sits Among His Abstract Paintings In Pink Hoodie.jpg",
+    "label": "Photograph Bladee Sits Among His Abstract Paintings In Pink Hoodie",
+    "sha256": "55c6015b174288809b6fa44f16e5ecfe72a1bcd4cd11cbe94db3730993f80199"
+  },
+  {
+    "old": "2000s/Photograph - Ornate Gold and Blue Tiled Ceiling.jpg",
+    "new": "photography/Photograph - Ornate Gold and Blue Tiled Ceiling.jpg",
+    "label": "Photograph Ornate Gold and Blue Tiled Ceiling",
+    "sha256": "8a4e003a1b934b69bd3f413673f6f406b1847be1e809671c997e623c52d2b276"
+  },
+  {
+    "old": "2000s/Photograph - Person's Silhouetted Head and Shoulders Against Bright Doorway.jpg",
+    "new": "photography/Photograph - Person's Silhouetted Head and Shoulders Against Bright Doorway.jpg",
+    "label": "Photograph Person's Silhouetted Head and Shoulders Against Bright Doorway",
+    "sha256": "e03a9a91b10cf9aba66a7e3024da2d6046813ebedf7e4684a07b724c97e5d9c7"
+  },
+  {
+    "old": "2000s/Photograph - Intricate Tiled Ceiling of Shah Mosque, Isfahan.jpg",
+    "new": "photography/Photograph - Intricate Tiled Ceiling of Shah Mosque, Isfahan.jpg",
+    "label": "Photograph Intricate Tiled Ceiling of Shah Mosque, Isfahan",
+    "sha256": "b8306d304b2e07c6d7ccd9a531127094a5f2b4389cf11d4be710002c2ca4d756"
+  },
+  {
+    "old": "2000s/Photograph - Woman in Black Dress Leaning on Grand Piano. by Edward Steichen.jpg",
+    "new": "photography/Photograph - Woman in Black Dress Leaning on Grand Piano. by Edward Steichen.jpg",
+    "label": "Photograph Woman in Black Dress Leaning on Grand Piano. by Edward Steichen",
+    "sha256": "f986271fef64ce618e4f97eda1e7878f660477ae0b3939f292ad9434b11bf312"
+  },
+  {
+    "old": "2000s/Photograph - Woman Painting Large Abstract Artwork in Studio.jpg",
+    "new": "photography/Photograph - Woman Painting Large Abstract Artwork in Studio.jpg",
+    "label": "Photograph Woman Painting Large Abstract Artwork in Studio",
+    "sha256": "af3c232ab19a90ca43cf9f653cece0dc18864f6378ac3f0f276ff4b5a82b6c07"
+  },
+  {
+    "old": "2000s/Photograph - Intricate Geometric and Floral Patterned Ceiling in Iranian Mosque Architecture by Mehrdad Rasoulifard.jpg",
+    "new": "photography/Photograph - Intricate Geometric and Floral Patterned Ceiling in Iranian Mosque Architecture by Mehrdad Rasoulifard.jpg",
+    "label": "Photograph Intricate Geometric and Floral Patterned Ceiling in Iranian Mosque Architecture by Mehrdad Rasoulifard",
+    "sha256": "0ca4579bcacdafce90a85b4c35d91a52705ee919a0a28cc5aadbbe15b96256a7"
+  },
+  {
+    "old": "2000s/Photograph - Robotic Dog With Rifle Attachment At Trade Show.jpg",
+    "new": "photography/Photograph - Robotic Dog With Rifle Attachment At Trade Show.jpg",
+    "label": "Photograph of a robotic dog with a rifle attachment at a trade show",
+    "sha256": "b1bf594db1d7f8c8c742c881a75b9ce3af939444b920dc53c775b1991d8e28ef"
+  },
+  {
+    "old": "2000s/Photograph - Black and White Portrait of James Dean Smoking a Cigarette.jpg",
+    "new": "photography/Photograph - Black and White Portrait of James Dean Smoking a Cigarette.jpg",
+    "label": "Black and white portrait of a young man in a dark coat and turtleneck with a cigarette",
+    "sha256": "488c0f4c5a6510fa9fd7db05f75b5afd89ea9380ba7f715614fbef0c72e39bda"
+  },
+  {
+    "old": "2000s/Photograph - Japanese Individuals in Uniforms and Helmets at Night.jpg",
+    "new": "photography/Photograph - Japanese Individuals in Uniforms and Helmets at Night.jpg",
+    "label": "Color photograph of several Japanese individuals in white and black uniforms with text and helmets standing outdoors at night",
+    "sha256": "b7537081a2253035f378191f07329c97d5e2aa4105c660ed2e12efccda7d0af6"
+  },
+  {
+    "old": "2000s/Photograph - Group of People, Some in Vests, Walking on Dirt Path.jpg",
+    "new": "photography/Photograph - Group of People, Some in Vests, Walking on Dirt Path.jpg",
+    "label": "Photograph of a group of seven people, including several wearing tactical vests, walking on a dirt path in front of Soviet-era apartment buildings on an overcast day",
+    "sha256": "f9960dc3a0fc8d8144390fa166c0514d3dc1046dc98120e821cbeaa4ebf61147"
+  },
+  {
+    "old": "unsorted/Photograph - Graffiti Under Bridge with Figures and Text 'CHUD', 'NOUD', 'DO NOT REDEEM!'.jpeg",
+    "new": "photography/Photograph - Graffiti Under Bridge with Figures and Text 'CHUD', 'NOUD', 'DO NOT REDEEM!'.jpeg",
+    "label": "Photograph Graffiti Under Bridge with Figures and Text 'CHUD', 'NOUD', 'DO NOT REDEEM!'",
+    "sha256": "b45bcf9b90c5d73b3c36b00de0215fa61984d3aa97aa6de5000ff28e14b8d05e"
+  },
+  {
+    "old": "unsorted/Photograph - Two Men with Faces Covered by Black Veils.jpg",
+    "new": "photography/Photograph - Two Men with Faces Covered by Black Veils.jpg",
+    "label": "Photograph Two Men with Faces Covered by Black Veils",
+    "sha256": "875d90ce5437104ba44bc81ac79a17568d8bb91223dbf45739e5d7e4403a0e4a"
+  },
+  {
+    "old": "unsorted/Photograph - Two Veiled Men Holding Hands Standing Barefoot Against Wall.jpg",
+    "new": "photography/Photograph - Two Veiled Men Holding Hands Standing Barefoot Against Wall.jpg",
+    "label": "Photograph Two Veiled Men Holding Hands Standing Barefoot Against Wall",
+    "sha256": "c05fb1900dc328485db5912ba5bbc0d625fb0aee99d0513f04c78f9462ce3de8"
+  },
+  {
+    "old": "2000s/Photograph - Sunlight Casting Lace Curtain Shadow on Wooden Wall.jpeg",
+    "new": "photography/Photograph - Sunlight Casting Lace Curtain Shadow on Wooden Wall.jpeg",
+    "label": "Photograph Sunlight Casting Lace Curtain Shadow on Wooden Wall",
+    "sha256": "23a81ef02687184f8ecdfeb41eb811694e5166a56b537b72ee644d3ae3fb15e1"
+  },
+  {
+    "old": "2000s/Photograph - Deer Standing in a Subway Tunnel with Japanese Signs.jpeg",
+    "new": "photography/Photograph - Deer Standing in a Subway Tunnel with Japanese Signs.jpeg",
+    "label": "Photograph Deer Standing in a Subway Tunnel with Japanese Signs",
+    "sha256": "f5c08001b4aa089978eec37f297ecc5d978850a56055319a918d865341add8b6"
+  },
+  {
+    "old": "2000s/Photograph - Group Photo of Yellow Magic Orchestra and Friends.jpeg",
+    "new": "photography/Photograph - Group Photo of Yellow Magic Orchestra and Friends.jpeg",
+    "label": "Photograph Group Photo of Yellow Magic Orchestra and Friends",
+    "sha256": "6fcccb02339947ed0f3f07e3adf077a71b5c0cbc696f73beaa3f53430d801d78"
+  },
+  {
+    "old": "2000s/Photograph - iMac Computer on Rock at Beach with Clear Chair.jpeg",
+    "new": "photography/Photograph - iMac Computer on Rock at Beach with Clear Chair.jpeg",
+    "label": "Photograph iMac Computer on Rock at Beach with Clear Chair",
+    "sha256": "15fea0dba3749e64e9c36589aac214464367458180333837f1c74edbcd75dff0"
+  },
+  {
+    "old": "2000s/Photograph - Rainy Tokyo Street at Night with Neon Signs by Greg Girard.jpeg",
+    "new": "photography/Photograph - Rainy Tokyo Street at Night with Neon Signs by Greg Girard.jpeg",
+    "label": "Photograph Rainy Tokyo Street at Night with Neon Signs by Greg Girard",
+    "sha256": "4765eb58fdc2ecd9022eff3152aebd24351cf612fef8d42f6b94cb742fcdef42"
+  },
+  {
+    "old": "2000s/Photograph - Densely Packed Apartment Buildings With Bamboo Scaffolding, Looking Up.jpeg",
+    "new": "photography/Photograph - Densely Packed Apartment Buildings With Bamboo Scaffolding, Looking Up.jpeg",
+    "label": "Photograph Densely Packed Apartment Buildings With Bamboo Scaffolding, Looking Up",
+    "sha256": "4c74c20dd988480e6af4b50cf76be3f891bd5972e21962a9d8adb301dd9157c8"
+  },
+  {
+    "old": "2000s/Photograph - Downtown Los Angeles Skyline at Dusk with Freeway Light Trails.jpeg",
+    "new": "photography/Photograph - Downtown Los Angeles Skyline at Dusk with Freeway Light Trails.jpeg",
+    "label": "Photograph Downtown Los Angeles Skyline at Dusk with Freeway Light Trails",
+    "sha256": "da3d290e88653181871ff4f224cbd4302352e65ab9245e37647727ccdc418ab9"
+  },
+  {
+    "old": "2000s/Photograph - Intricate Blue Geometric Ceiling Tilework by Ghasem Baneshi.webp",
+    "new": "photography/Photograph - Intricate Blue Geometric Ceiling Tilework by Ghasem Baneshi.webp",
+    "label": "Photograph Intricate Blue Geometric Ceiling Tilework by Ghasem Baneshi",
+    "sha256": "fd518b5815b5e0ff87195198bd6c60215c679b36a6d178f66228242b27708b20"
+  },
+  {
+    "old": "2000s/Photograph - Intricate Blue and White Geometric Tilework, Shah Mosque by Ghasem Baneshi.webp",
+    "new": "photography/Photograph - Intricate Blue and White Geometric Tilework, Shah Mosque by Ghasem Baneshi.webp",
+    "label": "Photograph Intricate Blue and White Geometric Tilework, Shah Mosque by Ghasem Baneshi",
+    "sha256": "9ff3b59b7f017121e17db6c3d8865febb0a434521bda4b3d0aef666ee9aa73b5"
+  },
+  {
+    "old": "2000s/Photograph - Intricate Geometric Tilework on an Iranian Mosque Ceiling by Ghasem Baneshi.webp",
+    "new": "photography/Photograph - Intricate Geometric Tilework on an Iranian Mosque Ceiling by Ghasem Baneshi.webp",
+    "label": "Photograph Intricate Geometric Tilework on an Iranian Mosque Ceiling by Ghasem Baneshi",
+    "sha256": "1808fe7be0bd8552fa7c7fef1f513266947161588e8590948c5d2e335a1a4bec"
+  },
+  {
+    "old": "2000s/Photograph - Colorful Intricate Tiled Ceiling and Arches with Light Reflections by Ghasem Baneshi.webp",
+    "new": "photography/Photograph - Colorful Intricate Tiled Ceiling and Arches with Light Reflections by Ghasem Baneshi.webp",
+    "label": "Photograph Colorful Intricate Tiled Ceiling and Arches with Light Reflections by Ghasem Baneshi",
+    "sha256": "91ece91b21d4914122254263d2c4dc03a51dae89183659ec8ca94713b9412f92"
+  },
+  {
+    "old": "2000s/Photograph - Intricate Blue and Yellow Geometric Tilework Ceiling by Ghasem Baneshi.webp",
+    "new": "photography/Photograph - Intricate Blue and Yellow Geometric Tilework Ceiling by Ghasem Baneshi.webp",
+    "label": "Photograph Intricate Blue and Yellow Geometric Tilework Ceiling by Ghasem Baneshi",
+    "sha256": "b6c294b40f0b24836e6cba48c658e0a0c8adc8f8ef6fc7e95ab9f2c8e81bebcf"
+  },
+  {
+    "old": "2000s/Photograph - Intricate Blue Tiled Iranian Architecture Against Blue Sky by Ghasem Baneshi.webp",
+    "new": "photography/Photograph - Intricate Blue Tiled Iranian Architecture Against Blue Sky by Ghasem Baneshi.webp",
+    "label": "Photograph Intricate Blue Tiled Iranian Architecture Against Blue Sky by Ghasem Baneshi",
+    "sha256": "5fad3703c807db480778c0cc3d48c41311aa08eba0f743ee62e9c908e2307971"
+  },
+  {
+    "old": "2000s/Photograph - Intricate Blue And Yellow Tiled Iranian Architectural Interior With Sunlight by Ghasem Baneshi.webp",
+    "new": "photography/Photograph - Intricate Blue And Yellow Tiled Iranian Architectural Interior With Sunlight by Ghasem Baneshi.webp",
+    "label": "Photograph Intricate Blue And Yellow Tiled Iranian Architectural Interior With Sunlight by Ghasem Baneshi",
+    "sha256": "149ee976e73d6a0c52945c125c30aa7692e0b764e1b00246cb67b9b412932f00"
+  },
+  {
+    "old": "2000s/Photograph - Ceiling of Shah Mosque, Isfahan by Ghasem Ganeshi.webp",
+    "new": "photography/Photograph - Ceiling of Shah Mosque, Isfahan by Ghasem Ganeshi.webp",
+    "label": "Photograph Ceiling of Shah Mosque, Isfahan by Ghasem Ganeshi",
+    "sha256": "ef7610c2598973afe4c9d9484b74faac7f2296243ffbabdc735f314687a71168"
+  },
+  {
+    "old": "1800s/richard_wagner_by_franz_hanfstaengl_c_1865.jpeg",
+    "new": "photography/richard_wagner_by_franz_hanfstaengl_c_1865.jpeg",
+    "label": "Richard Wagner by Franz Hanfstaengl (c. 1865)",
+    "sha256": "5b4c44602cea0e7319fadecbacf0093dab266ed2764bf671ba94bf8fbf98c8ff"
+  },
+  {
+    "old": "1800s/richard_wagner_by_franz_hanfstaengl_1865.jpeg",
+    "new": "photography/richard_wagner_by_franz_hanfstaengl_1865.jpeg",
+    "label": "Richard Wagner by Franz Hanfstaengl (1865)",
+    "sha256": "f31b5828b79bf9dfaf6e7126e772373c952314bff5f09895f31b3312a00bbb6e"
+  },
+  {
+    "old": "1800s/first_ballet_action_plate_370_of_animal_locomotion_by_eadweard_muybridge_1887.jpeg",
+    "new": "photography/first_ballet_action_plate_370_of_animal_locomotion_by_eadweard_muybridge_1887.jpeg",
+    "label": "First Ballet Action, plate 370 of Animal Locomotion by Eadweard Muybridge (1887)",
+    "sha256": "5ea9433e6463ba9d5eddf82b4005611cb9ed7280e1120590db090a0575592f9a"
+  },
+  {
+    "old": "1800s/dancing_fancy_plate_189_of_animal_locomotion_by_eadweard_muybridge_1887.jpeg",
+    "new": "photography/dancing_fancy_plate_189_of_animal_locomotion_by_eadweard_muybridge_1887.jpeg",
+    "label": "Dancing (Fancy), plate 189 of Animal Locomotion by Eadweard Muybridge (1887)",
+    "sha256": "57c7de0f4012aa287a8af0a3af869ecc14e66eaa6a2cc02bf230799494f0e0d4"
+  },
+  {
+    "old": "1800s/manufactures_and_liberal_arts_building_world_s_columbian_exposition_by_charles_dudley_arnold_1892.jpg",
+    "new": "photography/manufactures_and_liberal_arts_building_world_s_columbian_exposition_by_charles_dudley_arnold_1892.jpg",
+    "label": "Manufactures and Liberal Arts Building, World's Columbian Exposition by Charles Dudley Arnold (1892)",
+    "sha256": "a00e19d02ee964c1c0d1a6ce5e22e9b0aa6c6dcbd7d2eeca57f19c4ff40cf652"
+  },
+  {
+    "old": "1800s/417_east_entrance_electricity_bld_g_aug_21_1892_1892.jpg",
+    "new": "photography/417_east_entrance_electricity_bld_g_aug_21_1892_1892.jpg",
+    "label": "417. East entrance Electricity bld'g Aug. 21. 1892 (1892)",
+    "sha256": "243a2251faadb085348d113fa88da5bf9b387e1e8ce1b04b7ca770e2e5f2c4bd"
+  },
+  {
+    "old": "1800s/view_from_illinois_bldg_sep_18_1892_1892.jpg",
+    "new": "photography/view_from_illinois_bldg_sep_18_1892_1892.jpg",
+    "label": "View from Illinois Bldg. Sep. 18 1892 (1892)",
+    "sha256": "9176241364a0c380c5012ad56f9dcdd74d8743a340b1668b122a40a6b1b24d10"
+  },
+  {
+    "old": "1800s/the_barge_of_the_republic_by_frederick_william_macmonnies_1893.jpg",
+    "new": "photography/the_barge_of_the_republic_by_frederick_william_macmonnies_1893.jpg",
+    "label": "The Barge of the Republic by Frederick William MacMonnies (1893)",
+    "sha256": "5f42485f875c0f8f906cb18dc5e4bef0f5b9977247737da2c1f0a18685f4119d"
+  },
+  {
+    "old": "1800s/view_of_the_grand_basin_and_exposition_buildings_world_s_columbian_exposition_by_charles_dudley_arnold_1893.jpg",
+    "new": "photography/view_of_the_grand_basin_and_exposition_buildings_world_s_columbian_exposition_by_charles_dudley_arnold_1893.jpg",
+    "label": "View of the Grand Basin and Exposition Buildings, World's Columbian Exposition by Charles Dudley Arnold (1893)",
+    "sha256": "b3dc5571393f4f69d2df866080130a17a51b6572c2b855dcf40d739f6f013232"
+  },
+  {
+    "old": "1800s/the_lagoon_world_s_columbian_exposition_by_c_d_arnold_1893.jpg",
+    "new": "photography/the_lagoon_world_s_columbian_exposition_by_c_d_arnold_1893.jpg",
+    "label": "The Lagoon, World's Columbian Exposition by C. D. Arnold (1893)",
+    "sha256": "abec47ae694991dcc42a4a7f363855f7457f9ed275fb4ed21fa7538819a065ee"
+  },
+  {
+    "old": "1800s/peristyle_and_arch_of_triumph_world_s_columbian_exposition_chicago_by_charles_dudley_arnold_1893.jpg",
+    "new": "photography/peristyle_and_arch_of_triumph_world_s_columbian_exposition_chicago_by_charles_dudley_arnold_1893.jpg",
+    "label": "Peristyle and Arch of Triumph, World's Columbian Exposition, Chicago by Charles Dudley Arnold (1893)",
+    "sha256": "e09aad4625e9a66c594ab3b1946afb1664e1e87f9eb98b6f866db208c19500c3"
+  },
+  {
+    "old": "1800s/french_pavilion_world_s_columbian_exposition_chicago_1893.jpg",
+    "new": "photography/french_pavilion_world_s_columbian_exposition_chicago_1893.jpg",
+    "label": "French Pavilion, World's Columbian Exposition, Chicago (1893)",
+    "sha256": "d455add830923ecb658b54b6d099b48d403daec4374c9ef1c1233827e0dfb411"
+  },
+  {
+    "old": "1800s/menier_chocolate_pavilion_world_s_columbian_exposition_chicago_1893.jpg",
+    "new": "photography/menier_chocolate_pavilion_world_s_columbian_exposition_chicago_1893.jpg",
+    "label": "Menier Chocolate Pavilion, World's Columbian Exposition, Chicago (1893)",
+    "sha256": "2fa66af7203fc5ed62b7da6c8f25569448ec74c7c6d06c855d3bbd4d78c13e99"
+  },
+  {
+    "old": "1800s/view_of_the_palisade_from_roof_of_manufacture_building_by_w_h_browning_1893.jpg",
+    "new": "photography/view_of_the_palisade_from_roof_of_manufacture_building_by_w_h_browning_1893.jpg",
+    "label": "View of the Palisade from Roof of Manufacture Building by W. H. Browning (1893)",
+    "sha256": "f53b8b2a21892a222484349b919e7fa6d352ce65581534518d1eb2af48625203"
+  },
+  {
+    "old": "1800s/palace_of_fine_arts_and_promenade_along_the_lagoon_world_s_columbian_exposition_by_c_d_arnold_1893.jpg",
+    "new": "photography/palace_of_fine_arts_and_promenade_along_the_lagoon_world_s_columbian_exposition_by_c_d_arnold_1893.jpg",
+    "label": "Palace of Fine Arts and Promenade along the Lagoon, World's Columbian Exposition by C. D. Arnold (1893)",
+    "sha256": "930acaf18fd5ce8b28e1821ca393355585808e0f53182d5785b67e986bd805d0"
+  },
+  {
+    "old": "1800s/statue_of_a_draped_female_figure_and_a_bull_on_a_lagoon_at_a_classical_exposition_1893.jpg",
+    "new": "photography/statue_of_a_draped_female_figure_and_a_bull_on_a_lagoon_at_a_classical_exposition_1893.jpg",
+    "label": "Statue of a Draped Female Figure and a Bull on a Lagoon at a Classical Exposition (1893)",
+    "sha256": "98987457098f9bb4e50f28fc99f4e5feabceafbe9efa6f3789efa7f246891334"
+  },
+  {
+    "old": "1800s/palace_of_mechanic_arts_world_s_columbian_exposition_chicago_by_c_d_arnold_1893.jpg",
+    "new": "photography/palace_of_mechanic_arts_world_s_columbian_exposition_chicago_by_c_d_arnold_1893.jpg",
+    "label": "Palace of Mechanic Arts, World's Columbian Exposition, Chicago by C.D. Arnold (1893)",
+    "sha256": "6228a187623cc259adfce22cd0dd4b7ebb1f6eaa97a1e0892d997be3f88bd18c"
+  },
+  {
+    "old": "1800s/administration_building_and_statue_of_columbus_world_s_columbian_exposition_chicago_1893.jpg",
+    "new": "photography/administration_building_and_statue_of_columbus_world_s_columbian_exposition_chicago_1893.jpg",
+    "label": "Administration Building and Statue of Columbus, World's Columbian Exposition, Chicago (1893)",
+    "sha256": "b15bebd6e650d5ac9851801627fad4ac73388e6654ac46d09af39098ac8951e7"
+  },
+  {
+    "old": "1800s/palace_of_mechanic_arts_and_lagoon_world_s_columbian_exposition_chicago_1893.jpg",
+    "new": "photography/palace_of_mechanic_arts_and_lagoon_world_s_columbian_exposition_chicago_1893.jpg",
+    "label": "Palace of Mechanic Arts and Lagoon, World's Columbian Exposition, Chicago (1893)",
+    "sha256": "101801b9fe2230e4b8143f292e54184f2c3b3dede81fa78e8026bf70c2748b77"
+  },
+  {
+    "old": "1900s/the_avenue_looking_north_from_the_new_york_state_capitol_albany_n_y_by_detroit_publishing_co_1900_1910.jpg",
+    "new": "photography/the_avenue_looking_north_from_the_new_york_state_capitol_albany_n_y_by_detroit_publishing_co_1900_1910.jpg",
+    "label": "The Avenue, looking north from the New York State Capitol, Albany, N.Y. by Detroit Publishing Co. (1900-1910)",
+    "sha256": "7bec762e8932d586e513a01e08868f6137d2cf8c25f21f610bce3fa3966a69da"
+  },
+  {
+    "old": "1900s/view_of_the_rue_des_nations_looking_toward_the_palais_des_illusions_exposition_universelle_paris_1900_1900.jpg",
+    "new": "photography/view_of_the_rue_des_nations_looking_toward_the_palais_des_illusions_exposition_universelle_paris_1900_1900.jpg",
+    "label": "View of the Rue des Nations looking toward the Palais des Illusions, Exposition Universelle, Paris 1900 (1900)",
+    "sha256": "8a76b58e992ef0fd14b8a0f2c049ac0d1797baa3d83b6c49805137b4f3359afe"
+  },
+  {
+    "old": "1800s/View from the Window at Le Gras by Joseph Nicéphore Niépce (c. 1826).jpeg",
+    "new": "photography/View from the Window at Le Gras by Joseph Nicéphore Niépce (c. 1826).jpeg",
+    "label": "View from the Window at Le Gras by Joseph Nicéphore Niépce (c. 1826)",
+    "sha256": "8be590a8e50408da8720632e3c7bf3b7572c8063a1906ff89f6d03584bc072b8"
+  },
+  {
+    "old": "1900s/first_flight_120_feet_in_12_seconds_10_35_a_m_kitty_hawk_north_carolina_by_john_t_daniels_1903.jpeg",
+    "new": "photography/first_flight_120_feet_in_12_seconds_10_35_a_m_kitty_hawk_north_carolina_by_john_t_daniels_1903.jpeg",
+    "label": "First flight, 120 feet in 12 seconds, 10:35 a.m.; Kitty Hawk, North Carolina by John T. Daniels (1903)",
+    "sha256": "5562ca288bf238b8a1fe438bc1bc90ca42c9fc8f6fb80f74a68a731d2d2c57df"
+  },
+  {
+    "old": "1900s/french_pavilion_louisiana_purchase_exposition_st_louis_1904.jpg",
+    "new": "photography/french_pavilion_louisiana_purchase_exposition_st_louis_1904.jpg",
+    "label": "French Pavilion, Louisiana Purchase Exposition, St. Louis (1904)",
+    "sha256": "9a9720caafb0ae4f2e5ad667abb005000600546e32a889d63f03b4399509699e"
+  },
+  {
+    "old": "1900s/fire_at_the_second_cliff_house_san_francisco_1907.jpg",
+    "new": "photography/fire_at_the_second_cliff_house_san_francisco_1907.jpg",
+    "label": "Fire at the Second Cliff House, San Francisco (1907)",
+    "sha256": "fcc25bbc09afe2c190bae697ab37a61c9ce1e4f31c83c5e9d38df11a62ff4e32"
+  },
+  {
+    "old": "1900s/manhattan_bridge_construction_d_194_by_irving_underhill_1909.jpg",
+    "new": "photography/manhattan_bridge_construction_d_194_by_irving_underhill_1909.jpg",
+    "label": "Manhattan Bridge Construction (D-194) by Irving Underhill (1909)",
+    "sha256": "b5225de283bb44191f2880feac3528a25df9af2e9ec73aa70b035eab614dc8a5"
+  },
+  {
+    "old": "1900s/three_newsboys_smoking_by_lewis_hine_1910.jpg",
+    "new": "photography/three_newsboys_smoking_by_lewis_hine_1910.jpg",
+    "label": "Three newsboys smoking by Lewis Hine (1910)",
+    "sha256": "817039ccb328f70f3ad0b061294e046a93c624d7ad70ae3da98a54a101a48450"
+  },
+  {
+    "old": "1900s/portrait_of_vladimir_mayakovsky_by_alexander_rodchenko_1924.jpg",
+    "new": "photography/portrait_of_vladimir_mayakovsky_by_alexander_rodchenko_1924.jpg",
+    "label": "Portrait of Vladimir Mayakovsky by Alexander Rodchenko (1924)",
+    "sha256": "c9a10d871089c02c60a68e0a479f8816eca27a034a9fa8fd961c80d986adaad8"
+  },
+  {
+    "old": "1900s/1924_575_portrait_of_a_man_jpg.jpg",
+    "new": "photography/1924_575_portrait_of_a_man_jpg.jpg",
+    "label": "1924 575 portrait of a man jpg",
+    "sha256": "5170338eb095971d76dd178833e915f8b70c6052129f95efa4bf73c3f990a0d5"
+  },
+  {
+    "old": "1900s/three_bauhaus_students_by_t_lux_feininger_1927.jpg",
+    "new": "photography/three_bauhaus_students_by_t_lux_feininger_1927.jpg",
+    "label": "Three Bauhaus Students by T. Lux Feininger (1927)",
+    "sha256": "2520b804fc07cf825f7f33dcb63518e2d2813b5ce94d2eb58bb49ced549151d7"
+  },
+  {
+    "old": "1900s/american_gothic_by_grant_wood_1930.jpeg",
+    "new": "photography/american_gothic_by_grant_wood_1930.jpeg",
+    "label": "Two People Posing beside American Gothic",
+    "sha256": "fce691cc83f38c5b9262266cdb8059affd62d08c80d7921a341a9e9a997c2897"
+  },
+  {
+    "old": "1900s/mannequin_head_four_views_by_man_ray_c_1930.jpg",
+    "new": "photography/mannequin_head_four_views_by_man_ray_c_1930.jpg",
+    "label": "Mannequin Head (Four Views) by Man Ray (c. 1930)",
+    "sha256": "4f01dd45f7e249aee76a7616d32af010f81970a18a38158c4e0880af18f77ed2"
+  },
+  {
+    "old": "1900s/franklin_d_roosevelt_shaking_hands_with_a_farmer_1932.jpg",
+    "new": "photography/franklin_d_roosevelt_shaking_hands_with_a_farmer_1932.jpg",
+    "label": "Franklin D. Roosevelt shaking hands with a farmer (1932)",
+    "sha256": "1695ee3b654b6bff10ca2c8a8160adf34033064f29269cbfb2293791bbaa41ae"
+  },
+  {
+    "old": "1900s/allie_mae_burroughs_wife_of_a_sharecropper_hale_county_alabama_by_walker_evans_1936.jpeg",
+    "new": "photography/allie_mae_burroughs_wife_of_a_sharecropper_hale_county_alabama_by_walker_evans_1936.jpeg",
+    "label": "Allie Mae Burroughs, Wife of a Sharecropper, Hale County, Alabama by Walker Evans (1936)",
+    "sha256": "cbf43ad769d0252b9a5689d2838984091e0f1de54a026dbc6388ce666b997064"
+  },
+  {
+    "old": "1900s/family_at_supper_oklahoma_by_arthur_rothstein_1936.jpeg",
+    "new": "photography/family_at_supper_oklahoma_by_arthur_rothstein_1936.jpeg",
+    "label": "Family at Supper, Oklahoma by Arthur Rothstein (1936)",
+    "sha256": "e2f3b3ddc0929b09d3e0f0b06e5200e2a7dcd6adbf22d928f0fe857cdbe03e8c"
+  },
+  {
+    "old": "1900s/walker_evans_alabama_tenant_farmer_wife_1936.jpg",
+    "new": "photography/walker_evans_alabama_tenant_farmer_wife_1936.jpg",
+    "label": "walker evans alabama tenant farmer wife (1936)",
+    "sha256": "1874a66784a0f3656b75f7a7759c66a0698bdf7fb7a23362df34b1ecf21af717"
+  },
+  {
+    "old": "1900s/young_boxers_by_mark_markov_grinberg_1937.jpg",
+    "new": "photography/young_boxers_by_mark_markov_grinberg_1937.jpg",
+    "label": "Young Boxers by Mark Markov-Grinberg (1937)",
+    "sha256": "9b2a0d69f3f99479850e04e3169417b6ac7150e63d74e05073025184cecee365"
+  },
+  {
+    "old": "1900s/palazzo_della_civilta_italiana_by_giovanni_guerrini_ernesto_bruno_la_padula_mario_romano_19381943.jpg",
+    "new": "photography/palazzo_della_civilta_italiana_by_giovanni_guerrini_ernesto_bruno_la_padula_mario_romano_19381943.jpg",
+    "label": "Palazzo della Civiltà Italiana by Giovanni Guerrini, Ernesto Bruno La Padula, Mario Romano (1938–1943)",
+    "sha256": "a545159cd4366cda4ee52bcf11308af56b5722004c4f7ee09fb5869873ef1f97"
+  },
+  {
+    "old": "1900s/woman_killed_in_car_crash_by_weegee_1940.jpeg",
+    "new": "photography/woman_killed_in_car_crash_by_weegee_1940.jpeg",
+    "label": "Woman Killed in Car Crash by Weegee (1940)",
+    "sha256": "b90f5793d2ace9d3168f88aadc3e0a69418d85d42eefed7d507a3039fe15e252"
+  },
+  {
+    "old": "1900s/teenagers_sharing_a_milkshake_by_nina_leen_1944.jpg",
+    "new": "photography/teenagers_sharing_a_milkshake_by_nina_leen_1944.jpg",
+    "label": "Teenagers Sharing a Milkshake by Nina Leen (1944)",
+    "sha256": "aa292dc759bf980a1266aabe8320268c777fbca00e4e9d7c502da664a856cd77"
+  },
+  {
+    "old": "1900s/first_flag_raising_on_iwo_jima_by_louis_r_lowery_1945.jpg",
+    "new": "photography/first_flag_raising_on_iwo_jima_by_louis_r_lowery_1945.jpg",
+    "label": "First Flag Raising on Iwo Jima by Louis R. Lowery (1945)",
+    "sha256": "2bf2cce1ccd7ba5d3fc864e2305bfe309d4bb67d2e35de2593183f56273f14eb"
+  },
+  {
+    "old": "1900s/coney_island_by_louis_faurer_1947.jpg",
+    "new": "photography/coney_island_by_louis_faurer_1947.jpg",
+    "label": "Coney Island by Louis Faurer (1947)",
+    "sha256": "3a7ef2340b13e88e28c20aac713be4f903707d0b81aaf8777af9c3f6e416ff4d"
+  },
+  {
+    "old": "1900s/untitled_man_on_a_wheel_fort_scott_kansas_by_gordon_parks_1949.jpeg",
+    "new": "photography/untitled_man_on_a_wheel_fort_scott_kansas_by_gordon_parks_1949.jpeg",
+    "label": "Untitled (Man on a Wheel, Fort Scott, Kansas) by Gordon Parks (1949)",
+    "sha256": "8801a62a04fe6382e3e54ff0ca7bd29f830e99e8d2c7d5eee9e18849f7918366"
+  },
+  {
+    "old": "1900s/three_boys_with_a_toy_gun_fort_scott_kansas_by_gordon_parks_1949.jpg",
+    "new": "photography/three_boys_with_a_toy_gun_fort_scott_kansas_by_gordon_parks_1949.jpg",
+    "label": "Three Boys with a Toy Gun, Fort Scott, Kansas by Gordon Parks (1949)",
+    "sha256": "3aa471c489f59afe73f41bcf179c8256e3a95bf2e226de1a1c2d8197ed2e4105"
+  },
+  {
+    "old": "1900s/tennis_player_by_harold_edgerton_1949.jpg",
+    "new": "photography/tennis_player_by_harold_edgerton_1949.jpg",
+    "label": "Tennis Player by Harold Edgerton (1949)",
+    "sha256": "51cf08cd42e0721edc110c7feca5121f054fd52b8cb6c1f229c80848d9bad6d7"
+  },
+  {
+    "old": "1900s/big_jay_mcneely_driving_the_crowd_at_the_olympic_auditorium_into_a_frenzy_los_angeles_by_bob_willoughby_1953.jpg",
+    "new": "photography/big_jay_mcneely_driving_the_crowd_at_the_olympic_auditorium_into_a_frenzy_los_angeles_by_bob_willoughby_1953.jpg",
+    "label": "Big Jay McNeely driving the crowd at the Olympic Auditorium into a frenzy, Los Angeles by Bob Willoughby (1953)",
+    "sha256": "be9eb104e3021cb2e12753a1c986b13452e543007e47e695cdfaae89a228b166"
+  },
+  {
+    "old": "1900s/marilyn_monroe_in_red_swimsuit_with_parasol_by_frank_powolny_1953.jpg",
+    "new": "photography/marilyn_monroe_in_red_swimsuit_with_parasol_by_frank_powolny_1953.jpg",
+    "label": "Marilyn Monroe in Red Swimsuit with Parasol by Frank Powolny (1953)",
+    "sha256": "faaf26dbba53b7fd1c792590eeed68ebd5cf4569426d9fa936cd728d57124038"
+  },
+  {
+    "old": "1900s/marilyn_monroe_sitting_on_the_floor_by_milton_h_greene_1953.jpg",
+    "new": "photography/marilyn_monroe_sitting_on_the_floor_by_milton_h_greene_1953.jpg",
+    "label": "Marilyn Monroe, Sitting on the Floor by Milton H. Greene (1953)",
+    "sha256": "a48cc81172e6c2be207b441d8946d72a74f5e8684a4a9d3fd8306b1cbeba07cb"
+  },
+  {
+    "old": "1900s/chet_baker_hollywood_by_william_claxton_1953.jpeg",
+    "new": "photography/chet_baker_hollywood_by_william_claxton_1953.jpeg",
+    "label": "Chet Baker, Hollywood by William Claxton (1953)",
+    "sha256": "f803cdde6847644986de8807bf874b27b4a9bda502172a9dca622cf53c9aa0d4"
+  },
+  {
+    "old": "1900s/museum_new_york_by_elliott_erwitt_1954.jpeg",
+    "new": "photography/museum_new_york_by_elliott_erwitt_1954.jpeg",
+    "label": "Museum, New York by Elliott Erwitt (1954)",
+    "sha256": "8a1f8c4fc59315042c8a51eeea915216eccea730341cb4255e967f325cd9c966"
+  },
+  {
+    "old": "1900s/marilyn_monroe_with_apples_by_richard_avedon_1954.jpg",
+    "new": "photography/marilyn_monroe_with_apples_by_richard_avedon_1954.jpg",
+    "label": "Marilyn Monroe with Apples by Richard Avedon (1954)",
+    "sha256": "26d31c3e409cc7fcce69d89373a4fb2d7af7f02f556a322929ffe3de921c6798"
+  },
+  {
+    "old": "1900s/marilyn_monroe_new_york_by_richard_avedon_1954.jpg",
+    "new": "photography/marilyn_monroe_new_york_by_richard_avedon_1954.jpg",
+    "label": "Marilyn Monroe, New York by Richard Avedon (1954)",
+    "sha256": "6043270b460d5a0673ee9ce3233c4c3660a11de9a867e660b0ceca052eca8443"
+  },
+  {
+    "old": "1900s/james_dean_times_square_new_york_by_dennis_stock_1955.jpg",
+    "new": "photography/james_dean_times_square_new_york_by_dennis_stock_1955.jpg",
+    "label": "James Dean, Times Square, New York by Dennis Stock (1955)",
+    "sha256": "0d802ac08f45e179343fca42a19bf5e5179994102880f040993e95402058e81e"
+  },
+  {
+    "old": "1900s/nikos_kazantzakis_by_dimitris_harissiadis_1955.jpg",
+    "new": "photography/nikos_kazantzakis_by_dimitris_harissiadis_1955.jpg",
+    "label": "Nikos Kazantzakis by Dimitris Harissiadis (1955)",
+    "sha256": "20820de45af6e7c88a329565d9b34fb5d9817e41627d9571d35ba193e586ba24"
+  },
+  {
+    "old": "1900s/eldridge_a_member_of_the_thornton_family_with_a_rifle_near_mobile_alabama_by_gordon_parks_1956.jpg",
+    "new": "photography/eldridge_a_member_of_the_thornton_family_with_a_rifle_near_mobile_alabama_by_gordon_parks_1956.jpg",
+    "label": "Eldridge, a member of the Thornton family, with a rifle, near Mobile, Alabama by Gordon Parks (1956)",
+    "sha256": "af3683c70c433984a6c706ecd86ea2ec40980972398c844016c1e4cdd5494f2d"
+  },
+  {
+    "old": "1900s/the_walker_by_fan_ho_1956.jpg",
+    "new": "photography/the_walker_by_fan_ho_1956.jpg",
+    "label": "The Walker by Fan Ho (1956)",
+    "sha256": "f41529e3e060e419a243d2d53475eb9ba9c330c7fc6f5b9e678157d663419d1d"
+  },
+  {
+    "old": "1900s/pablo_picasso_in_his_studio_at_la_californie_cannes_by_david_douglas_duncan_1957.jpg",
+    "new": "photography/pablo_picasso_in_his_studio_at_la_californie_cannes_by_david_douglas_duncan_1957.jpg",
+    "label": "Pablo Picasso in his studio at La Californie, Cannes by David Douglas Duncan (1957)",
+    "sha256": "fd3f546dfb2bfc95e8ec7ce446d37f15087ae20fc204f2270c32fe171b65a31b"
+  },
+  {
+    "old": "1900s/dancing_at_the_st_regis_by_garry_winogrand_1957.jpg",
+    "new": "photography/dancing_at_the_st_regis_by_garry_winogrand_1957.jpg",
+    "label": "Dancing at the St. Regis by Garry Winogrand (1957)",
+    "sha256": "3e8c25f1a5f5b4e26b500534fd04accc2c2c00079ca73d427a457d497c978495"
+  },
+  {
+    "old": "1900s/marilyn_monroe_by_richard_avedon_1957.jpg",
+    "new": "photography/marilyn_monroe_by_richard_avedon_1957.jpg",
+    "label": "Marilyn Monroe by Richard Avedon (1957)",
+    "sha256": "e09edee5574873694d24957b7bb6ec3380bb4604f9a71823ee13d709cdac95e5"
+  },
+  {
+    "old": "1900s/susaninglettgallery_unknown_artist_a_simian_briton_so_they_cite_the_work_of_congo_a_chimp_at_the_london_zoo_c_1957_webp.webp",
+    "new": "photography/susaninglettgallery_unknown_artist_a_simian_briton_so_they_cite_the_work_of_congo_a_chimp_at_the_london_zoo_c_1957_webp.webp",
+    "label": "susaninglettgallery unknown artist a simian briton so they cite the work of congo a chimp at the london zoo c 1957 webp",
+    "sha256": "26a4331cd5a722dabfd72df014e751fa33922a88590d16992bf38aa803dc8b11"
+  },
+  {
+    "old": "1900s/iannis_xenakis_and_le_corbusier_philips_pavilion_brussels_worlds_fair_expo_58_1958.jpg",
+    "new": "photography/iannis_xenakis_and_le_corbusier_philips_pavilion_brussels_worlds_fair_expo_58_1958.jpg",
+    "label": "iannis xenakis and le corbusier philips pavilion brussels worlds fair expo 58 (1958)",
+    "sha256": "ec63968d6aa27e5d17c7f092e676dc85bb0884636fcfd4b8224310ff33102f95"
+  },
+  {
+    "old": "1900s/francis_bacon_in_his_studio_by_cecil_beaton_1960.jpeg",
+    "new": "photography/francis_bacon_in_his_studio_by_cecil_beaton_1960.jpeg",
+    "label": "Francis Bacon in his studio by Cecil Beaton (1960)",
+    "sha256": "40649ff2fc96673bf4e479a5c950dbfba316659e9fd539dec571af2944d3d5aa"
+  },
+  {
+    "old": "1900s/00081_brutalist_architecture_1960_png.png",
+    "new": "photography/00081_brutalist_architecture_1960_png.png",
+    "label": "00081 brutalist architecture 1960 png",
+    "sha256": "506bb728ae1a2c470da5e20e92595b7167cf902aa8fd8ff2f921d16917c67dcc"
+  },
+  {
+    "old": "1900s/children_drinking_and_smoking_london_by_david_bailey_1962.jpg",
+    "new": "photography/children_drinking_and_smoking_london_by_david_bailey_1962.jpg",
+    "label": "Children Drinking and Smoking, London by David Bailey (1962)",
+    "sha256": "807852c658dfa76b35d5f007902eea266473bf49d0a2984803293fb8b250ca42"
+  },
+  {
+    "old": "1900s/willem_de_kooning_in_his_studio_springs_long_island_by_hans_namuth_1964.jpeg",
+    "new": "photography/willem_de_kooning_in_his_studio_springs_long_island_by_hans_namuth_1964.jpeg",
+    "label": "Willem de Kooning in his studio, Springs, Long Island by Hans Namuth (1964)",
+    "sha256": "c98029bff55d7313d03e175fa7098797b42ad1bf96b539d16d13f623d2080e78"
+  },
+  {
+    "old": "1900s/one_for_the_road_documentation_of_a_happening_by_wolf_vostell_1964.jpeg",
+    "new": "photography/one_for_the_road_documentation_of_a_happening_by_wolf_vostell_1964.jpeg",
+    "label": "One for the Road (Documentation of a Happening) by Wolf Vostell (1964)",
+    "sha256": "f7fc576f7a9ee5dae540d8ac53225134d458df25379801476041cf44f04a2d38"
+  },
+  {
+    "old": "1900s/boy_with_rifle_by_bill_owens_1964.jpg",
+    "new": "photography/boy_with_rifle_by_bill_owens_1964.jpg",
+    "label": "Boy with Rifle by Bill Owens (1964)",
+    "sha256": "7cdb07908f16fbb5adb4a4a7141c91410f44401e9cfc5d74ff6d0fa79d86f196"
+  },
+  {
+    "old": "1900s/eglise_saint_jacques_le_majeur_by_andre_le_donne_1965.jpg",
+    "new": "photography/eglise_saint_jacques_le_majeur_by_andre_le_donne_1965.jpg",
+    "label": "Église Saint-Jacques-le-Majeur by André Le Donné (1965)",
+    "sha256": "dfe064b101e352b278b11df680343ed1477db9e3a6d082a9d6eddb51e992caf4"
+  },
+  {
+    "old": "1900s/yukoku_patriotism_by_yukio_mishima_1966.jpg",
+    "new": "photography/yukoku_patriotism_by_yukio_mishima_1966.jpg",
+    "label": "Yūkoku (Patriotism) by Yukio Mishima (1966)",
+    "sha256": "4982fdc9212fa1bafbc45297633cc8eac1eab530d966728a577a5e30486743e8"
+  },
+  {
+    "old": "1900s/bob_dylan_at_breakfast_paris_by_barry_feinstein_1966.jpg",
+    "new": "photography/bob_dylan_at_breakfast_paris_by_barry_feinstein_1966.jpg",
+    "label": "Bob Dylan at Breakfast, Paris by Barry Feinstein (1966)",
+    "sha256": "e4bc70dc02a3acd9e5b591b8d3550abc9d4fa6c3ff6ba0636c9f053b447398d8"
+  },
+  {
+    "old": "1900s/andy_warhol_and_the_velvet_underground_at_the_castle_by_lisa_law_1967.jpg",
+    "new": "photography/andy_warhol_and_the_velvet_underground_at_the_castle_by_lisa_law_1967.jpg",
+    "label": "Andy Warhol and The Velvet Underground at the Castle by Lisa Law (1967)",
+    "sha256": "553909e398a7501a8e5c8131dde3ecd1ffb2c000d47008e4786ba23f7cb191fc"
+  },
+  {
+    "old": "1900s/bruce_nauman_suspended_fortitude_c_1968.jpg",
+    "new": "photography/bruce_nauman_suspended_fortitude_c_1968.jpg",
+    "label": "bruce nauman suspended fortitude (c 1968)",
+    "sha256": "91305522692942a75b3d8dca217089ddd0a729bd4ce788d6cdbadc917cbb807d"
+  },
+  {
+    "old": "1900s/el_che_guevara_de_la_mirada_by_hector_garcia_1968.jpg",
+    "new": "photography/el_che_guevara_de_la_mirada_by_hector_garcia_1968.jpg",
+    "label": "El Che Guevara de la Mirada by Héctor García (1968)",
+    "sha256": "bb94df21fb45c60472e918e48468ed871cc2293c4a16b6cca97bcec275be441f"
+  },
+  {
+    "old": "1900s/a_young_couple_armed_with_rifles_walk_along_the_shore_of_the_perfume_river_hue_by_philip_jones_griffiths_1968.jpg",
+    "new": "photography/a_young_couple_armed_with_rifles_walk_along_the_shore_of_the_perfume_river_hue_by_philip_jones_griffiths_1968.jpg",
+    "label": "A young couple, armed with rifles, walk along the shore of the Perfume River, Hue. by Philip Jones Griffiths (1968)",
+    "sha256": "c28148fa4725e06a1b758f28c3708736749a6739cf645ce0790ad1328a055ead"
+  },
+  {
+    "old": "1900s/john_cage_composer_new_york_by_richard_avedon_1970.jpg",
+    "new": "photography/john_cage_composer_new_york_by_richard_avedon_1970.jpg",
+    "label": "John Cage, Composer, New York by Richard Avedon (1970)",
+    "sha256": "cdd46e30d46e67c8f6e7b7cfc5c5600391d51255dad99c5645c7e1bc94d0c0c2"
+  },
+  {
+    "old": "1900s/geisel_library_by_william_l_pereira_1970.jpg",
+    "new": "photography/geisel_library_by_william_l_pereira_1970.jpg",
+    "label": "Geisel Library by William L. Pereira (1970)",
+    "sha256": "21857cbdc7ebb5a266e1f33b625fc41e92c56b16cae18b9ab4294a19baedb6b4"
+  },
+  {
+    "old": "1900s/john_lennon_and_yoko_ono_leaving_the_troubadour_los_angeles_by_ron_galella_1973.png",
+    "new": "photography/john_lennon_and_yoko_ono_leaving_the_troubadour_los_angeles_by_ron_galella_1973.png",
+    "label": "John Lennon and Yoko Ono leaving the Troubadour, Los Angeles by Ron Galella (1973)",
+    "sha256": "cb170546f34c4d6a7fa88c0a2adb213d44e16d0bbd01d0f47a4a691fff90a334"
+  },
+  {
+    "old": "1900s/hyatt_regency_san_francisco_by_john_portman_1973.jpg",
+    "new": "photography/hyatt_regency_san_francisco_by_john_portman_1973.jpg",
+    "label": "Hyatt Regency San Francisco by John Portman (1973)",
+    "sha256": "7060fb6f6fd08855a79fcd9136b0ac8934c16e9e0bf529f9d74412fc3b0c6ea3"
+  },
+  {
+    "old": "1900s/hunter_s_thompson_shooting_his_typewriter_by_al_satterwhite_1977.jpeg",
+    "new": "photography/hunter_s_thompson_shooting_his_typewriter_by_al_satterwhite_1977.jpeg",
+    "label": "Hunter S. Thompson Shooting His Typewriter by Al Satterwhite (1977)",
+    "sha256": "97e48b8553a6d3cdb4145d90842e0f798b4ab6ab85b02f3d18808cada0103259"
+  },
+  {
+    "old": "1900s/grace_jones_by_jean_paul_goude_1978.jpeg",
+    "new": "photography/grace_jones_by_jean_paul_goude_1978.jpeg",
+    "label": "Grace Jones by Jean-Paul Goude (1978)",
+    "sha256": "7e6e33f76b4854584b796b0da26460851c8888036b1923d3eb8cfbfadf13ea14"
+  },
+  {
+    "old": "1900s/a_man_sitting_at_a_table_in_a_room_overlooking_the_ocean_san_francisco_california_by_joel_sternfeld_1979.jpeg",
+    "new": "photography/a_man_sitting_at_a_table_in_a_room_overlooking_the_ocean_san_francisco_california_by_joel_sternfeld_1979.jpeg",
+    "label": "A man sitting at a table in a room overlooking the ocean, San Francisco, California by Joel Sternfeld (1979)",
+    "sha256": "7d24161babbb8632c996bc5b28fa831a7c733e56e04a04084355b08e3f53fef3"
+  },
+  {
+    "old": "1900s/boy_with_glove_times_square_new_york_by_bruce_davidson_1980.jpg",
+    "new": "photography/boy_with_glove_times_square_new_york_by_bruce_davidson_1980.jpg",
+    "label": "Boy with Glove, Times Square, New York by Bruce Davidson (1980)",
+    "sha256": "cfbc2b5fe237db27f8bb3f1f3f1bd064f35e818f9fe2c7d0399a7feb3c8833dd"
+  },
+  {
+    "old": "1900s/david_bowie_contact_sheet_paris_by_helmut_newton_1980.jpg",
+    "new": "photography/david_bowie_contact_sheet_paris_by_helmut_newton_1980.jpg",
+    "label": "David Bowie, Contact Sheet, Paris by Helmut Newton (1980)",
+    "sha256": "f3dea0e8e515bc6a61c45081fa68fe22a27f160755141a17d8ba626f1f915b0f"
+  },
+  {
+    "old": "1900s/subway_by_bruce_davidson_1980.jpg",
+    "new": "photography/subway_by_bruce_davidson_1980.jpg",
+    "label": "Subway by Bruce Davidson (1980)",
+    "sha256": "cfd2135e575a49d97307acd178aabf7b86593ddc5afcd101ba3bf74dfdc744cf"
+  },
+  {
+    "old": "1900s/man_on_brooklyn_bridge_new_york_by_william_klein_1980.jpg",
+    "new": "photography/man_on_brooklyn_bridge_new_york_by_william_klein_1980.jpg",
+    "label": "Man on Brooklyn Bridge, New York by William Klein (1980)",
+    "sha256": "7720962661b218005c5c96317160b4a865d1aa8d7cb968943dc456848e1788ba"
+  },
+  {
+    "old": "1900s/genova_piazza_della_vittoria_by_gabriele_basilico_1980.jpg",
+    "new": "photography/genova_piazza_della_vittoria_by_gabriele_basilico_1980.jpg",
+    "label": "Genova, Piazza della Vittoria by Gabriele Basilico (1980)",
+    "sha256": "8b0611818d52cae0c7dcf7eea2a277658385e02e15f39d78cd85b6647edc2aec"
+  },
+  {
+    "old": "1900s/bgm_by_yellow_magic_orchestra_1981.jpeg",
+    "new": "photography/bgm_by_yellow_magic_orchestra_1981.jpeg",
+    "label": "BGM by Yellow Magic Orchestra (1981)",
+    "sha256": "254e2c2dc505914f84303504cfbd60f0d768012c7ce5f58c58a3326522ff9391"
+  },
+  {
+    "old": "1900s/monument_to_the_revolution_spomenik_revolucije_by_miodrag_zivkovic_1981.jpg",
+    "new": "photography/monument_to_the_revolution_spomenik_revolucije_by_miodrag_zivkovic_1981.jpg",
+    "label": "Monument to the Revolution (Spomenik Revolucije) by Miodrag Živković (1981)",
+    "sha256": "25513b01322a0e33e28f50e8ad69310ff9e92b5daa4b3bc20dcfd3178f4691cd"
+  },
+  {
+    "old": "1900s/twist_silk_jersey_knits_patchworks_autumn_winter_1984_85_by_peter_lindbergh_1984.jpeg",
+    "new": "photography/twist_silk_jersey_knits_patchworks_autumn_winter_1984_85_by_peter_lindbergh_1984.jpeg",
+    "label": "Twist, Silk + Jersey, Knits (Patchworks), autumn/winter 1984-85 by Peter Lindbergh (1984)",
+    "sha256": "931479f9a36f9777ed0a29d8238c753d818a6fce5ae7c21c944e3ffd5cc191d7"
+  },
+  {
+    "old": "1900s/steve_jobs_with_macintosh_by_norman_seeff_1984.jpg",
+    "new": "photography/steve_jobs_with_macintosh_by_norman_seeff_1984.jpg",
+    "label": "Steve Jobs with Macintosh by Norman Seeff (1984)",
+    "sha256": "9ecb867ba1fe660ceae2935d8a8e4fafbef0bab13a31cc4baa42538841cc9730"
+  },
+  {
+    "old": "1900s/auerbach_s_studio_1985.jpeg",
+    "new": "photography/auerbach_s_studio_1985.jpeg",
+    "label": "Auerbach's studio (1985)",
+    "sha256": "2582a3318d3f399d9962d69ab7031d17c823efdc0c3e497e2ab64d74929b26f9"
+  },
+  {
+    "old": "1900s/isabella_rossellini_malibu_by_herb_ritts_1988.jpeg",
+    "new": "photography/isabella_rossellini_malibu_by_herb_ritts_1988.jpeg",
+    "label": "Isabella Rossellini, Malibu by Herb Ritts (1988)",
+    "sha256": "8d3e2a2a89133348c62658a85043b74f77a02a2bba5470d858f1c9a86d94fd39"
+  },
+  {
+    "old": "1900s/issey_miyake_white_and_black_new_york_by_irving_penn_1990.jpg",
+    "new": "photography/issey_miyake_white_and_black_new_york_by_irving_penn_1990.jpg",
+    "label": "Issey Miyake, White and Black, New York by Irving Penn (1990)",
+    "sha256": "f1a81db2daf0649f9abdf1711928b90a4b509473325e376c91e0701455d82676"
+  },
+  {
+    "old": "1900s/sendai_daikannon_1991.jpg",
+    "new": "photography/sendai_daikannon_1991.jpg",
+    "label": "Sendai Daikannon (1991)",
+    "sha256": "af8a049c39241aa1379284678ae5d452ec8bc3020fc20845a157e15a5e74fb6c"
+  },
+  {
+    "old": "1900s/eddie_vedder_stage_diving_at_pinkpop_festival_by_rob_verhorst_1992.jpg",
+    "new": "photography/eddie_vedder_stage_diving_at_pinkpop_festival_by_rob_verhorst_1992.jpg",
+    "label": "Eddie Vedder Stage Diving at Pinkpop Festival by Rob Verhorst (1992)",
+    "sha256": "f5dfe282cd4dc8e80533e366c2620488f2a5f71aeee23c4ad46836f6d99e209d"
+  },
+  {
+    "old": "1900s/three_men_sitting_on_the_hood_of_a_car_the_center_man_holding_a_rifle_barrel_in_his_mouth_by_michael_lavine_1992.jpg",
+    "new": "photography/three_men_sitting_on_the_hood_of_a_car_the_center_man_holding_a_rifle_barrel_in_his_mouth_by_michael_lavine_1992.jpg",
+    "label": "Three men sitting on the hood of a car, the center man holding a rifle barrel in his mouth by Michael Lavine (1992)",
+    "sha256": "634da783297ab6e8e44e735f0f77e9e792476e574166768e23dd6a721a66802b"
+  },
+  {
+    "old": "1900s/self_portrait_hands_on_head_by_lyle_ashton_harris_1993.jpeg",
+    "new": "photography/self_portrait_hands_on_head_by_lyle_ashton_harris_1993.jpeg",
+    "label": "Self-Portrait (Hands on Head) by Lyle Ashton Harris (1993)",
+    "sha256": "75b2b4803578aeec61e2526acb650b62a97f01c26026bea3e9d61e23c3d486a0"
+  },
+  {
+    "old": "1900s/nirvana_kurt_cobain_with_a_gun_by_jesse_frohman_1993.jpg",
+    "new": "photography/nirvana_kurt_cobain_with_a_gun_by_jesse_frohman_1993.jpg",
+    "label": "Nirvana (Kurt Cobain with a Gun) by Jesse Frohman (1993)",
+    "sha256": "1bcc76a2ccf169851a8e28e5eae2a1627c9e71711a55fb056d326c749f81cdec"
+  },
+  {
+    "old": "1900s/coffee_by_sarah_moon_1995.jpg",
+    "new": "photography/coffee_by_sarah_moon_1995.jpg",
+    "label": "Coffee by Sarah Moon (1995)",
+    "sha256": "2be164c4d1956ef2bd40c71e4d60ba94f2034c6451edc7f970c9f196c16b4aef"
+  },
+  {
+    "old": "1900s/untitled_v_by_andreas_gursky_1997.jpeg",
+    "new": "photography/untitled_v_by_andreas_gursky_1997.jpeg",
+    "label": "Untitled V by Andreas Gursky (1997)",
+    "sha256": "b6cc905a10c3cd743c8e29fbd09e6e5986b879aac844c1802946d23d526f491b"
+  },
+  {
+    "old": "1900s/smoke_by_nick_knight_1998.jpeg",
+    "new": "photography/smoke_by_nick_knight_1998.jpeg",
+    "label": "Smoke by Nick Knight (1998)",
+    "sha256": "1490fe856bce7c86fec4c13489abcb1242d2a78a76ce2c26eb47ff6609a265ca"
+  },
+  {
+    "old": "1900s/dreamin_by_chara_1999.jpg",
+    "new": "photography/dreamin_by_chara_1999.jpg",
+    "label": "DREAMIN' by Chara (1999)",
+    "sha256": "f2568ff4dbc844089bbaa5bf9b8a35eaa09f9fae2d558ed5bfe9dce015ca2510"
+  },
+  {
+    "old": "1900s/The Flat-iron by Alfred Stieglitz (1903).jpg",
+    "new": "photography/The Flat-iron by Alfred Stieglitz (1903).jpg",
+    "label": "The Flat iron by Alfred Stieglitz (1903)",
+    "sha256": "2857c33f3abca7f5ff3d745bb3b512e3ca4db7539580270421887e508302bf83"
+  },
+  {
+    "old": "1900s/The Pleasure Principle by Fin Costello (1979).jpg",
+    "new": "photography/The Pleasure Principle by Fin Costello (1979).jpg",
+    "label": "The Pleasure Principle by Fin Costello (1979)",
+    "sha256": "21c40b7fc235ed79126989c3d5b87a46b958c8129fad10aa3c04c761a394922c"
+  },
+  {
+    "old": "1900s/My Next Child Could Be Retarded. So Could Yours. by Richard Avedon (1969).jpg",
+    "new": "photography/My Next Child Could Be Retarded. So Could Yours. by Richard Avedon (1969).jpg",
+    "label": "My Next Child Could Be Retarded. So Could Yours. by Richard Avedon (1969)",
+    "sha256": "1c26d3430759e7ee0a47c431cd8908814461847d473ef04f3bc7ac4e2d23d764"
+  },
+  {
+    "old": "1900s/Jaguar and Car by Erwin Blumenfeld (1950).jpeg",
+    "new": "photography/Jaguar and Car by Erwin Blumenfeld (1950).jpeg",
+    "label": "Jaguar and Car by Erwin Blumenfeld (1950)",
+    "sha256": "a00110dc4c4d3cc6937b928f2bf4dcb5d4a73d856a62d4ef68b7eb9fba9a6b21"
+  },
+  {
+    "old": "1900s/Dropping a Han Dynasty Urn by Ai Weiwei (1995).jpg",
+    "new": "photography/Dropping a Han Dynasty Urn by Ai Weiwei (1995).jpg",
+    "label": "Dropping a Han Dynasty Urn by Ai Weiwei (1995)",
+    "sha256": "5cce545fea2958d640d3e759d303335b71df5e6ea8e9b5d4df5ecf6e6092a486"
+  },
+  {
+    "old": "1900s/Chronocyclegraph of a Solderer by Frank and Lillian Gilbreth (1914).jpg",
+    "new": "photography/Chronocyclegraph of a Solderer by Frank and Lillian Gilbreth (1914).jpg",
+    "label": "Chronocyclegraph of a Solderer by Frank and Lillian Gilbreth (1914)",
+    "sha256": "d8698751aab6a32f1a31c5f9218e686bdbf00b9c07f55119a0c59ccdc15fbf2c"
+  },
+  {
+    "old": "1900s/Malcolm X at a Window by Eve Arnold (1961).jpeg",
+    "new": "photography/Malcolm X at a Window by Eve Arnold (1961).jpeg",
+    "label": "Malcolm X at a Window by Eve Arnold (1961)",
+    "sha256": "9a29be095235be30d313225148cef746fd20897984efd524b687103746ab0ce9"
+  },
+  {
+    "old": "1900s/Coyote by Joseph Beuys (1974).jpg",
+    "new": "photography/Coyote by Joseph Beuys (1974).jpg",
+    "label": "Coyote by Joseph Beuys (1974)",
+    "sha256": "11528e8f766c9da5166f2a396d513f1d2698444bf3f3bd2be87a85230ce59c21"
+  },
+  {
+    "old": "2000s/Hyper Paris (Plan Voisin) by Jean-François Rauzier (2012).jpg",
+    "new": "photography/Hyper Paris (Plan Voisin) by Jean-François Rauzier (2012).jpg",
+    "label": "Hyper-Paris by Jean-François Rauzier (2012)",
+    "sha256": "d6eed6c020f75c77cb800656302c15fbc6f12b8fa7b6f0dc63b176489d949752"
+  },
+  {
+    "old": "2000s/BLAU @ Stadtbad Mitte James Simon by Clare Brokens (2013).jpg",
+    "new": "photography/BLAU @ Stadtbad Mitte James Simon by Clare Brokens (2013).jpg",
+    "label": "BLAU # Stadtbad Mitte James Simon by Clare Brokens (2013)",
+    "sha256": "3735bd0a74640b1e181b309d33328454ebab721dd22fc5115d1e2d485b30410d"
+  },
+  {
+    "old": "2000s/Bad Cameo by James Blake & Lil Yachty (2023).jpg",
+    "new": "photography/Bad Cameo by James Blake & Lil Yachty (2023).jpg",
+    "label": "DS2 (Dirty Sprite 2) Album Cover by Future (2015)",
+    "sha256": "e52cecf2498a2d275a799ad282a4ba3926953a643e27f2708f801b5143a7ca8f"
+  },
+  {
+    "old": "2000s/Moon Phases over the Dolomites by Giorgia Hofer.jpg",
+    "new": "photography/Moon Phases over the Dolomites by Giorgia Hofer.jpg",
+    "label": "Moon Phases over the Dolomites by Giorgia Hofer",
+    "sha256": "1439d88eab4c3bb7385f3b5d27ef0d1b17db4ed66435e4384adfdd1ea8e94c22"
+  },
+  {
+    "old": "2000s/Nymph by Torso Solutions (2022).jpg",
+    "new": "photography/Nymph by Torso Solutions (2022).jpg",
+    "label": "Nymph by Torso Solutions (2022)",
+    "sha256": "d4555648ded3db27483aab3faae0df28875f77fc8629431bc74c6bef00b4b6b7"
+  },
+  {
+    "old": "2000s/Alert Alert by Jordan Sullivan (2020).jpg",
+    "new": "photography/Alert Alert by Jordan Sullivan (2020).jpg",
+    "label": "Alert Alert by Jordan Sullivan (2020)",
+    "sha256": "459d454d0523ee5d8f540d589bc7c37ea90c2ea4129bddcc04c30f4a3ec63dd4"
+  },
+  {
+    "old": "2000s/Konoyo (2018).jpeg",
+    "new": "photography/Konoyo (2018).jpeg",
+    "label": "Konoyo (2018)",
+    "sha256": "39780fd6e48d258277b1599714a593c577be2b52c2dd5c73a69c96235cd57a3b"
+  },
+  {
+    "old": "2000s/Konoyo by Tim Hecker (2018).jpg",
+    "new": "photography/Konoyo by Tim Hecker (2018).jpg",
+    "label": "Konoyo by Tim Hecker (2018)",
+    "sha256": "9b235bfbc9b7efc8aa66aefbf80a38c95e70646fc5e2070569e6dcd8e50ea419"
+  },
+  {
+    "old": "2000s/Some Worlds Have Two Suns by Andrew McConnell (2015-2024).jpeg",
+    "new": "photography/Some Worlds Have Two Suns by Andrew McConnell (2015-2024).jpeg",
+    "label": "Some Worlds Have Two Suns by Andrew McConnell (2015-2024)",
+    "sha256": "1a6818438506ae565faeb0634fe700a61430c61aa31e2d51176219655fae5543"
+  },
+  {
+    "old": "2000s/Ye and Travis Scott at SoFi Stadium by Giorgia Rose (2021).jpeg",
+    "new": "photography/Ye and Travis Scott at SoFi Stadium by Giorgia Rose (2021).jpeg",
+    "label": "Ye and Travis Scott at SoFi Stadium by Giorgia Rose (2021)",
+    "sha256": "7f0a2943bf60c963b63c106bcd245a3628a8ff6d9a930fe536353bd99dbe31d0"
+  },
+  {
+    "old": "2000s/Sagrada Familia by Antoni Gaudí.jpeg",
+    "new": "photography/Sagrada Familia by Antoni Gaudí.jpeg",
+    "label": "Photograph of a tall, ornate cathedral structure under construction above a city skyline (2025)",
+    "sha256": "cfafc2244cf13d849553c350f4b241ca2ea9980b9bc7a647bf8f21038239b67e"
+  },
+  {
+    "old": "2000s/Image - Wii Game Case Featuring John Coltrane's A Love Supreme Album Cover.jpeg",
+    "new": "photography/Image - Wii Game Case Featuring John Coltrane's A Love Supreme Album Cover.jpeg",
+    "label": "Black and White Photograph of John Coltrane on a Wii Game Case Labeled 'A Love Supreme'",
+    "sha256": "af71e973a21ab62da3d237e25e73c20bfd0620bc391f061093b976158741e2c1"
+  },
+  {
+    "old": "2000s/Image - Grumpy White Cat With Spiky Hair.jpeg",
+    "new": "photography/Image - Grumpy White Cat With Spiky Hair.jpeg",
+    "label": "Close-up Photograph of a White Cat with Spiked Fur",
+    "sha256": "8bddcea84589d594f90bae13f740e259d721623871551ecc33791579b9a2f90c"
+  },
+  {
+    "old": "2000s/Image - Close-Up Of Teeth With Blue And White Porcelain Designs.jpeg",
+    "new": "photography/Image - Close-Up Of Teeth With Blue And White Porcelain Designs.jpeg",
+    "label": "Image Close Up Of Teeth With Blue And White Porcelain Designs",
+    "sha256": "1b6f4b0e4ed7bedfa960d007ebb56106f7eb119160f412888dc140ef8e70882c"
+  },
+  {
+    "old": "2000s/Dropping a Han Dynasty Urn by Ai Weiwei (1995).jpg",
+    "new": "photography/Dropping a Han Dynasty Urn by Ai Weiwei (1995) - from 2000s.jpg",
+    "label": "Dropping a Han Dynasty Urn by Ai Weiwei (1995)",
+    "sha256": "accd6451b3674667db1c38dfc5eda22ba78d0fae2cbb1397be786a61e197203b"
+  },
+  {
+    "old": "2000s/Democracy is Merry by Joseph Beuys (1973).jpeg",
+    "new": "photography/Democracy is Merry by Joseph Beuys (1973).jpeg",
+    "label": "Grainy photograph of a man in a fedora smiling while escorted by uniformed officers, with handwritten German text across the bottom",
+    "sha256": "dcbaaa43dd9e41162377e72ac96c69c93b7e246c97c97f75c1c90b2d68600718"
+  },
+  {
+    "old": "2000s/Monochrome by Xi Huang.jpg",
+    "new": "photography/Monochrome by Xi Huang.jpg",
+    "label": "Black and white photograph showing multiple, overlapping, and blurred exposures of a woman's face",
+    "sha256": "f3ba3f2a11bc4dbbe5fb8a689887c29d556c1ab73b7e5e620e263afe4357bd8a"
+  },
+  {
+    "old": "2000s/Image - Nintendo 3DS with 'KONY 2012' written in white powder on a lap.jpeg",
+    "new": "photography/Image - Nintendo 3DS with 'KONY 2012' written in white powder on a lap.jpeg",
+    "label": "Image Nintendo 3DS with 'KONY 2012' written in white powder on a lap",
+    "sha256": "706b547412df2833dcf66254ca7e102950db09f291274a35875678256374f393"
+  },
+  {
+    "old": "1500s/putti_detail_from_the_sistine_madonna_by_raphael_c_1513_1514.png",
+    "new": "photography/putti_detail_from_the_sistine_madonna_by_raphael_c_1513_1514.png",
+    "label": "Woman Seated at a Table beneath a Reproduction of Raphael’s Putti",
+    "sha256": "b6dc722ffb926fd923bf7c640cd97bf9ed930f2d5681c91a2dc9334dad4e8963"
+  },
+  {
+    "old": "1900s/washington_d_c_a_worker_in_the_bureau_of_engraving_and_printing_operating_a_machine_which_rounds_the_corners_of_the_cards_on_which_war_savings_stamps_are_mounted_by_john_vachon_1942.jpeg",
+    "new": "photography/washington_d_c_a_worker_in_the_bureau_of_engraving_and_printing_operating_a_machine_which_rounds_the_corners_of_the_cards_on_which_war_savings_stamps_are_mounted_by_john_vachon_1942.jpeg",
+    "label": "Washington, D.C. A worker in the Bureau of Engraving and Printing operating a machine which rounds the corners of the cards on which war savings stamps are mounted by John Vachon (1942)",
+    "sha256": "69095958165ac982ff4c8bc2d1c5ebe90d66aae6018a68cdd8354603c84780be"
+  },
+  {
+    "old": "1900s/pablo_picasso_drawing_a_figure_with_light_by_gjon_mili_1949.webp",
+    "new": "photography/pablo_picasso_drawing_a_figure_with_light_by_gjon_mili_1949.webp",
+    "label": "Pablo Picasso drawing a figure with light by Gjon Mili (1949)",
+    "sha256": "f3411bd705b0f4e439ef7a2425780d5767bbcc57d3b9e6a3c20b8c6759da4b0b"
+  },
+  {
+    "old": "1900s/jane_birkin_with_paul_mccartney_mask_and_portrait_by_tony_frank_1969.jpeg",
+    "new": "photography/jane_birkin_with_paul_mccartney_mask_and_portrait_by_tony_frank_1969.jpeg",
+    "label": "Jane Birkin with Paul McCartney Mask and Portrait by Tony Frank (1969)",
+    "sha256": "487b55d4780121ac2e8744e626b3e962025fbfe0bdd2a67a8dfa2e1409ab3bec"
+  },
+  {
+    "old": "1900s/self_portrait_by_pipilotti_rist_1984.jpg",
+    "new": "photography/self_portrait_by_pipilotti_rist_1984.jpg",
+    "label": "Self-Portrait by Pipilotti Rist (1984)",
+    "sha256": "7a4de056569b6011c36180a43d2e6bda3ba26d2a7af88d85639edc5dcd4e4af2"
+  },
+  {
+    "old": "2000s/Illustration - Woman in Brown Military Uniform Among Pink Flowers.jpeg",
+    "new": "photography/Illustration - Woman in Brown Military Uniform Among Pink Flowers.jpeg",
+    "label": "Portrait of a Woman in a Brown Military Uniform Standing Among Pink Flowers (2025)",
+    "sha256": "3d9bc2d59858983b5a0c09afbc4887a57a6705c666d06586c432dfdaa3d38ef5"
+  },
+  {
+    "old": "1700s/large_oil_portrait_of_a_man_in_18th_century_military_uniform.webp",
+    "new": "photography/large_oil_portrait_of_a_man_in_18th_century_military_uniform.webp",
+    "label": "World Leaders Meeting in the Oval Office",
+    "sha256": "c5890f7f42113dde5ab55a9aacc2e49e1e9b5c5a4197f4ec79613a743bbe0ff6"
+  },
+  {
+    "old": "2000s/Illustration - Street Artist Painting Wavy Lines on Brick Wall by Revok.webp",
+    "new": "photography/Illustration - Street Artist Painting Wavy Lines on Brick Wall by Revok.webp",
+    "label": "Mural in progress of horizontal colored lines on a brick wall",
+    "sha256": "3672ac073d59cbab6516bc6508d19894243b83ab3f1cce8ae89e7667a557f0da"
+  },
+  {
+    "old": "2000s/Illustration - Person Drawing Stylized 'S' Symbol on Whiteboard.jpeg",
+    "new": "photography/Illustration - Person Drawing Stylized 'S' Symbol on Whiteboard.jpeg",
+    "label": "Oil Painting of a Person Drawing the Stylized 'S' Symbol",
+    "sha256": "dbb5079a9aff2fdca8b2cdaf5754ec83135d45b7aba9e60d4bbf19aee56a212d"
+  },
+  {
+    "old": "unsorted/Illustration - Black And White Photomontage Of Overlapping Male Faces In Profile.jpg",
+    "new": "photography/Illustration - Black And White Photomontage Of Overlapping Male Faces In Profile.jpg",
+    "label": "Black and White Photomontage of Overlapping Human Profiles",
+    "sha256": "aa90dc0b9cef05e6a1f3bda118a866e7a967b59600c3f07439a372ca7db07737"
+  },
+  {
+    "old": "unsorted/Illustration - Abstract Black And White Figure With Obscured Face And Hands.jpeg",
+    "new": "photography/Illustration - Abstract Black And White Figure With Obscured Face And Hands.jpeg",
+    "label": "Illustration Abstract Black And White Figure With Obscured Face And Hands",
+    "sha256": "5d4c66b3ec03aa45eee471da5fb361b368f74ddfdf6a4e143b10f4d166d59ada"
+  },
+  {
+    "old": "unsorted/Illustration - Close-Up Of Soldier Wearing Advanced Military Helmet With AR Device.png",
+    "new": "photography/Illustration - Close-Up Of Soldier Wearing Advanced Military Helmet With AR Device.png",
+    "label": "Illustration Close Up Of Soldier Wearing Advanced Military Helmet With AR Device",
+    "sha256": "9ca924350b580439176a7d42600f4f79c682b33fe76097383f4dfdda68f2c4c8"
+  },
+  {
+    "old": "2000s/Photograph - Artworks Displayed in a Gallery or Storage Space.jpeg",
+    "new": "photography/Photograph - Artworks Displayed in a Gallery or Storage Space.jpeg",
+    "label": "Artworks Displayed in a Gallery or Storage Space",
+    "sha256": "9bcecff8a7609140be89363a9dcecc5e19cd87a6fdd3c699b002fd92d09e90cc"
+  },
+  {
+    "old": "2000s/Photograph - Reflection of Person in Dark Jacket Over Faint Landscape.jpeg",
+    "new": "photography/Photograph - Reflection of Person in Dark Jacket Over Faint Landscape.jpeg",
+    "label": "Reflection of Person in Dark Jacket Over Faint Landscape",
+    "sha256": "03362e80834d091500a27ae0993031231ac1d9b3da83822cdf9260a4849817f5"
+  },
+  {
+    "old": "2000s/Photograph - Blurry Night Photograph of Buildings with Red and Blue Lights.gif",
+    "new": "photography/Photograph - Blurry Night Photograph of Buildings with Red and Blue Lights.gif",
+    "label": "Blurry Night Photograph of Buildings with Red and Blue Lights",
+    "sha256": "24547337579a5d9681da308ac092a0fecd38e7905750e7b6acaa2d268dd5d5b5"
+  },
+  {
+    "old": "unnamed/IMG_0268.png",
+    "new": "photography/IMG_0268.png",
+    "label": "Chairs beside a Bright Window",
+    "sha256": "67f0aeedcd0d7c9569ac3557d2ea29798edbc075b1260aa75ac9ed69c89de25b"
+  }
+]

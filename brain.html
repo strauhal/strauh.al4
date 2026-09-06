@@ -303,7 +303,24 @@ function showBootStatus(msg){
 }
 showBootStatus("loading the archive\u2026");
 fetch(DATA_URL)
-  .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+  .then(function(text){
+    // The graph is exported separately; keep its images valid after media moves.
+    return fetch("./data/media-relocations.json")
+      .then(function(r){ if(!r.ok) throw new Error("relocation map unavailable"); return r.json(); })
+      .catch(function(){ return []; })
+      .then(function(rows){
+        var moved = Object.create(null);
+        rows.forEach(function(row){ moved[row.old] = row.new; });
+        return JSON.parse(text, function(key, value){
+          if(typeof value !== "string") return value;
+          return value.replace(/https:\/\/raw\.githubusercontent\.com\/strauhal\/strauh\.al3\.1\/(?:refs\/heads\/)?main\/([^\s"<>]+)/g, function(url, path){
+            try { path = decodeURIComponent(path); } catch(e) { return url; }
+            return moved[path] ? "https://raw.githubusercontent.com/strauhal/strauh.al3.1/refs/heads/main/" + moved[path].split("/").map(encodeURIComponent).join("/") : url;
+          });
+        });
+      });
+  })
   .then(function(d){
     DATA = d;
     var el = document.getElementById("bootstatus"); if(el) el.remove();
