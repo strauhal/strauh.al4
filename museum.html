@@ -442,9 +442,9 @@
     const xrIsVision=/Vision|visionOS/i.test(xrUserAgent);
     const xrRuntimePreset=xrIsStandaloneQuest
       ?{
-          name:"quest-standalone-safe",
-          framebufferScale:1,
-          foveation:.58,
+          name:"quest-standalone-crisp",
+          framebufferScale:1.32,
+          foveation:.12,
           far:410,
           fogDensity:.00305,
           artworkDrawLimit:20,
@@ -453,8 +453,8 @@
           previewResidentLimit:38,
           previewTextureLimit:30,
           frameAssetLimit:76,
-          previewTextureDimension:320,
-          fullTextureDimension:1536,
+          previewTextureDimension:512,
+          fullTextureDimension:2048,
           anisotropy:4,
           heavyMotionStride:3
         }
@@ -477,7 +477,7 @@
         };
     document.body.dataset.xrDevicePreset=xrRuntimePreset.name;
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-    renderer.setPixelRatio(1);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
     renderer.setSize(
       initialMuseumViewport.width,
       initialMuseumViewport.height,
@@ -610,7 +610,12 @@
       material.needsUpdate=true;
       return material;
     }
-    const whiteLineMaterial = new THREE.LineBasicMaterial({ color: WHITE, linewidth: 1 });
+    // These are authored as literal #fff strokes. Bypassing tone mapping keeps
+    // them white instead of soft gray, while the higher XR framebuffer density
+    // gives one-pixel diagonals enough samples to remain clean in the headset.
+    const whiteLineMaterial = new THREE.LineBasicMaterial({
+      color:WHITE,linewidth:1,toneMapped:false
+    });
     const exteriorGroundMaterial = new THREE.MeshBasicMaterial({
       color:0xffffff,
       side:THREE.DoubleSide
@@ -4899,7 +4904,91 @@
       // A single medium wall tier is sharp enough for normal gallery viewing
       // without decoding/uploading multi-megabyte originals as the gaze ray
       // crosses each work. Originals are reserved for the focus viewer.
-      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=384&h=384&fit=inside&q=62&output=webp`;
+      const dimension=renderer.xr.isPresenting
+        ?xrRuntimePreset.previewTextureDimension
+        :512;
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${dimension}&h=${dimension}&fit=inside&q=78&output=webp`;
+    }
+    async function canvasTextureFromBlob(blob,maxTextureDimension) {
+      const objectURL=URL.createObjectURL(blob);
+      try {
+        const image=new Image();
+        image.decoding="async";
+        image.src=objectURL;
+        try {
+          await image.decode();
+        } catch (_) {
+          await new Promise((resolve,reject) => {
+            image.onload=resolve;
+            image.onerror=()=>reject(new Error("image decode failed"));
+          });
+        }
+        const scale=Math.min(
+          1,maxTextureDimension/Math.max(image.naturalWidth,image.naturalHeight)
+        );
+        const canvas=document.createElement("canvas");
+        canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
+        canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+        const context=canvas.getContext("2d");
+        if (!context) throw new Error("canvas decode unavailable");
+        context.drawImage(image,0,0,canvas.width,canvas.height);
+        return new THREE.CanvasTexture(canvas);
+      } finally {
+        URL.revokeObjectURL(objectURL);
+      }
+    }
+    async function textureFromArtworkBlob(blob,url,tier) {
+      if (!blob.type.startsWith("image/")) {
+        throw new Error(`unexpected artwork content type ${blob.type||"unknown"}`);
+      }
+      if (blob.type==="image/gif" || isAnimatedImageURL(url)) {
+        const objectURL=URL.createObjectURL(blob);
+        const image=new Image();
+        image.src=objectURL;
+        try { await image.decode(); }
+        catch (_) {
+          await new Promise((resolve,reject) => {
+            image.onload=resolve;
+            image.onerror=reject;
+          });
+        }
+        const texture=new THREE.Texture(image);
+        texture.generateMipmaps=false;
+        texture.minFilter=THREE.LinearFilter;
+        texture.magFilter=THREE.LinearFilter;
+        texture.userData.animated=true;
+        texture.userData.objectURL=objectURL;
+        return texture;
+      }
+      const xrTextureBudget=renderer.xr.isPresenting?xrRuntimePreset:null;
+      const maxTextureDimension=tier==="preview"
+        ?(xrTextureBudget?.previewTextureDimension||512)
+        :Math.min(
+            renderer.capabilities.maxTextureSize,
+            xrTextureBudget?.fullTextureDimension||4096
+          );
+      try {
+        // This fast path works in current Chromium. Some Quest Browser builds
+        // reject ImageBitmap decode options, so it is deliberately optional.
+        const source=await createImageBitmap(blob,{imageOrientation:"flipY"});
+        const scale=Math.min(
+          1,maxTextureDimension/Math.max(source.width,source.height)
+        );
+        let bitmap=source;
+        if (scale<1) {
+          bitmap=await createImageBitmap(source,0,0,source.width,source.height,{
+            resizeWidth:Math.max(1,Math.round(source.width*scale)),
+            resizeHeight:Math.max(1,Math.round(source.height*scale)),
+            resizeQuality:"high"
+          });
+          source.close();
+        }
+        return new THREE.Texture(bitmap);
+      } catch (_) {
+        // HTML image + canvas decoding is supported by older Quest Chromium
+        // versions and also handles formats whose ImageBitmap path is broken.
+        return canvasTextureFromBlob(blob,maxTextureDimension);
+      }
     }
     function touchPreviewTexture(texture) {
       if (!texture || texture.userData.tier!=="preview" ||
@@ -4974,43 +5063,23 @@
               });
             }
             if (!response.ok) throw new Error(`image ${response.status}`);
-            const blob = await response.blob();
+            let blob = await response.blob();
             let texture;
-            if (blob.type==="image/gif" || isAnimatedImageURL(url)) {
-              const objectURL=URL.createObjectURL(blob);
-              const image=new Image();
-              image.src=objectURL;
-              try { await image.decode(); }
-              catch (_) { await new Promise((resolve,reject) => { image.onload=resolve; image.onerror=reject; }); }
-              texture=new THREE.Texture(image);
-              texture.generateMipmaps=false;
-              texture.minFilter=THREE.LinearFilter;
-              texture.magFilter=THREE.LinearFilter;
-              texture.userData.animated=true;
-              texture.userData.objectURL=objectURL;
-            } else {
-              // ImageBitmap bypasses Texture.flipY in WebGL, so orient at decode time.
-              const source = await createImageBitmap(blob,{ imageOrientation:"flipY" });
-              const xrTextureBudget=renderer.xr.isPresenting
-                ?xrRuntimePreset
-                :null;
-              const maxTextureDimension=tier==="preview"
-                ?(xrTextureBudget?.previewTextureDimension||384)
-                :Math.min(
-                    renderer.capabilities.maxTextureSize,
-                    xrTextureBudget?.fullTextureDimension||4096
-                  );
-              const scale = Math.min(1,maxTextureDimension/Math.max(source.width,source.height));
-              let bitmap = source;
-              if (scale < 1) {
-                bitmap = await createImageBitmap(source,0,0,source.width,source.height,{
-                  resizeWidth:Math.max(1,Math.round(source.width*scale)),
-                  resizeHeight:Math.max(1,Math.round(source.height*scale)),
-                  resizeQuality:"medium"
-                });
-                source.close();
+            try {
+              texture=await textureFromArtworkBlob(blob,url,tier);
+            } catch (decodeError) {
+              // A thumbnail proxy can return a successful HTML response or a
+              // WebP variant a particular headset cannot decode. Retry the
+              // original source before marking the artwork as failed.
+              if (requestURL===url || decodeError?.name==="AbortError") {
+                throw decodeError;
               }
-              texture=new THREE.Texture(bitmap);
+              response=await fetch(url,{
+                mode:"cors",signal:controller.signal,cache:"force-cache"
+              });
+              if (!response.ok) throw new Error(`image ${response.status}`);
+              blob=await response.blob();
+              texture=await textureFromArtworkBlob(blob,url,tier);
             }
             texture.needsUpdate = true;
             texture.colorSpace = THREE.SRGBColorSpace;
@@ -8281,6 +8350,7 @@
     const xrMoveForward=new THREE.Vector3();
     const xrMoveRight=new THREE.Vector3();
     const xrMoveVector=new THREE.Vector3();
+    const xrWorldUp=new THREE.Vector3(0,1,0);
     const xrStickRadius=.13;
     let lastXRPinchAt=-Infinity;
     let pendingXRPanelToggle=null;
@@ -8311,7 +8381,7 @@
       if (renderer.xr.isPresenting && xrIsStandaloneQuest) {
         try {
           renderer.xr.setFoveation(
-            active ? .86 : xrRuntimePreset.foveation
+            active ? .28 : xrRuntimePreset.foveation
           );
         } catch (_) {}
         xrDecorativeWireMeshes.forEach(mesh=>{
@@ -8397,7 +8467,7 @@
       );
       const outline=new THREE.LineSegments(
         new THREE.EdgesGeometry(pad.geometry),
-        new THREE.LineBasicMaterial({color:WHITE})
+        new THREE.LineBasicMaterial({color:WHITE,toneMapped:false})
       );
       const knob=new THREE.Mesh(
         new THREE.CircleGeometry(.042,32),
@@ -8677,7 +8747,9 @@
       const controller = renderer.xr.getController(index);
       controller.userData.xrIndex=index;
       const lineGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-1)]);
-      const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: WHITE }));
+      const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({
+        color:WHITE,toneMapped:false
+      }));
       line.scale.z = 18;
       line.visible=false;
       controller.add(line);
@@ -8883,6 +8955,14 @@
       });
 
       const xRunHeld=readXRControllerInput();
+      const lookInput=xrCombinedLook.copy(
+        xrHardwareLook.lengthSq()>xrStickState.look.lengthSq()
+          ?xrHardwareLook
+          :xrStickState.look
+      );
+      if (Math.abs(lookInput.x)>.1) {
+        rig.rotation.y-=lookInput.x*1.35*dt;
+      }
       const moveInput=xrCombinedMove.copy(
         xrHardwareMove.lengthSq()>xrStickState.move.lengthSq()
           ?xrHardwareMove
@@ -8895,12 +8975,13 @@
         document.body.dataset.xrPace=running?"run":"walk";
       }
       if (moveMagnitude>.12) {
-        viewCamera.getWorldDirection(xrMoveForward);
-        xrMoveForward.y=0;
-        if (xrMoveForward.lengthSq()<.001) xrMoveForward.set(0,0,-1);
-        xrMoveForward.normalize();
+        // Keep locomotion relative to the visitor's artificial/body heading.
+        // Physical head movement must never rotate the thumbstick axes: a
+        // visitor can look at a painting while continuing straight ahead.
+        xrMoveForward.set(0,0,-1)
+          .applyAxisAngle(xrWorldUp,rig.rotation.y);
         xrMoveRight.crossVectors(
-          xrMoveForward,new THREE.Vector3(0,1,0)
+          xrMoveForward,xrWorldUp
         ).normalize();
         xrMoveVector.set(0,0,0)
           .addScaledVector(xrMoveForward,moveInput.y)
@@ -8921,14 +9002,6 @@
         }
       }
 
-      const lookInput=xrCombinedLook.copy(
-        xrHardwareLook.lengthSq()>xrStickState.look.lengthSq()
-          ?xrHardwareLook
-          :xrStickState.look
-      );
-      if (Math.abs(lookInput.x)>.1) {
-        rig.rotation.y-=lookInput.x*1.35*dt;
-      }
       if (flying) {
         if (Math.abs(lookInput.y)>.1) {
           rig.position.y=THREE.MathUtils.clamp(
@@ -8983,6 +9056,8 @@
       }
       document.body.dataset.xrInput=
         "quest-sticks|a-jump-double-a-flight|hold-x-run|b-y-menu|vision-pinch";
+      document.body.dataset.xrLocomotion=
+        "body-heading-head-look-independent";
     }
 
     const artworkFrustum = new THREE.Frustum();
