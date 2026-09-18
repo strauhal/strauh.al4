@@ -1,0 +1,59 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body { color: white; }
+header { position: relative; top: -8px; z-index: 20; }
+@media (max-width: 900px) { header { top: 0; } }
+
+nav button { padding: 0; font: inherit; }
+a:hover, button:hover { color: white; background: white; }
+button { background: none; border: 0; padding: 3px; text-decoration: underline; cursor: pointer; }
+button, input { font: inherit; color: inherit; }
+nav button[aria-current="true"] { text-decoration: none; background: white; color: white; }
+
+#stage { position: absolute; inset: 130px 0 120px; overflow: hidden; touch-action: none; cursor: grab; outline-offset: -4px; }
+#stage:active { cursor: grabbing; }
+#scene { position: absolute; inset: 0; perspective: 1000px; perspective-origin: 50% 40%; }
+.artwork { position: absolute; left: 50%; top: 50%; width: min(44vw, 660px); height: min(48vh, 440px); transform-style: preserve-3d; will-change: transform, opacity; pointer-events: none; }
+.artwork .plane { position: absolute; inset: 0; transform: perspective(1000px) rotateX(-23deg); display: flex; align-items: center; justify-content: center; }
+.artwork img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.artwork .caption, .artwork .period { position: absolute; top: 42%; font-size: clamp(15px, 1.6vw, 24px); line-height: 1.25; text-wrap: pretty; }
+.artwork .period { right: calc(100% + 35px); width: 15vw; text-align: right; }
+.artwork .caption { left: calc(100% + 35px); width: min(20vw, 290px); }
+.artwork small { display: block; margin-top: 8px; font-size: .7em; }
+.artwork .unavailable { position: absolute; text-align: center; font-style: italic; }
+#message { position: absolute; top: 40%; width: 100%; text-align: center; margin: 0; }
+footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 12px 24px 18px; z-index: 20; font-size: 14pt; }
+.controls { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.scrubber { display: flex; align-items: center; gap: 15px; max-width: 840px; margin: 12px auto; }
+input[type="range"] { flex: 1; min-width: 0; accent-color: white; height: 12px; cursor: ew-resize; }
+.hint { text-align: center; font-size: 13px; }
+:focus-visible { outline: 1px solid white; outline-offset: 4px; }
+@media (max-width: 650px) {
+
+  #stage { top: 150px; bottom: 135px; }
+  .artwork { width: 49vw; height: 32vh; }
+  .artwork .period { right: calc(100% + 10px); width: 19vw; font-size: 14px; }
+  .artwork .caption { left: calc(100% + 10px); width: 20vw; font-size: 13px; overflow-wrap: anywhere; }
+  footer { padding: 12px; font-size: 15px; } .controls { gap: 12px; } .hint { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { body { animation: none; } .artwork .plane { transform: none; } }
+
+.artwork .plane { pointer-events: auto; cursor: zoom-in; }
+.artwork img { user-select: none; -webkit-user-drag: none; }
+/* Keep the hit area unoutlined; keyboard focus is indicated by the caption. */
+#stage:focus, .artwork .plane:focus, #viewer:focus { outline: none; }
+.artwork:has(.plane:focus-visible) .caption { text-decoration: underline; }
+.artwork .plane::before { content: ''; position: absolute; inset: 0; background: rgba(185, 185, 185, .34); opacity: 1; transition: opacity 350ms ease; pointer-events: none; }
+.artwork .plane.loaded::before { opacity: 0; }
+.artwork img { position: relative; opacity: 0; transition: opacity 350ms ease; }
+.artwork .loaded img { opacity: 1; }
+
+#viewer { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: white; background: transparent; overflow: hidden; text-align: center; cursor: zoom-out; }
+#viewer[open] { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#viewer::backdrop { background: transparent; }
+#viewer-background { position: absolute; inset: 0; background: #00f; opacity: .94; pointer-events: none; }
+#viewer-image { position: relative; width: auto; height: 100dvh; max-width: 94vw; object-fit: contain; flex-shrink: 0; transform-origin: center; user-select: none; -webkit-user-drag: none; }
+#viewer-title { position: absolute; left: 18px; bottom: 14px; max-width: 80vw; font-size: 14px; background: #00f; }
+@media (prefers-reduced-motion: reduce) {
+  .artwork img, .artwork .plane::before { transition: none; }
+}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0000ff">
+  <title>strauh.al/art timeline</title>
+  <meta name="description" content="Move through the strauh.al art archive in a three-dimensional chronological timeline.">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="assets/timeline/timeline.css">
+  <script src="assets/timeline/timeline.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1><a href="./">strauh.al</a>/<a href="art.html">art</a>/timeline</h1>
+    <nav class="nav" aria-label="Jump to century"><p id="centuries"></p></nav>
+  </header>
+  <main id="stage" tabindex="0" aria-label="Art timeline. Scroll or use arrow keys to travel through artworks.">
+    <div id="scene"></div>
+    <p id="message" role="status">loading the archive…</p>
+  </main>
+  <dialog id="viewer" tabindex="-1" aria-labelledby="viewer-title" aria-label="Click anywhere or press Escape to return to the timeline">
+    <div id="viewer-background" aria-hidden="true"></div>
+    <img id="viewer-image" alt="">
+    <div id="viewer-title"></div>
+
+  </dialog>
+  <footer>
+    <div class="controls"><a href="art.html">exit timeline</a><button id="previous" aria-label="Previous artwork">←</button><span id="position">—</span><button id="next" aria-label="Next artwork">→</button><a id="open" hidden target="_blank" rel="noopener">view artwork</a></div>
+    <label class="scrubber">earlier <input id="scrub" type="range" min="0" max="1" value="0" step="1" aria-label="Position in art archive"> later</label>
+    <div class="hint">scroll / drag / arrow keys &nbsp; · &nbsp; click a work to bring it closer</div>
+    <span class="visually-hidden" id="announcement" aria-live="polite"></span>
+  </footer>
+</body>
+</html>
