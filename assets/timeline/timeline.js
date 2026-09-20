@@ -245,15 +245,15 @@
       render(); wake(); return;
     }
     const idle = now - lastInput;
-    const settling = idle > 90 && !pointer;
+    const settling = idle > 140 && !pointer;
     // Choose a projected resting point, then ease the moving target toward it.
     // No rounded-position jump or change of spring stiffness at release.
     if (settling) {
-      if (landing === null) landing = Math.round(clamp(target + inputVelocity * .18));
+      if (landing === null) landing = Math.round(clamp(target + inputVelocity * .14));
       target = clamp(target + inputVelocity * elapsed / 1000);
-      inputVelocity *= Math.exp(-elapsed / 180);
-      const attraction = Math.min(1, Math.max(0, (idle - 90) / 350));
-      target += (landing - target) * (1 - Math.exp(-elapsed * attraction / 260));
+      inputVelocity *= Math.exp(-elapsed / 145);
+      const attraction = Math.min(1, Math.max(0, (idle - 140) / 420));
+      target += (landing - target) * (1 - Math.exp(-elapsed * attraction / 420));
     }
     if (reduced.matches) {
       position = target = landing === null ? target : landing;
@@ -273,7 +273,9 @@
     }
     const destination = landing === null ? target : landing;
     const resting = settling && landing !== null && Math.abs(destination - position) < .00005 && Math.abs(velocity) < .0005;
-    if (resting) { position = target = destination; velocity = inputVelocity = 0; }
+    // Avoid forcing the final fraction of a pixel to an integer position. That
+    // correction was the visible bump at the end of a glide.
+    if (resting) { target = position; velocity = inputVelocity = 0; }
     render();
     if (!resting) wake();
     else {
@@ -288,12 +290,20 @@
     const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1);
     stopTravel();
     const now = performance.now();
-    const delta = pixels / 300;
+    // Reverse the deck direction: moving the page down moves the archive back,
+    // while moving up brings later artworks forward.
+    const delta = -pixels / 300;
     const interval = Math.max(16, Math.min(100, now - (lastWheel || now - 50)));
     if (now - lastWheel > 180) inputVelocity = 0;
-    // A decaying trackpad tail naturally reduces this estimate; wheel bursts retain momentum.
-    inputVelocity = inputVelocity * .35 + delta / interval * 1000 * .65;
-    inputVelocity = Math.max(-18, Math.min(18, inputVelocity));
+    // A Mac trackpad already sends its own inertial tail. Adding another one
+    // made the deck feel detached. Only discrete line-wheel input gets a small
+    // synthetic coast; touch releases keep their own measured velocity.
+    if (event.deltaMode === 0) {
+      inputVelocity = 0;
+    } else {
+      inputVelocity = inputVelocity * .45 + delta / interval * 1000 * .55;
+      inputVelocity = Math.max(-12, Math.min(12, inputVelocity));
+    }
     lastWheel = now;
     if (landing !== null) target = position;
     move(target + delta, 'wheel');
@@ -310,7 +320,7 @@
     if (!pointer || pointer.id !== event.pointerId) return;
     if (Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) > 6) pointer.moved = true;
     if (!pointer.moved) return;
-    const now = performance.now(), delta = (pointer.y - event.clientY) / 220;
+    const now = performance.now(), delta = (event.clientY - pointer.y) / 220;
     pointer.velocity = pointer.velocity * .6 + delta / Math.max(8, now - pointer.time) * .4;
     move(target + delta); pointer.y = event.clientY; pointer.time = now;
   });
