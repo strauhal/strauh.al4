@@ -1,3 +1,8 @@
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background-color: #00f;
   font-family: times new roman;
@@ -72,7 +77,8 @@ body {
 }
 
 
-@media (max-width: 900px) {
+/* Keep the desktop layout in landscape, including on phones. */
+@media (max-width: 900px) and (orientation: portrait) {
 
 	body {
 		margin: 0px 0px 0px 0px;
@@ -104,12 +110,14 @@ body {
 		font-size: 5vw;
 	}
 
+}
+
+/* Touch hover behavior is independent of the viewport orientation. */
+@media (hover: none) {
     a:hover {
         background-color: transparent !important;
     }
-
 }
-
 
 /* shared accessibility helpers */
 .skip-link{position:absolute;left:-9999px;top:0;z-index:9999;background:#fff;color:#00f;padding:.5rem}.skip-link:focus{left:.5rem}.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}main{display:block}
