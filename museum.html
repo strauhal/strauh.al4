@@ -696,7 +696,12 @@
       new THREE.Vector3(22,0,89),new THREE.Vector3(11,0,94),
       new THREE.Vector3(0,0,88),new THREE.Vector3(-11,0,94)
     ];
-    const museumCatStartChoices=[0,5,7,8,14,16];
+    museumCatPatrolPoints.splice(8,0,
+      new THREE.Vector3(-6,0,24),new THREE.Vector3(-9,0,10),
+      new THREE.Vector3(-8,0,-5),new THREE.Vector3(0,0,-12),
+      new THREE.Vector3(8,0,-5),new THREE.Vector3(9,0,10),
+      new THREE.Vector3(6,0,24));
+    const museumCatStartChoices=[10,11,12];
     const museumCatStartIndex=museumCatStartChoices[
       Math.abs(Date.now()>>>4)%museumCatStartChoices.length
     ];
@@ -705,6 +710,12 @@
       direction:1,seed:0x5ca7,wait:0,gait:0,crouch:0,
       zoomies:0,zoomiesCooldown:6,grooming:0,groomingCooldown:4
     };
+    const catBehaviors=[
+      ["stretch",5],["walk",9],["sniff",4],["roll",9],
+      ["groom",7],["play",10],["walk",10],["rest",8]
+    ];
+    let catBehaviorIndex=0,catBehaviorTime=0;
+    let catBehaviorLastTime=null;
     const museumCatGroundRaycaster=new THREE.Raycaster();
     const museumCatGroundDirection=new THREE.Vector3(0,-1,0);
     function catPanel(points,parent=museumCat,position=[0,0,0],
@@ -921,7 +932,7 @@
     document.body.dataset.museumCatStart=
       museumCatStartIndex>=5&&museumCatStartIndex<=10?"lobby":"forecourt";
     museumCat.position.y=.02;
-    museumCat.scale.setScalar(1.02);
+    museumCat.scale.setScalar(.64);
     museumCat.userData.head=museumCatHead;
     museumCat.userData.body=museumCatBody;
     scene.add(museumCat);
@@ -3199,31 +3210,44 @@
     const outerRadius=42;
     const wallHeight=8.35;
 
-    // Five synchronized, six-minute stems form one spatial composition. Media
-    // elements stream compressed MP3 data instead of decoding ~650 MB of PCM
-    // into memory. The synths share one slow orbit and remain quarter-turns
-    // apart, so all four are equidistant and equally loud at the helix center.
-    // Room tone is decorrelated into four fixed, non-attenuating directions:
-    // it stays anchored in the building while head rotation remains audible.
+    // Stream the five six-minute stems. Preserve the synths' stereo channels:
+    // three contain substantial opposing-phase energy that a mono point
+    // source loses. Slow, independent paired trajectories reveal that detail.
     const museumSoundfield={
       state:"idle",context:null,master:null,elements:[],synthPanners:[],
-      roomPanners:[],startedAt:0,lastSyncAt:0,error:null,startPromise:null
+      roomPanners:[],startedAt:0,lastSyncAt:0,error:null,startPromise:null,
+      lastSpatialAt:-Infinity,spatialHeight:3.1
     };
     const museumSoundListenerPosition=new THREE.Vector3();
     const museumSoundListenerForward=new THREE.Vector3();
     const museumSoundListenerUp=new THREE.Vector3();
     const museumSoundListenerQuaternion=new THREE.Quaternion();
-    const museumSoundOrbitPeriod=168;
-    const museumSoundOrbitRadius=24;
+    const museumSoundVoices=[
+      {period:211,radius:22,ellipse:.78,height:1.8,width:5,gain:.14,cutoff:4200},
+      {period:-157,radius:28,ellipse:.64,height:4.2,width:8,gain:.34,cutoff:7200},
+      {period:283,radius:19,ellipse:.9,height:2.6,width:6,gain:.27,cutoff:3600},
+      {period:-337,radius:30,ellipse:.72,height:1.3,width:4,gain:.105,cutoff:3200}
+    ];
     const museumSoundCenterY=3.1;
     const museumSoundDirectFileMode=location.protocol==="file:";
+    const museumSoundIsSafari=/Safari/i.test(navigator.userAgent)&&
+      !/Chrome|Chromium|CriOS|Edg|Oculus/i.test(navigator.userAgent);
     const museumSoundFiles=[
       "roomtone.mp3","synth1.mp3","synth2.mp3","synth3.mp3",
       "synth4.mp3"
     ];
+    // Spread the four voices over the whole museum, including future floors.
+    const museumStemFloorFractions=[0,.32,.66,1];
+    function museumStemFloorGain(index,height) {
+      const floor=Math.max(0,height/storyHeight);
+      const top=Math.max(1,spiralRevolutions-1);
+      const centre=museumStemFloorFractions[index]*top;
+      const width=Math.max(1.4,top*.19);
+      return .025+.975*Math.exp(-.5*((floor-centre)/width)**2);
+    }
     document.body.dataset.museumSoundfield="idle";
     document.body.dataset.museumSoundfieldLayout=
-      "fixed-diffuse-roomtone+clockwise-four-stem-orbit";
+      "anchored-roomtone+independent-stereo-pairs";
     document.body.dataset.museumSoundfieldCenter=
       `${spiralCenter.x},${museumSoundCenterY},${spiralCenter.z}`;
     document.body.dataset.museumSoundfieldTransport=museumSoundDirectFileMode
@@ -3232,12 +3256,28 @@
 
     function setAudioParam(param,value) {
       if (!param) return;
-      // Direct assignment replaces the current value. Scheduling a new Web
-      // Audio automation event every render frame would grow an unbounded
-      // timeline during long museum visits.
-      param.value=value;
+      const now=museumSoundfield.context?.currentTime;
+      if (now===undefined) { param.value=value; return; }
+      // Replace the previous target so the automation timeline stays bounded.
+      param.cancelScheduledValues(now);
+      param.setTargetAtTime(value,now,.075);
     }
     function positionMuseumPanner(panner,x,y,z) {
+      if (panner.panNode) {
+        const dx=x-museumSoundListenerPosition.x;
+        const dy=y-museumSoundListenerPosition.y;
+        const dz=z-museumSoundListenerPosition.z;
+        const horizontal=Math.hypot(dx,dz)||1;
+        const forward=museumSoundListenerForward;
+        const headingLength=Math.hypot(forward.x,forward.z)||1;
+        const side=(-forward.z*dx+forward.x*dz)/(horizontal*headingLength);
+        const facing=(forward.x*dx+forward.z*dz)/(horizontal*headingLength);
+        setAudioParam(panner.panNode.pan,THREE.MathUtils.clamp(side*1.25,-1,1));
+        const distance=Math.hypot(dx,dy,dz);
+        setAudioParam(panner.distanceGain.gain,Math.min(1,10/Math.max(10,distance)));
+        setAudioParam(panner.headFilter.frequency,1800+6200*(facing+1)/2);
+        return;
+      }
       if (panner.positionX) {
         setAudioParam(panner.positionX,x);
         setAudioParam(panner.positionY,y);
@@ -3248,7 +3288,9 @@
     }
     function createMuseumPanner(context,{fixed=false}={}) {
       const panner=context.createPanner();
-      panner.panningModel="HRTF";
+      // Eight moving HRTF branches compete with this large WebGL scene.
+      // Equal-power spatial panning keeps Safari's audio workload bounded.
+      panner.panningModel=museumSoundIsSafari?"equalpower":"HRTF";
       panner.distanceModel="inverse";
       panner.refDistance=fixed?10000:18;
       panner.maxDistance=fixed?10000:95;
@@ -3351,15 +3393,32 @@
         });
         museumSoundfield.elements.push(roomElement);
 
-        museumSoundFiles.slice(1).forEach(file=>{
+        museumSoundFiles.slice(1).forEach((file,index)=>{
+          const voice=museumSoundVoices[index];
           const element=createMuseumAudioElement(file);
           const source=context.createMediaElementSource(element);
           const gain=context.createGain();
-          gain.gain.value=.22;
-          const panner=createMuseumPanner(context);
-          source.connect(gain).connect(panner).connect(master);
+          gain.gain.value=voice.gain;
+          const filter=context.createBiquadFilter();
+          filter.type="lowpass";
+          filter.frequency.value=voice.cutoff;
+          filter.Q.value=.45;
+          const splitter=context.createChannelSplitter(2);
+          source.connect(filter).connect(gain).connect(splitter);
+          const pair=[0,1].map(channel=>{
+            const panNode=context.createStereoPanner();
+            const distanceGain=context.createGain();
+            const headFilter=context.createBiquadFilter();
+            headFilter.type="lowpass";
+            headFilter.Q.value=.5;
+            const trim=context.createGain();
+            trim.gain.value=.707;
+            splitter.connect(trim,channel);
+            trim.connect(headFilter).connect(distanceGain).connect(panNode).connect(master);
+            return {panNode,distanceGain,headFilter};
+          });
           museumSoundfield.elements.push(element);
-          museumSoundfield.synthPanners.push(panner);
+          museumSoundfield.synthPanners.push({pair,filter,gain});
         });
       }
       const context=museumSoundfield.context;
@@ -3398,7 +3457,31 @@
     }
     function updateMuseumSoundfield(timeSeconds) {
       const {context,synthPanners,elements}=museumSoundfield;
-      if (!context) return;
+      const soundCamera=renderer.xr.isPresenting?renderer.xr.getCamera(camera):camera;
+      soundCamera.getWorldPosition(museumSoundListenerPosition);
+      // Distance outside the museum envelope, including above its roof.
+      // Apply to the whole mix, including the non-attenuating room tone and
+      // Safari's direct file:// playback path.
+      const outside=Math.hypot(
+        Math.max(0,Math.abs(museumSoundListenerPosition.x)-66),
+        Math.max(0,-museumSoundListenerPosition.y,museumSoundListenerPosition.y-roofY),
+        Math.max(0,museumSoundListenerPosition.z-50,-museumSoundListenerPosition.z-116)
+      );
+      const buildingGain=1/(1+(outside/12)**2);
+      if (museumSoundDirectFileMode) {
+        elements.forEach((element,index)=>{
+          const floorGain=index===0?1:
+            museumStemFloorGain(index-1,museumSoundListenerPosition.y);
+          element.volume=THREE.MathUtils.lerp(element.volume,.18*buildingGain*floorGain,.12);
+        });
+        return;
+      }
+      if (!context || context.state!=="running") return;
+      setAudioParam(museumSoundfield.master.gain,.72*buildingGain);
+      const audioTime=context.currentTime;
+      const elapsed=audioTime-museumSoundfield.lastSpatialAt;
+      if (elapsed<1/30) return;
+      museumSoundfield.lastSpatialAt=audioTime;
       const viewCamera=renderer.xr.isPresenting
         ?renderer.xr.getCamera(camera)
         :camera;
@@ -3408,7 +3491,6 @@
         viewCamera.getWorldQuaternion(museumSoundListenerQuaternion)
       );
       const listener=context.listener;
-      const audioTime=context.currentTime;
       if (listener.positionX) {
         setAudioParam(listener.positionX,museumSoundListenerPosition.x);
         setAudioParam(listener.positionY,museumSoundListenerPosition.y);
@@ -3426,25 +3508,46 @@
           ...museumSoundListenerUp.toArray()
         );
       }
-      const orbitAngle=timeSeconds/museumSoundOrbitPeriod*Math.PI*2;
-      synthPanners.forEach((panner,index)=>{
-        const angle=orbitAngle+index*Math.PI*.5;
-        positionMuseumPanner(
-          panner,
-          spiralCenter.x+Math.cos(angle)*museumSoundOrbitRadius,
-          museumSoundCenterY,
-          spiralCenter.z+Math.sin(angle)*museumSoundOrbitRadius
-        );
+      // Sources occupy different elevations in the building; moving between
+      // floors must change the balance instead of dragging every source along.
+      synthPanners.forEach(({pair,filter,gain},index)=>{
+        const voice=museumSoundVoices[index];
+        const phase=index*1.71;
+        const angle=audioTime/voice.period*Math.PI*2+phase+
+          .19*Math.sin(audioTime/47+phase);
+        const radius=voice.radius*(1+.09*Math.sin(audioTime/61+phase));
+        const width=voice.width*(1+.18*Math.sin(audioTime/39+phase));
+        const height=museumSoundCenterY+
+          museumStemFloorFractions[index]*(spiralRevolutions-1)*storyHeight+
+          voice.height*Math.sin(audioTime/53+phase);
+        pair.forEach((panner,channel)=>{
+          const side=channel===0?-1:1;
+          positionMuseumPanner(panner,
+            spiralCenter.x+Math.cos(angle)*radius-Math.sin(angle)*width*side*.5,
+            height+side*.55*Math.sin(audioTime/43+phase),
+            spiralCenter.z+Math.sin(angle)*radius*voice.ellipse+
+              Math.cos(angle)*width*side*.5);
+        });
+        setAudioParam(filter.frequency,voice.cutoff*(1+.12*Math.sin(audioTime/71+phase)));
+        setAudioParam(gain.gain,voice.gain*
+          museumStemFloorGain(index,museumSoundListenerPosition.y)*
+          (1+.045*Math.sin(audioTime/67+phase)));
       });
-      // The stems have identical durations. Correct only audible drift rather
-      // than seeking every frame, which would repeatedly flush MP3 buffers.
+      // Keep synchronization continuous. Seeking streamed MP3s flushes their
+      // buffers and can cause audible dropouts, especially around loop edges.
       if (museumSoundfield.state==="playing"&&
           audioTime-museumSoundfield.lastSyncAt>2.5) {
         museumSoundfield.lastSyncAt=audioTime;
         const reference=elements[0]?.currentTime||0;
         elements.slice(1).forEach(element=>{
-          const drift=element.currentTime-reference;
-          if (Math.abs(drift)>.12) element.currentTime=reference;
+          let drift=element.currentTime-reference;
+          const duration=element.duration;
+          if (Number.isFinite(duration)&&duration>0) {
+            drift-=Math.round(drift/duration)*duration;
+          }
+          element.playbackRate=Math.abs(drift)>.04
+            ?1-THREE.MathUtils.clamp(drift*.02,-.005,.005)
+            :1;
         });
         document.body.dataset.museumSoundfieldDrift=Math.max(
           0,...elements.slice(1).map(element=>
@@ -5618,7 +5721,6 @@
       artworkSurfacesByLevel.get(surface.level).push(surface);
       if (wallLayout) {
         wallLayout.surfaces.push(surface);
-        scheduleArtworkWallLayout(wallLayout);
       }
       return surface;
     }
@@ -5650,6 +5752,20 @@
       return result;
     }
     function candidateWallRows(layout,surfaces,rowCount) {
+      if (surfaces.length<=6) {
+        // Sparse walls get generous equal cells rather than narrow boxes
+        // derived from guessed aspect ratios. Real images fit without crops.
+        const columns=Math.ceil(surfaces.length/rowCount);
+        const height=(layout.usableHeight-layout.verticalGutter*(rowCount-1))/rowCount;
+        const rows=[];
+        for (let index=0;index<surfaces.length;index+=columns) {
+          const items=surfaces.slice(index,index+columns);
+          const cellWidth=(layout.usableWidth-layout.horizontalGutter*(items.length-1))/items.length;
+          rows.push({items,height,cellWidth,width:layout.usableWidth});
+        }
+        const totalHeight=rows.length*height+(rows.length-1)*layout.verticalGutter;
+        return {rows,totalHeight,score:Math.min(height,...rows.map(row=>row.cellWidth))};
+      }
       const rows=Array.from({length:rowCount},()=>({items:[],load:0}));
       const rowCapacity=Math.ceil(surfaces.length/rowCount);
       for (const surface of surfaces) {
@@ -5715,37 +5831,20 @@
           Math.max(0,horizontalOverflow)*10
       };
     }
-    function applyArtworkSurfaceLayout(
+    function applyArtworkSlotLayout(
       surface,position,width,height
     ) {
       surface.worldPosition.copy(position);
-      surface.maxW=Math.max(.55,width);
-      surface.maxH=Math.max(.55,height);
-      const aspect=THREE.MathUtils.clamp(surface.aspectRatio,.42,2.7);
-      let renderWidth=surface.maxW;
-      let renderHeight=renderWidth/aspect;
-      if (renderHeight>surface.maxH) {
-        renderHeight=surface.maxH;
-        renderWidth=renderHeight*aspect;
-      }
-      surface.renderWidth=renderWidth;
-      surface.renderHeight=renderHeight;
+      surface.maxW=width;
+      surface.maxH=height;
+      surface.renderWidth=width;
+      surface.renderHeight=height;
       refreshArtworkProxy(surface);
-      if (!surface.group) return;
-      surface.group.position.copy(surface.worldPosition);
-      surface.group.updateMatrix();
-      resizeArtworkFrame(surface,renderWidth,renderHeight);
-      surface.imageMesh.geometry.dispose();
-      surface.imageMesh.geometry=prepareArtworkDeformableGeometry(
-        new THREE.PlaneGeometry(renderWidth,renderHeight,5,5)
-      );
-      if (surface.titleLabel) {
-        sizeArtworkLabel(surface,renderWidth,renderHeight);
-      }
     }
     function layoutArtworkWall(layout) {
-      layout.pending=false;
-      if (!layout.surfaces.length) return;
+      // Pack only occupied mounts, once the catalog is complete and before
+      // revealing the artworks. Texture dimensions never trigger repacking.
+      if (layout.layoutCount || !layout.surfaces.length) return;
       const surfaces=composedWallSequence(layout.surfaces);
       let bestPlan=null;
       const maximumRows=Math.min(3,surfaces.length);
@@ -5761,20 +5860,32 @@
         let along=layout.margin+
           (layout.usableWidth-row.width)/2;
         const localY=rowTop-row.height/2;
-        for (const surface of row.items) {
-          const width=surface.aspectRatio*row.height;
+        for (const [itemIndex,surface] of row.items.entries()) {
+          const width=row.cellWidth||surface.aspectRatio*row.height;
           const centerAlong=along+width/2;
+          // Keep centres fixed, but let an image use the empty space around
+          // its slot. A panorama must not be trapped in a portrait-sized box.
+          const leftBoundary=itemIndex===0?layout.margin:
+            along-layout.horizontalGutter*.25;
+          const rightBoundary=itemIndex===row.items.length-1
+            ?layout.margin+layout.usableWidth
+            :along+width+layout.horizontalGutter*.25;
+          const availableWidth=2*Math.min(
+            centerAlong-leftBoundary,rightBoundary-centerAlong
+          );
+          const availableHeight=bestPlan.rows.length===1
+            ?layout.usableHeight:row.height;
           const base=segmentPoint(
             layout.a,layout.b,centerAlong/layout.length
           );
-          applyArtworkSurfaceLayout(
+          applyArtworkSlotLayout(
             surface,
             new THREE.Vector3(
               base.x+layout.normal.x*.24,
               base.y+localY,
               base.z+layout.normal.z*.24
             ),
-            width,row.height
+            availableWidth,availableHeight
           );
           along+=width+layout.horizontalGutter;
         }
@@ -5789,7 +5900,7 @@
       layout.layoutCount++;
       document.body.dataset.aspectAwareWallLayouts=String(
         [...artworkWallLayouts.values()]
-          .filter(item=>item.surfaces.length).length
+          .filter(item=>item.layoutCount).length
       );
       const layoutOverflowCount=[...artworkWallLayouts.values()]
         .filter(item=>
@@ -5815,12 +5926,6 @@
         ).length
       );
     }
-    function scheduleArtworkWallLayout(layout) {
-      if (!layout||layout.pending) return;
-      layout.pending=true;
-      requestAnimationFrame(()=>layoutArtworkWall(layout));
-    }
-
     function streamArtwork(surface, priority, requestedTier="preview") {
       const tier=effectiveTextureTier(surface.item[1],requestedTier);
       if (textureTierRank[tier]>textureTierRank[surface.requestedTier]) {
@@ -5890,9 +5995,6 @@
         if (surface.titleLabel) {
           sizeArtworkLabel(surface,w,h);
         }
-        scheduleArtworkWallLayout(
-          artworkWallLayouts.get(surface.wallId)
-        );
         if (textureTierRank[surface.requestedTier]>
             textureTierRank[surface.textureTier]) {
           streamArtwork(surface,priority+20,surface.requestedTier);
@@ -5998,6 +6100,15 @@
       if (/\/2000s\//i.test(item[1])) return "after";
       return "art";
     }
+    function artworkDateYear(item) {
+      const title=item[0].replace(/\b(?:no\.?|number|issue|vol(?:ume)?\.?|plate|op(?:us)?\.?)\s*#?\s*\d+\b/gi,"");
+      const explicit=title.match(/\(\s*(?:c\.?\s*)?((?:1[1-9]|20)\d{2})(?:\s*[-–]\s*\d{2,4})?\s*\)\s*$/i);
+      if (explicit) return Number(explicit[1]);
+      const candidates=[...title.matchAll(/\b((?:1[1-9]|20)\d{2})\b/g)].map(match=>Number(match[1]));
+      const century=item[1].match(/\/((?:1[1-9]|20)00)s\//)?.[1];
+      const consistent=century?candidates.filter(year=>Math.floor(year/100)*100===Number(century)):candidates;
+      return consistent.length===1?consistent[0]:null;
+    }
     function inferCentury(item) {
       if (catalogCollection(item)==="photography") return "photography";
       const collectionPath=item[1].match(
@@ -6008,12 +6119,12 @@
         return "unclassified";
       }
       const pathMatch = item[1].match(/\/((?:1[1-9]|20)00s)\//);
-      const yearMatch = item[0].match(/\b((?:1[1-9]|20)\d{2})\b/);
-      if (pathMatch?.[1] === "2000s" && yearMatch && Number(yearMatch[1]) < 2000) {
-        return `${Math.floor(Number(yearMatch[1])/100)*100}s`;
+      const year=artworkDateYear(item);
+      if (pathMatch?.[1] === "2000s" && year && year < 2000) {
+        return `${Math.floor(year/100)*100}s`;
       }
       if (pathMatch) return pathMatch[1];
-      return yearMatch ? `${Math.floor(Number(yearMatch[1])/100)*100}s` : "1900s";
+      return year ? `${Math.floor(year/100)*100}s` : "1900s";
     }
     function inferDecade(item) {
       if (catalogCollection(item)==="photography") return "photography";
@@ -6021,9 +6132,9 @@
       // Keep the unclassified source tree in its own undated galleries instead
       // of allowing incidental digits to leak those works into dated rooms.
       if (inferCentury(item)==="unclassified") return "undated";
-      const yearMatch=item[0].match(/\b((?:1[1-9]|20)\d{2})\b/);
-      if (!yearMatch) return "undated";
-      return `${Math.floor(Number(yearMatch[1])/10)*10}s`;
+      const year=artworkDateYear(item);
+      if (!year) return "undated";
+      return `${Math.floor(year/10)*10}s`;
     }
     function centuryForWall(set,z) {
       if (set===mountSets.after) return "2000s";
@@ -6056,8 +6167,12 @@
     const collectionForSet=set =>
       set===mountSets.art || set===mountSets.balconyArt ? "art" :
       set===mountSets.photo || set===mountSets.balconyPhoto ? "photography" : "after";
-    const mount=(set,x,y,z,rotationY,maxW=1.82,maxH=1.82,metadata={}) =>
-      set.push({x,y,z,rotationY,maxW,maxH,collection:collectionForSet(set),...metadata});
+    const mount=(set,x,y,z,rotationY,maxW=1.82,maxH=1.82,metadata={}) => {
+      const slot={x,y,z,rotationY,maxW,maxH,
+        collection:collectionForSet(set),...metadata};
+      slot.aspectRatio=THREE.MathUtils.clamp(slot.aspectHint||maxW/maxH,.42,2.7);
+      set.push(slot);
+    };
     const salonSizes=[
       [1.42,1.92],[1.92,1.38],[1.62,1.7],[1.5,1.84],
       [1.82,1.5],[2.05,1.28],[1.28,2.02]
@@ -6409,7 +6524,7 @@
           usableHeight:(wall.windowed?5.82:6.2)-1.25,
           horizontalGutter:wall.collection==="photo"?.7:1.12,
           verticalGutter:wall.collection==="photo"?.68:1.12,
-          surfaces:[],pending:false,layoutCount:0
+          surfaces:[],layoutCount:0
         };
         artworkWallLayouts.set(wall.id,wallLayout);
         const columns=Math.max(
@@ -6515,6 +6630,8 @@
       // walls and reintroduce unexplained blank areas.
     }
     buildMuseumMounts();
+    let artworkPlacementReady=false;
+    document.body.dataset.artworkPlacement="preparing-occupied-slots";
     document.body.dataset.sparseWallAlignment="center-out";
     window.museumExpansionPlan.sparseWallAlignment="center-out";
     const generatedMountCapacity=Object.values(mountSets)
@@ -6627,6 +6744,7 @@
         generatedMountCapacity
       );
       proxyMesh.count=0;
+      proxyMesh.visible=false;
       proxyMesh.frustumCulled=false;
       proxyMesh.renderOrder=2;
       proxyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -6908,6 +7026,10 @@
         await mountUniqueCollection(allPhotography,mountSets.balconyPhoto,usedURLs,false);
       } catch (_) {
       } finally {
+        artworkWallLayouts.forEach(layoutArtworkWall);
+        artworkPlacementReady=true;
+        artworkProxyMeshes.forEach(mesh=>{mesh.visible=true;});
+        document.body.dataset.artworkPlacement="fixed-occupied-slots";
         buildDecadeHeaders();
       }
     }
@@ -9070,6 +9192,7 @@
     let lastArtworkVisibilityUpdate = -Infinity;
     let lastTextureTrim = -Infinity;
     function updateArtworkStreaming(time) {
+      if (!artworkPlacementReady) return;
       if (time-lastArtworkVisibilityUpdate < 285) return;
       lastArtworkVisibilityUpdate = time;
       const xrPresenting=renderer.xr.isPresenting;
@@ -9386,10 +9509,29 @@
         ?Math.max(6,xrRuntimePreset.heavyMotionStride)
         :xrRuntimePreset.heavyMotionStride;
       const updateHeavyXRMotion=
-        !renderer.xr.isPresenting||!xrIsStandaloneQuest||
-        (++xrHeavyMotionFrame%xrMotionStride===0);
+        renderer.xr.isPresenting&&xrIsStandaloneQuest
+          ?(++xrHeavyMotionFrame%xrMotionStride===0)
+          :(!museumSoundIsSafari||++xrHeavyMotionFrame%3===0);
       dimensionalFoldUniforms.time.value=time*.001;
       treeMotionUniforms.time.value=time*.001;
+      // Behavior timing must not slow down with the physics delta cap when
+      // the renderer drops frames. Pause long gaps from background tabs.
+      catBehaviorTime+=catBehaviorLastTime===null?0:
+        Math.min(.5,(time-catBehaviorLastTime)/1000);
+      catBehaviorLastTime=time;
+      if (catBehaviorTime>=catBehaviors[catBehaviorIndex][1]) {
+        catBehaviorTime=0;
+        catBehaviorIndex=(catBehaviorIndex+1)%catBehaviors.length;
+      }
+      const catBehavior=catBehaviors[catBehaviorIndex][0];
+      document.body.dataset.catActivity=catBehavior;
+      const behaviorDuration=catBehaviors[catBehaviorIndex][1];
+      const behaviorEnvelope=Math.min(1,catBehaviorTime/1.8,
+        (behaviorDuration-catBehaviorTime)/1.8);
+      museumCatMotion.zoomies=0;
+      museumCatMotion.zoomiesCooldown=Infinity;
+      museumCatMotion.grooming=catBehavior==="groom"?2:0;
+      museumCatMotion.groomingCooldown=Infinity;
       museumCatMotion.zoomies=Math.max(0,museumCatMotion.zoomies-dt);
       museumCatMotion.zoomiesCooldown=Math.max(
         0,museumCatMotion.zoomiesCooldown-dt
@@ -9440,25 +9582,31 @@
       museumCatMotion.wait=Math.max(0,museumCatMotion.wait-dt);
       const catZooming=museumCatMotion.zoomies>0;
       const catGrooming=museumCatMotion.grooming>0;
-      const catMoving=!catGrooming&&
+      const catWantsToMove=(catBehavior==="walk"||catBehavior==="play")&&!catGrooming&&
         (catZooming||museumCatMotion.wait<=0)&&catDistance>=.28;
-      if (catMoving) {
+      const desiredSpeed=catWantsToMove
+        ?Math.min((catBehavior==="play"?.95:.32)*behaviorEnvelope,
+          Math.sqrt(Math.max(0,catDistance-.2)*.5))
+        :0;
+      museumCatMotion.speed=THREE.MathUtils.damp(
+        museumCatMotion.speed||0,desiredSpeed,catWantsToMove?2.8:5,dt
+      );
+      const catMoving=museumCatMotion.speed>.015;
+      if (catMoving&&catDistance>.01) {
         const catDirectionX=catDx/catDistance;
         const catDirectionZ=catDz/catDistance;
-        const stalkingSpeed=catZooming
-          ?2.15+((museumCatMotion.seed>>>8)%35)/100
-          :.46+((museumCatMotion.seed>>>8)%18)/100;
-        museumCat.position.x+=catDirectionX*stalkingSpeed*dt;
-        museumCat.position.z+=catDirectionZ*stalkingSpeed*dt;
         const targetYaw=-Math.atan2(catDirectionZ,catDirectionX);
         const yawDelta=Math.atan2(
           Math.sin(targetYaw-museumCat.rotation.y),
           Math.cos(targetYaw-museumCat.rotation.y)
         );
-        museumCat.rotation.y+=yawDelta*Math.min(
-          1,dt*(catZooming?7.5:2.8)
-        );
-        museumCatMotion.gait+=dt*(catZooming?12.5:5.1);
+        museumCat.rotation.y+=THREE.MathUtils.clamp(yawDelta,-2.4*dt,2.4*dt);
+        // Turn into the path before advancing; no sideways skating on corners.
+        const travel=Math.min(catDistance,museumCatMotion.speed*dt)*
+          Math.max(0,Math.cos(yawDelta));
+        museumCat.position.x+=Math.cos(museumCat.rotation.y)*travel;
+        museumCat.position.z-=Math.sin(museumCat.rotation.y)*travel;
+        museumCatMotion.gait+=travel/.62*Math.PI*2;
       }
       // Resolve the real walkable surface under the cat instead of assuming
       // every lobby/forecourt slab ends at world Y=0. The short downward ray
@@ -9518,6 +9666,7 @@
         const torsoSin=Math.sin(torsoAngle);
         const headAngle=catGrooming
           ?-.32+Math.sin(time*.012)*.095
+          :catBehavior==="sniff"?-.22*behaviorEnvelope
           :Math.sin(felinePhase*.72+.55)*(catMoving?.024:.016);
         const headCos=Math.cos(headAngle);
         const headSin=Math.sin(headAngle);
@@ -9529,9 +9678,19 @@
           let x=baseX;
           let y=baseY;
           let z=baseZ;
+          if (catBehavior==="stretch") {
+            const frontWeight=THREE.MathUtils.smoothstep(baseX,-.4,.6);
+            x+=frontWeight*.22*behaviorEnvelope;
+            y-=Math.max(0,baseY-.15)*frontWeight*.35*behaviorEnvelope;
+          }
+          if (catBehavior==="groom"&&baseY<.62&&baseX>.12&&baseZ>0) {
+            const pawWeight=Math.max(0,1-baseY/.62);
+            x-=pawWeight*.18*behaviorEnvelope;
+            y+=pawWeight*(.22+.045*Math.sin(time*.005))*behaviorEnvelope;
+          }
           // Treat the torso as one restrained rigid mass. The earlier
           // per-vertex traveling wave made the cat flex like gelatin.
-          if (baseY>.58&&baseY<1.35&&baseX>-1&&baseX<.72) {
+          if (baseY>.58&&baseY<1.35&&baseX>-1&&baseX<=.08) {
             const pivotX=-.12;
             const pivotY=.78;
             const dx=x-pivotX;
@@ -9545,6 +9704,9 @@
           // the shoulder. This gives visible articulation without warping the
           // skull or stretching individual torso facets.
           if (baseX>.08&&baseY>.68) {
+            // The entire skull follows exactly the ears' rigid head joint.
+            // Exclude earlier torso/stretch offsets from this rigid link.
+            x=baseX; y=baseY; z=baseZ;
             const pivotX=.1;
             const pivotY=.7;
             const dx=x-pivotX;
@@ -9565,13 +9727,15 @@
               )
             );
             const lowerWeight=Math.max(0,1-baseY/.62)*proximity;
-            const phase=(front===left)?0:Math.PI;
-            const stride=Math.sin(museumCatMotion.gait+phase);
-            const lift=Math.max(0,Math.sin(
-              museumCatMotion.gait+phase+Math.PI*.2
-            ));
-            x+=stride*.095*lowerWeight;
-            y+=lift*.075*lowerWeight;
+            const phase=front?(left?.5:0):(left?.25:.75);
+            const cycle=(museumCatMotion.gait/(Math.PI*2)+phase)%1;
+            const stance=.68;
+            const swing=Math.max(0,(cycle-stance)/(1-stance));
+            const stride=cycle<stance?1-2*cycle/stance:
+              -Math.cos(swing*Math.PI);
+            const lift=Math.sin(swing*Math.PI);
+            x+=stride*.16*lowerWeight;
+            y+=lift*.09*lowerWeight;
           }
           positions.setXYZ(index,x,y,z);
         }
@@ -9581,6 +9745,7 @@
         const earPhase=catMoving?museumCatMotion.gait:time*.00115;
         const connectedHeadAngle=catGrooming
           ?-.32+Math.sin(time*.012)*.095
+          :catBehavior==="sniff"?-.22*behaviorEnvelope
           :Math.sin(earPhase*.72+.55)*(catMoving?.024:.016);
         // This group is anchored at the exact (.1,.7) head pivot used for the
         // STL vertices above, so grooming rotates the skull and ears as one
@@ -9598,6 +9763,23 @@
       museumCatModelRoot.rotation.x=catMoving
         ?Math.sin(museumCatMotion.gait)*.006
         :0;
+      if (catBehavior==="roll"||catBehavior==="rest") {
+        // Recline onto the flank, wriggle on the back, then settle before
+        // standing. Rotate around the spine and keep the lowest vertex grounded.
+        const ease=behaviorEnvelope*behaviorEnvelope*(3-2*behaviorEnvelope);
+        const roll=(catBehavior==="roll"
+          ?1.35+Math.sin(catBehaviorTime*1.1)*.22
+          :1.25+Math.sin(catBehaviorTime*1.6)*.012)*ease;
+        museumCatModelRoot.rotation.x=roll;
+        let lowest=Infinity;
+        if (museumCatSTLPosition) {
+          for (let i=0;i<museumCatSTLPosition.count;i++) {
+            lowest=Math.min(lowest,museumCatSTLPosition.getY(i)*Math.cos(roll)-
+              museumCatSTLPosition.getZ(i)*Math.sin(roll));
+          }
+          museumCatModelRoot.position.y=Math.max(0,-lowest);
+        }
+      }
       museumCatTail.forEach(tail => {
         tail.rotation.y=Math.sin(
           time*.0031+tail.userData.segment*.62
@@ -9635,8 +9817,8 @@
       // Frames and images follow the same structural inhale instead of
       // hovering in front of the moving wall. Selection proxies stay at the
       // authoritative static wall location, within its generous hit depth.
-      if (updateHeavyXRMotion) artworkSurfaces.forEach(surface=>{
-        if (!surface.group) return;
+      if (updateHeavyXRMotion) artworkTargetSurfaces.forEach(surface=>{
+        if (!surface.group?.visible) return;
         const floorPivotY=Math.round(
           surface.worldPosition.y/storyHeight
         )*storyHeight;
