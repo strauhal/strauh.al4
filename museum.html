@@ -3457,7 +3457,7 @@
     }
     function updateMuseumSoundfield(timeSeconds) {
       const {context,synthPanners,elements}=museumSoundfield;
-      const soundCamera=renderer.xr.isPresenting?renderer.xr.getCamera(camera):camera;
+      const soundCamera=renderer.xr.isPresenting?xrViewCamera:camera;
       soundCamera.getWorldPosition(museumSoundListenerPosition);
       // Distance outside the museum envelope, including above its roof.
       // Apply to the whole mix, including the non-attenuating room tone and
@@ -3483,7 +3483,7 @@
       if (elapsed<1/30) return;
       museumSoundfield.lastSpatialAt=audioTime;
       const viewCamera=renderer.xr.isPresenting
-        ?renderer.xr.getCamera(camera)
+        ?xrViewCamera
         :camera;
       viewCamera.getWorldPosition(museumSoundListenerPosition);
       viewCamera.getWorldDirection(museumSoundListenerForward);
@@ -7633,12 +7633,12 @@
       border.scale.set(width+.025,height+.025,1);
     }
     function sizeArtworkViewer(surface) {
-      const distance=Math.abs(artworkViewer.position.z);
+      const distance=renderer.xr.isPresenting?1.8:Math.abs(artworkViewer.position.z);
       const viewHeight=2*Math.tan(
         THREE.MathUtils.degToRad(camera.fov*.5)
       )*distance;
       const maximumHeight=viewHeight*.9;
-      const maximumWidth=maximumHeight*camera.aspect*.94;
+      const maximumWidth=renderer.xr.isPresenting?1.9:maximumHeight*camera.aspect*.94;
       const hasNeighbors=viewerPreviousSurface||viewerNextSurface;
       const mainMaximumHeight=maximumHeight;
       const mainMaximumWidth=maximumWidth*(hasNeighbors?.64:1);
@@ -7697,6 +7697,13 @@
     }
     function showArtworkViewer(surface) {
       if (!surface?.texture) return;
+      if (renderer.xr.isPresenting&&xrPoseReady&&!artworkViewer.visible) {
+        refreshXRView();
+        scene.add(artworkViewer);
+        artworkViewer.quaternion.copy(xrViewCamera.quaternion);
+        artworkViewer.position.set(0,0,-1.8).applyQuaternion(xrViewCamera.quaternion)
+          .add(xrViewCamera.position);
+      }
       targetedArtworkSurface=null;
       setArtworkGloveVisible(false);
       if (focusedArtworkSurface?.focusBorder) {
@@ -7727,11 +7734,15 @@
       streamArtwork(surface,10000,"full");
     }
     function hideArtworkViewer() {
+      xrArtworkSelectionSerial++;
       enlargedArtworkSurface=null;
       viewerPreviousSurface=null;
       viewerNextSurface=null;
       viewerHoveredSurface=null;
       artworkViewer.visible=false;
+      camera.add(artworkViewer);
+      artworkViewer.position.set(0,0,-1.35);
+      artworkViewer.quaternion.identity();
       artworkViewerImage.material.map=null;
       artworkViewerImage.material.needsUpdate=true;
       delete renderer.domElement.dataset.artworkViewerTextureTier;
@@ -8473,6 +8484,16 @@
     const xrMoveRight=new THREE.Vector3();
     const xrMoveVector=new THREE.Vector3();
     const xrWorldUp=new THREE.Vector3(0,1,0);
+    const xrTrackedOrientation=new THREE.Quaternion();
+    const xrTrackedPosition=new THREE.Vector3();
+    const xrViewCamera=new THREE.PerspectiveCamera();
+    let xrPoseReady=false;
+    function refreshXRView() {
+      rig.updateWorldMatrix(true,false);
+      xrViewCamera.position.copy(xrTrackedPosition).applyMatrix4(rig.matrixWorld);
+      xrViewCamera.quaternion.copy(rig.quaternion).multiply(xrTrackedOrientation);
+      xrViewCamera.updateMatrixWorld(true);
+    }
     const xrStickRadius=.13;
     let lastXRPinchAt=-Infinity;
     let pendingXRPanelToggle=null;
@@ -8673,6 +8694,7 @@
       updateCoordinateReadout();
     }
     function setXRControllerRay(controller) {
+      controller.updateWorldMatrix(true,false);
       tempMatrix.identity().extractRotation(controller.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
       raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
@@ -8835,6 +8857,7 @@
         xrButton.hidden=false;
         xrButton.textContent="leave immersive XR";
         session.addEventListener("end", () => {
+          hideArtworkViewer();
           xrControlDeck.visible=false;
           xrElevatorChoices.visible=false;
           xrStickState.active.forEach((_,index)=>releaseXRStick(index));
@@ -8908,10 +8931,8 @@
           controller.userData.usedXRControl=false;
           return;
         }
-        // Quest trigger presses reveal or dismiss the spatial version of the
-        // desktop controls. They no longer enter a delayed teleport path.
         if (controller.userData.inputSource?.gamepad) {
-          toggleXRControlDeck();
+          selectXRArtwork(controller);
           return;
         }
         // Vision Pro exposes look+pinch as a transient pointer. A single pinch
@@ -8940,6 +8961,34 @@
       xrHands[index]=hand;
     }
     addXRPointer(0); addXRPointer(1);
+
+    let xrArtworkSelectionSerial=0;
+    function selectXRArtwork(controller) {
+      setXRControllerRay(controller);
+      let surface=null;
+      if (artworkViewer.visible) {
+        artworkViewer.updateWorldMatrix(true,true);
+        const neighbor=raycaster.intersectObjects(
+          [artworkViewerPrevious,artworkViewerNext].filter(mesh=>mesh.visible),false
+        )[0];
+        surface=neighbor?.object.userData.artworkSurface;
+        if (!surface) { hideArtworkViewer(); return; }
+      } else {
+        const meshes=artworkTargetSurfaces
+          .filter(item=>item.group?.visible).map(item=>item.imageMesh);
+        meshes.forEach(mesh=>mesh.updateWorldMatrix(true,false));
+        surface=raycaster.intersectObjects(meshes,false)[0]?.object.userData.artworkSurface;
+      }
+      if (!surface) return;
+      const serial=++xrArtworkSelectionSerial;
+      if (surface.texture) { showArtworkViewer(surface); return; }
+      streamArtwork(surface,10000,"preview");
+      optimizedTexture(surface.item[1],10000,"preview").then(()=>{
+        if (serial===xrArtworkSelectionSerial&&renderer.xr.isPresenting) {
+          showArtworkViewer(surface);
+        }
+      }).catch(()=>{});
+    }
 
     function handleXRPrimaryAction() {
       const now=performance.now();
@@ -9034,11 +9083,9 @@
       return xRunHeld;
     }
     function updateXRControls(dt) {
-      if (!renderer.xr.isPresenting) return;
-      const xrCamera=renderer.xr.getCamera(camera);
-      const viewCamera=xrCamera.isArrayCamera
-        ?xrCamera.cameras[0]
-        :xrCamera;
+      if (!renderer.xr.isPresenting||!xrPoseReady) return;
+      refreshXRView();
+      const viewCamera=xrViewCamera;
       viewCamera.getWorldPosition(xrDeckPosition);
       viewCamera.getWorldQuaternion(xrDeckQuaternion);
       xrDeckForward.set(0,0,-1).applyQuaternion(xrDeckQuaternion);
@@ -9085,6 +9132,7 @@
       if (Math.abs(lookInput.x)>.1) {
         rig.rotation.y-=lookInput.x*1.35*dt;
       }
+      refreshXRView();
       const moveInput=xrCombinedMove.copy(
         xrHardwareMove.lengthSq()>xrStickState.move.lengthSq()
           ?xrHardwareMove
@@ -9097,11 +9145,14 @@
         document.body.dataset.xrPace=running?"run":"walk";
       }
       if (moveMagnitude>.12) {
-        // Keep locomotion relative to the visitor's artificial/body heading.
-        // Physical head movement must never rotate the thumbstick axes: a
-        // visitor can look at a painting while continuing straight ahead.
-        xrMoveForward.set(0,0,-1)
-          .applyAxisAngle(xrWorldUp,rig.rotation.y);
+        // Compose the current tracked head pose with the new stick turn once.
+        // Forward is always the horizontal direction the visitor is facing.
+        xrViewCamera.getWorldDirection(xrMoveForward);
+        xrMoveForward.y=0;
+        if (xrMoveForward.lengthSq()<.001) {
+          xrMoveForward.set(0,0,-1).applyAxisAngle(xrWorldUp,rig.rotation.y);
+        }
+        xrMoveForward.normalize();
         xrMoveRight.crossVectors(
           xrMoveForward,xrWorldUp
         ).normalize();
@@ -9177,9 +9228,10 @@
         }
       }
       document.body.dataset.xrInput=
-        "quest-sticks|a-jump-double-a-flight|hold-x-run|b-y-menu|vision-pinch";
+        "quest-sticks|trigger-artwork-open-close-neighbors|a-jump-double-a-flight|hold-x-run|b-y-menu|vision-pinch";
       document.body.dataset.xrLocomotion=
-        "body-heading-head-look-independent";
+        "tracked-head-plus-current-rig-turn";
+      refreshXRView();
     }
 
     const artworkFrustum = new THREE.Frustum();
@@ -9198,8 +9250,7 @@
       const xrPresenting=renderer.xr.isPresenting;
       const movingRecently=time-lastMovementAt<180;
       rig.updateMatrixWorld(true);
-      const xrCamera = xrPresenting ? renderer.xr.getCamera(camera) : camera;
-      const viewCamera = xrCamera.isArrayCamera ? xrCamera.cameras[0] : xrCamera;
+      const viewCamera = xrPresenting ? xrViewCamera : camera;
       viewCamera.updateMatrixWorld(true);
       viewCamera.matrixWorldInverse.copy(viewCamera.matrixWorld).invert();
       artworkViewProjection.multiplyMatrices(viewCamera.projectionMatrix,viewCamera.matrixWorldInverse);
@@ -9500,7 +9551,16 @@
       renderer.domElement.dataset.animatedGifs=String(visibleAnimatedTextures.size);
     }
 
-    function animate(time) {
+    function animate(time,frame) {
+      if (renderer.xr.isPresenting&&frame) {
+        const pose=frame.getViewerPose(renderer.xr.getReferenceSpace());
+        xrPoseReady=Boolean(pose);
+        if (pose) {
+          xrTrackedOrientation.copy(pose.transform.orientation);
+          xrTrackedPosition.copy(pose.transform.position);
+          refreshXRView();
+        }
+      } else xrPoseReady=false;
       const dt = Math.min(clock.getDelta(), .05);
       updateMuseumBluePalette(time);
       monitorXRPerformance(dt);
