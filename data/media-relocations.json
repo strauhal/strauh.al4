@@ -2575,7 +2575,7 @@
   },
   {
     "old": "2000s/Illustration - Street Artist Painting Wavy Lines on Brick Wall by Revok.webp",
-    "new": "photography/Illustration - Street Artist Painting Wavy Lines on Brick Wall by Revok.webp",
+    "new": "photography/Person Painting Horizontal Colored Lines on a Brick Wall.webp",
     "label": "Mural in progress of horizontal colored lines on a brick wall",
     "sha256": "3672ac073d59cbab6516bc6508d19894243b83ab3f1cce8ae89e7667a557f0da"
   },
@@ -3127,7 +3127,7 @@
   },
   {
     "old": "unsorted/Document - Newspaper Clipping With Halftone Photo Of A Man In Uniform.jpg",
-    "new": "photography/Document - Newspaper Clipping With Halftone Photo Of A Man In Uniform.jpg",
+    "new": "photography/Document - Newspaper Clipping With Halftone Photo Of A Man And Text.jpg",
     "label": "Document Newspaper Clipping With Halftone Photo Of A Man In Uniform",
     "sha256": "d713c420d4f709d4b18c44d6b3738a245b3fde719b7781333ddaca459dd96d3b"
   },
@@ -3208,5 +3208,635 @@
     "new": "photography/Photograph - Black And White Halftone Print Of A Chimpanzee.jpeg",
     "label": "Photograph Black And White Halftone Print Of A Chimpanzee",
     "sha256": "cd44ebb871cde1ef652b87a3f9764998d0a5cb8f4fbfc97d8a5b683873ae00af"
+  },
+  {
+    "old": "1400s/two_profile_heads_a_grotesque_man_and_a_youth_by_leonardo_da_vinci_c_1490.jpeg",
+    "new": "1400s/grotesque_head_and_profile_of_a_youth_by_leonardo_da_vinci_c_1490.jpeg",
+    "label": "grotesque_head_and_profile_of_a_youth_by_leonardo_da_vinci_c_1490",
+    "sha256": "d162533de52ca286101cb005dee895eefd34402f239f040ff8e12dbb80a81fe3"
+  },
+  {
+    "old": "1400s/head_of_a_warrior_in_profile_by_leonardo_da_vinci_c_1472_1475_2.jpeg",
+    "new": "1400s/head_of_a_warrior_in_profile_by_leonardo_da_vinci_c_1472_1475.jpeg",
+    "label": "head_of_a_warrior_in_profile_by_leonardo_da_vinci_c_1472_1475",
+    "sha256": "47b455047ad9aa54cfe5dad2a066508330031329993f14d27dc09b782ddd3d28"
+  },
+  {
+    "old": "1500s/studies_of_the_muscles_of_the_arm_and_shoulder_by_leonardo_da_vinci_c_15101511_2.jpeg",
+    "new": "1500s/studies_of_the_muscles_of_the_arm_and_shoulder_by_leonardo_da_vinci_c_15101511.jpeg",
+    "label": "studies_of_the_muscles_of_the_arm_and_shoulder_by_leonardo_da_vinci_c_15101511",
+    "sha256": "78fff7173f5b150f0fbebe7179de729c3395b62a51afae379a4338d1460d5e59"
+  },
+  {
+    "old": "2000s/The Fall of the Damned by Peter Paul Rubens (c. 1618-1620).jpeg",
+    "new": "1600s/the_fall_of_the_damned_by_peter_paul_rubens_c_1620_1621.jpeg",
+    "label": "the_fall_of_the_damned_by_peter_paul_rubens_c_1620_1621",
+    "sha256": "62eb1f5ec305adc0b320b51412f26379e12eefdb29b5aafe9c36e8c46abf6dd5"
+  },
+  {
+    "old": "museum_ideas/the_gallery_of_cornelis_van_der_geest_by_willem_van_haecht_1628.jpeg",
+    "new": "1600s/the_gallery_of_cornelis_van_der_geest_by_willem_van_haecht_1628.jpeg",
+    "label": "the_gallery_of_cornelis_van_der_geest_by_willem_van_haecht_1628",
+    "sha256": "8b10099c2b02085b203f97acdbd5cf98e10b2464d6f04d0a97b6f504b0ed497f"
+  },
+  {
+    "old": "1800s/frederiksborg_castle_by_moonlight_by_johan_christian_dahl_1817.jpg",
+    "new": "1700s/jens_juel_frederiksborg_castle_by_moonlight_c_1799.jpg",
+    "label": "jens_juel_frederiksborg_castle_by_moonlight_c_1799",
+    "sha256": "ef5f1f82dceee086259c898c8e80dc5f24fd096ea6c3fd8c06af6a0a122eadc4"
+  },
+  {
+    "old": "1800s/antiochus_and_stratonice_by_alexandre_cabanel_1866.jpg",
+    "new": "1800s/alexandre_cabanel_cleopatra_1887.jpg",
+    "label": "alexandre_cabanel_cleopatra_1887",
+    "sha256": "7cd40c0cc25cb0cef1aa60ae1d465bc39c421734f5a103b88f70c3eb62dd4cdb"
+  },
+  {
+    "old": "2000s/Illustration - Busy City Street at Night with Arch and Many Lights.jpg",
+    "new": "1800s/boulevard_des_capucines_at_night_by_jean_beraud_c_1880.jpg",
+    "label": "boulevard_des_capucines_at_night_by_jean_beraud_c_1880",
+    "sha256": "c51975741b1dd0e68d26a12c671fda58401eee97b7574eafbc427065d372a212"
+  },
+  {
+    "old": "1800s/cotopaxi_by_frederic_edwin_church_1855.jpg",
+    "new": "1800s/frederic_edwin_church_cotopaxi_1855.jpg",
+    "label": "frederic_edwin_church_cotopaxi_1855",
+    "sha256": "6949940824b332fe2e7234282c1500036433ccf227fee2319f957f7b6c8a3352"
+  },
+  {
+    "old": "1800s/the_parthenon_by_frederic_edwin_church_1871.jpg",
+    "new": "1800s/frederic_edwin_church_the_parthenon_1871.jpg",
+    "label": "frederic_edwin_church_the_parthenon_1871",
+    "sha256": "3b76b1a222f287bbc89edb28c2ef6b18cad378b066a7f4ec1d9ad5292cca8546"
+  },
+  {
+    "old": "1800s/the_castle_of_the_sleeping_beauty_by_gustave_dore_1867.jpg",
+    "new": "1800s/gustave_dor_the_castle_of_the_grail_c_1878.jpg",
+    "label": "gustave_dor_the_castle_of_the_grail_c_1878",
+    "sha256": "deae9cc70ff229295982d51ed5ec7703ebfaf9c9456b66205c75675c5ce6835b"
+  },
+  {
+    "old": "1800s/ilya_repin_ivan_the_terrible_and_his_son_ivan_on_november_16_1581_1885_2.jpg",
+    "new": "1800s/ilya_repin_ivan_the_terrible_and_his_son_ivan_on_november_16_1581_1885.jpg",
+    "label": "ilya_repin_ivan_the_terrible_and_his_son_ivan_on_november_16_1581_1885",
+    "sha256": "3980c134db5b4dfb360c8523840da4f8e750b6535442ac5352434e614c2b3cce"
+  },
+  {
+    "old": "1800s/belshazzar_s_feast_by_john_martin_1821_2.jpg",
+    "new": "1800s/john_martin_belshazzars_feast_1821.jpg",
+    "label": "john_martin_belshazzars_feast_1821",
+    "sha256": "2ef3a26047bbe3591f5ea96bd816e30f5d267a61b1bba2b2b484c756f79f3bcc"
+  },
+  {
+    "old": "1800s/medea_by_koloman_moser_1898.jpeg",
+    "new": "1800s/medea_by_koloman_moser_1898.jpg",
+    "label": "medea_by_koloman_moser_1898",
+    "sha256": "e8fba1db50e0c8ef5038c39b04ce28f02c63426dabdcb57eced42cc087cc3c52"
+  },
+  {
+    "old": "1800s/portrait_of_a_woman_by_konstantin_makovsky_1880.jpeg",
+    "new": "1800s/portrait_of_a_woman_by_konstantin_makovsky_1880.jpg",
+    "label": "portrait_of_a_woman_by_konstantin_makovsky_1880",
+    "sha256": "7a9e1fd29fbd9942e808cd55aec3274bceee1cb595ad046defa43d2feeefeee5"
+  },
+  {
+    "old": "1800s/portrait_of_a_woman_by_jacques_emile_blanche_1895.jpeg",
+    "new": "1800s/portrait_of_a_woman_by_konstantin_makovsky_1880.jpg",
+    "label": "portrait_of_a_woman_by_konstantin_makovsky_1880",
+    "sha256": "7a9e1fd29fbd9942e808cd55aec3274bceee1cb595ad046defa43d2feeefeee5"
+  },
+  {
+    "old": "1800s/vodyanitsa_water_nymph_by_konstantin_makovsky_1879.jpg",
+    "new": "1800s/rusaka_by_jacek_malczewski_1888.jpg",
+    "label": "rusaka_by_jacek_malczewski_1888",
+    "sha256": "f88c280edff79d641d184d6c45c440d62661edbfa946aa8bda12114972e7cd24"
+  },
+  {
+    "old": "1800s/the_roses_of_heliogabalus_by_lawrence_alma_tadema_1888.jpg",
+    "new": "1800s/sir_lawrence_almatadema_the_roses_of_heliogabalus_1888.jpg",
+    "label": "sir_lawrence_almatadema_the_roses_of_heliogabalus_1888",
+    "sha256": "f3fcd48fe74cbfee8122e61001a7efb27c3e7c01c35ce5dd919bc5eda9b101dd"
+  },
+  {
+    "old": "1800s/the_roses_of_heliogabalus_by_lawrence_alma_tadema_1888_2.jpg",
+    "new": "1800s/sir_lawrence_almatadema_the_roses_of_heliogabalus_1888.jpg",
+    "label": "sir_lawrence_almatadema_the_roses_of_heliogabalus_1888",
+    "sha256": "f3fcd48fe74cbfee8122e61001a7efb27c3e7c01c35ce5dd919bc5eda9b101dd"
+  },
+  {
+    "old": "1800s/the_queen_of_hearts_by_john_byam_liston_shaw_1896.jpeg",
+    "new": "1800s/the_queen_of_hearts_by_john_byam_liston_shaw_1896.jpg",
+    "label": "the_queen_of_hearts_by_john_byam_liston_shaw_1896",
+    "sha256": "810e0c73c0c95aa85bec8754bc61e3922c56f1eada10c1969ba2c902e7f7f38f"
+  },
+  {
+    "old": "1800s/view_of_the_rhine_valley_with_burg_rheinstein_by_barend_cornelis_koekkoek_1853_2.jpg",
+    "new": "1800s/view_of_the_rhine_valley_with_burg_rheinstein_by_barend_cornelis_koekkoek_1853.jpg",
+    "label": "view_of_the_rhine_valley_with_burg_rheinstein_by_barend_cornelis_koekkoek_1853",
+    "sha256": "b34d75155fa6dfc90ce776e6835e9a31cac81ba6b6e76c97cbf5e7c94bd3174e"
+  },
+  {
+    "old": "unsorted/colorful_painting_of_a_bouquet_of_flowers_in_a_vase.webp",
+    "new": "1900s/Anemones by Raoul Dufy (1956).webp",
+    "label": "Anemones by Raoul Dufy (1956)",
+    "sha256": "185a638b54b73180b57d2d81c379d68a54cc4f92cab51c62471e653e14f79f11"
+  },
+  {
+    "old": "1900s/a_forest_stream_with_a_fisherman_by_peder_mrk_mnsted_1910.jpg",
+    "new": "1900s/a_forest_stream_summer_day_by_peder_mrk_mnsted_1910.jpeg",
+    "label": "a_forest_stream_summer_day_by_peder_mrk_mnsted_1910",
+    "sha256": "3fda9904d148718cc73a77a0a2ab06a58b686390596df17e666b628804052df8"
+  },
+  {
+    "old": "1900s/drawing_of_a_stepped_art_deco_skyscraper_illuminated_at_night_1930.jpg",
+    "new": "1900s/charcoal_drawing_of_a_stepped_art_deco_skyscraper_at_night_1930.jpg",
+    "label": "charcoal_drawing_of_a_stepped_art_deco_skyscraper_at_night_1930",
+    "sha256": "cc31764da773d7ab6cc5a5dd5fe7bc4c9599062d588a542cb1875c3788642b62"
+  },
+  {
+    "old": "1900s/drawing_of_a_stepped_art_deco_skyscraper_illuminated_at_night_1930_2.jpg",
+    "new": "1900s/charcoal_drawing_of_a_stepped_art_deco_skyscraper_at_night_1930.jpg",
+    "label": "charcoal_drawing_of_a_stepped_art_deco_skyscraper_at_night_1930",
+    "sha256": "cc31764da773d7ab6cc5a5dd5fe7bc4c9599062d588a542cb1875c3788642b62"
+  },
+  {
+    "old": "1900s/the_city_and_the_stars_by_fred_gambino_1988.jpg",
+    "new": "1900s/cityscape_by_fred_gambino_1984.jpg",
+    "label": "cityscape_by_fred_gambino_1984",
+    "sha256": "bfb8a8eb6074cf04e7eb6715f21a6c706aa963fe3420e402760fe1d65cd7421a"
+  },
+  {
+    "old": "1900s/composition_by_arthur_dove_c_1927.jpeg",
+    "new": "1900s/composition_by_jean_arp_1930.jpeg",
+    "label": "composition_by_jean_arp_1930",
+    "sha256": "a050d1069991a92f82d00d63b16e2446d34c6b98244098360276975dc7234341"
+  },
+  {
+    "old": "2000s/Screenshot - Woman in Large Hat With Black Scribbles Over Her Face.jpg",
+    "new": "1900s/douglas_gordon_scribbled_portrait_of_woman_in_hat_mid1990s.jpg",
+    "label": "douglas_gordon_scribbled_portrait_of_woman_in_hat_mid1990s",
+    "sha256": "645367d3deb78b5aa4f8368a9daa3da7827a85563ad41b3ed2fc8fbd074fdedb"
+  },
+  {
+    "old": "1900s/futuristic_cityscape_with_flying_vehicles_and_canal_by_mac_grea_1984_2.jpg",
+    "new": "1900s/futuristic_cityscape_with_flying_vehicles_and_canal_by_mac_grea_1984.jpg",
+    "label": "futuristic_cityscape_with_flying_vehicles_and_canal_by_mac_grea_1984",
+    "sha256": "6ed84a55c5c4c59ff99fa398f9d1681f8fe448d1ab6e094f8d983a2549a334d1"
+  },
+  {
+    "old": "1900s/les_amants_the_lovers_by_rene_magritte_1928.jpg",
+    "new": "1900s/ren_magritte_les_amants_1928.jpg",
+    "label": "ren_magritte_les_amants_1928",
+    "sha256": "b0320f32b96ea5088957e9e6531bb8b9bcbe1299be2e51c06939bd736318af2b"
+  },
+  {
+    "old": "1900s/T-u00eate de femme (Head of a Woman) by Pablo Picasso (1952-1953).jpeg",
+    "new": "1900s/tete_de_femme_head_of_a_woman_by_pablo_picasso_1952.jpeg",
+    "label": "tete_de_femme_head_of_a_woman_by_pablo_picasso_1952",
+    "sha256": "797275aa0a0e62bc63364401b25b329d4bbeda4680102964fc8094c855694f0d"
+  },
+  {
+    "old": "1900s/the_crystal_palace_by_moebius_1977.jpeg",
+    "new": "1900s/the_crystal_palace_by_moebius_1977.jpg",
+    "label": "the_crystal_palace_by_moebius_1977",
+    "sha256": "279635c3e43a1e4c312eeb9ec4eeb820b0fc30f338ced34d5fed10823a72766e"
+  },
+  {
+    "old": "1900s/the_crystal_citadel_by_jean_giraud_1980.jpg",
+    "new": "1900s/the_crystal_palace_by_moebius_1977.jpg",
+    "label": "the_crystal_palace_by_moebius_1977",
+    "sha256": "279635c3e43a1e4c312eeb9ec4eeb820b0fc30f338ced34d5fed10823a72766e"
+  },
+  {
+    "old": "1900s/voyager_by_yumi_matsutoya_1983_2.jpg",
+    "new": "1900s/voyager_by_yumi_matsutoya_1983.jpg",
+    "label": "voyager_by_yumi_matsutoya_1983",
+    "sha256": "55f85f4ada451ce1b4787a2d33369e5dffc9618c147000e0ae2c8b4732a2a0b4"
+  },
+  {
+    "old": "2000s/Ceres & Calypso in the Deep Time (2013) (2).jpg",
+    "new": "2000s/Ceres & Calypso in the Deep Time (2013).jpg",
+    "label": "Ceres & Calypso in the Deep Time (2013)",
+    "sha256": "7865af170ce65fa6a412ade6d7420df7cdfce2afe7a76c2b874610f67432f7bf"
+  },
+  {
+    "old": "1900s/Clyties of the Mist by Herbert James Draper (1912).jpg",
+    "new": "2000s/Clyties of the Mist by Herbert James Draper.jpg",
+    "label": "Clyties of the Mist by Herbert James Draper",
+    "sha256": "f75cfd2e0ab93a5d1d1756c3e922a58a11b2a058678d724b71d9b914da095f30"
+  },
+  {
+    "old": "2000s/Comic - Black And White Comic Panel Of Crying Woman (2).jpeg",
+    "new": "2000s/Comic - Black and White Comic Panel of Crying Woman.jpeg",
+    "label": "Comic - Black and White Comic Panel of Crying Woman",
+    "sha256": "0c511e246ce0363cb323b29acbf66de087d2004f861e0515558eef5a38b599c9"
+  },
+  {
+    "old": "2000s/Comic - Dream and a Cat-like Creature in a Fantastical Desert Landscape by J. H. Williams III.jpg",
+    "new": "2000s/Comic - Dream and Cat in Fantastical Desert Landscape by J.H. Williams III.jpeg",
+    "label": "Comic - Dream and Cat in Fantastical Desert Landscape by J.H. Williams III",
+    "sha256": "89cd5c5716cdb2e7867ad4d43b946ba980f804d87cecd92032e409128340034b"
+  },
+  {
+    "old": "2000s/Diagram - Colorful Microchip Layout Diagram with Interconnected Traces.jpeg",
+    "new": "2000s/Diagram - Multicolor Diagram of Complex Electronic Circuitry Layout.jpg",
+    "label": "Diagram - Multicolor Diagram of Complex Electronic Circuitry Layout",
+    "sha256": "aad15b08083d472535284b0d5607c85044e85dbcc3c1ade1986a98970a6ba013"
+  },
+  {
+    "old": "2000s/Illustration - Abstract Figurative Painting of Two Reclining Figures in Warm Tones.jpeg",
+    "new": "2000s/Illustration - Abstract Figurative Painting of Two Reclining Figures.jpeg",
+    "label": "Illustration - Abstract Figurative Painting of Two Reclining Figures",
+    "sha256": "48b64220cb6e2c0d4631e536a7d5cb4bc83fc1d27d73d63e03ea5c45d4d9dc57"
+  },
+  {
+    "old": "2000s/Illustration - Abstract White Scribbles on Black Background.jpg",
+    "new": "2000s/Illustration - Dense White Scribbles on a Black Background.jpg",
+    "label": "Illustration - Dense White Scribbles on a Black Background",
+    "sha256": "7aabc1560da94a98bc69dc1c040f8b00c1f7258985906b4a462d29143d963612"
+  },
+  {
+    "old": "2000s/Illustration - Intricate Ornate Fantasy Architecture Drawing in Grayscale by Laurent Gapaillard.jpg",
+    "new": "2000s/Illustration - Detailed Ornate Fantastical Baroque Architecture Drawing by Laurent Gapaillard.jpg",
+    "label": "Illustration - Detailed Ornate Fantastical Baroque Architecture Drawing by Laurent Gapaillard",
+    "sha256": "cef2f4fa61c150cd3f5a8a313a2c58be79553ce7631eb5298d999d480ac106ef"
+  },
+  {
+    "old": "2000s/Illustration - Monochromatic Portrait Painting of an Older Woman with a Smirk by Stefan Burnett.jpeg",
+    "new": "2000s/Illustration - Grayscale Portrait of a Smiling Person with Disheveled Hair by Stefan Burnett.jpeg",
+    "label": "Illustration - Grayscale Portrait of a Smiling Person with Disheveled Hair by Stefan Burnett",
+    "sha256": "b85ea3f9eafb23ff9b0870d48f413ae41620fb9b50ce37e55786dfa35c285f8e"
+  },
+  {
+    "old": "2000s/Illustration - Framed Illustration of Two People Embracing in Rain.jpeg",
+    "new": "2000s/Rainy Day by Pascal Campion (2015).jpeg",
+    "label": "Rainy Day by Pascal Campion (2015)",
+    "sha256": "eefdb5d1e90b7cdc268e67129442854f592fb4ee6d62b417075f7525b3d5fcca"
+  },
+  {
+    "old": "2000s/Study for The Virgin and Child with Saint Anne by Leonardo da Vinci (c. 1500).jpeg",
+    "new": "2000s/The Virgin and Child with Saint Anne by Leonardo da Vinci (c. 1500).jpeg",
+    "label": "The Virgin and Child with Saint Anne by Leonardo da Vinci (c. 1500)",
+    "sha256": "8aec9dbe68c1c69ae4a643f604db1e233b03572f03223797f345e9282674f606"
+  },
+  {
+    "old": "computers/abstract_orange_pattern_on_a_retro_computer_monitor_2.png",
+    "new": "computers/abstract_orange_pattern_on_a_retro_computer_monitor.png",
+    "label": "abstract_orange_pattern_on_a_retro_computer_monitor",
+    "sha256": "f7aa394353fb72924eece12580d037ea88a3de7ea6fd87ef68511ec8ffcec345"
+  },
+  {
+    "old": "computers/screenshot_of_text_and_emojis_with_mouse_and_elephant_2.png",
+    "new": "computers/screenshot_of_text_and_emojis_with_mouse_and_elephant.png",
+    "label": "screenshot_of_text_and_emojis_with_mouse_and_elephant",
+    "sha256": "ef73ab5b217beb025030735d1a8bd67ad142367451a947ac2cd2a4f8a51e7afd"
+  },
+  {
+    "old": "diagrams/Granular_Conversation_Topic_Shares_Breakdown_Diagram.jpeg",
+    "new": "diagrams/Breakdown_Of_Granular_Conversation_Topic_Shares.jpeg",
+    "label": "Breakdown_Of_Granular_Conversation_Topic_Shares",
+    "sha256": "d72c908379290ea05369a3a37d38db488e6ba5d833a12461511ed21e4728b196"
+  },
+  {
+    "old": "diagrams/Stacked_Bar_Chart_Showing_Car_Colors_By_Year.jpeg",
+    "new": "diagrams/Car_Colors_By_Year.jpeg",
+    "label": "Car_Colors_By_Year",
+    "sha256": "52ad27369b2c855f7b1161989372ff993732a4b0077044884a66828e2bfeb663"
+  },
+  {
+    "old": "diagrams/Chart_of_Various_Neural_Network_Architectures_by_Fjodor_van_Veen_&_Stefan_Leijnen_copy.png",
+    "new": "diagrams/Chart_of_Various_Neural_Network_Architectures_by_Fjodor_van_Veen_&_Stefan_Leijnen.png",
+    "label": "Chart_of_Various_Neural_Network_Architectures_by_Fjodor_van_Veen_&_Stefan_Leijnen",
+    "sha256": "e912e0e2c87b9936ea7ee5c4a40ff0e72686b2cbea78a5963486e4cca36ebae8"
+  },
+  {
+    "old": "gif_collection/1626802674000.gif",
+    "new": "diary/adderall.gif",
+    "label": "adderall",
+    "sha256": "f7f1e4a9571602e8fb04de2cead021252ab79c849c812677718c2927d00561c2"
+  },
+  {
+    "old": "diary/covidflute.JPG",
+    "new": "diary/fltues.JPG",
+    "label": "fltues",
+    "sha256": "f469ae3934aea06cceef2327fc0b308d625274d4e418d34990267d0646fde597"
+  },
+  {
+    "old": "diagrams/UMAP_Embedding_of_LAION-Aesthetics_Captions.jpeg",
+    "new": "diary/laion-clusters.jpeg",
+    "label": "laion-clusters",
+    "sha256": "989d93fe75d2234320cf2c7b708e468ce949acfa1e9007d266c964371b9f2c1f"
+  },
+  {
+    "old": "1900s/1974-S No. 1 by Clyfford Still (1974).jpg",
+    "new": "diary/still.jpg",
+    "label": "still",
+    "sha256": "4b415137b9d303664e0aa83d3fc4602427b7eddad30e26fd172b2ab83de06221"
+  },
+  {
+    "old": "computers/1686386813646332.jpg",
+    "new": "diary/systems.jpg",
+    "label": "systems",
+    "sha256": "85cb8f72f8327a6486ae9f0bae7023c984e74309d1f30b654295869843bbfe6f"
+  },
+  {
+    "old": "computers/andy warhol computer.png",
+    "new": "diary/warhol.png",
+    "label": "warhol",
+    "sha256": "90899e67e1caee3d55847e28b00b1033f25a9ca7bed3cbd655fca2ec167d3e5d"
+  },
+  {
+    "old": "gif_collection/IMG_0339 2.gif",
+    "new": "gif_collection/IMG_0339.gif",
+    "label": "IMG_0339",
+    "sha256": "e7f55ac9ab8612fd847a695be4c78a1dda42bc15fb079489df0d82ff994796ac"
+  },
+  {
+    "old": "gif_collection/tumblr_8780864a81021a07f97798137794a58d_5b95ebee_540.gif",
+    "new": "gif_collection/ezgif.com-resize.gif",
+    "label": "ezgif.com-resize",
+    "sha256": "237d94b2ddf13162bc2d262445f8b430f90c13c39aa8db60999c19c8159bb53b"
+  },
+  {
+    "old": "gif_collection/it+moves!+just+wait+for+it+_+^+).gif",
+    "new": "gif_collection/it+moves!+just+wait+for+it+-+^+).gif",
+    "label": "it+moves!+just+wait+for+it+-+^+)",
+    "sha256": "8d352620afb968cb02d25e64794f5284889c3696147780e02a43e9caa0648179"
+  },
+  {
+    "old": "1400s/Hyōnen zu by Josetsu (c. 1413).jpg",
+    "new": "influences/josetsu.jpg",
+    "label": "josetsu",
+    "sha256": "62487d399bb545535126ffca4b92b1e5e0b51815f2c06f084434d2b5744bf253"
+  },
+  {
+    "old": "gif_collection/1628073257472.gif",
+    "new": "museum_ideas/8-cell-simple.gif",
+    "label": "8-cell-simple",
+    "sha256": "e4a9967bfae6b3c39bd4bf0e2a8592a7e08bcf3edb02387d2620041c86821fc5"
+  },
+  {
+    "old": "photography/Allegory of the Divine Providence and Barberini Power by Pietro da Cortona.jpg",
+    "new": "photography/Apotheosis of St Ignatius by Andrea Pozzo.jpg",
+    "label": "Apotheosis of St Ignatius by Andrea Pozzo",
+    "sha256": "14e402fcae2f4477be1a45310309ed3f55ecfa841cb7ffd9d5a2485eb83f897c"
+  },
+  {
+    "old": "photography/Document - Newspaper Clipping With Halftone Photo Of A Man In Uniform.jpg",
+    "new": "photography/Document - Newspaper Clipping With Halftone Photo Of A Man And Text.jpg",
+    "label": "Document - Newspaper Clipping With Halftone Photo Of A Man And Text",
+    "sha256": "d713c420d4f709d4b18c44d6b3738a245b3fde719b7781333ddaca459dd96d3b"
+  },
+  {
+    "old": "photography/Woman In Military Uniform Standing Among Pink Flowers With Mountains.jpg",
+    "new": "photography/Illustration - Woman in Brown Military Uniform Among Pink Flowers.jpeg",
+    "label": "Illustration - Woman in Brown Military Uniform Among Pink Flowers",
+    "sha256": "3d9bc2d59858983b5a0c09afbc4887a57a6705c666d06586c432dfdaa3d38ef5"
+  },
+  {
+    "old": "photography/Person Lying Face Down On Cobblestones Surrounded By Swans At Night.jpeg",
+    "new": "photography/Person Lying On Cobblestones Surrounded By Swans At Night.jpeg",
+    "label": "Person Lying On Cobblestones Surrounded By Swans At Night",
+    "sha256": "86f46a042178da7518921051e27ea2cc3f8b105990dee7908a8986ba659d8664"
+  },
+  {
+    "old": "photography/Illustration - Street Artist Painting Wavy Lines on Brick Wall by Revok.webp",
+    "new": "photography/Person Painting Horizontal Colored Lines on a Brick Wall.webp",
+    "label": "Person Painting Horizontal Colored Lines on a Brick Wall",
+    "sha256": "3672ac073d59cbab6516bc6508d19894243b83ab3f1cce8ae89e7667a557f0da"
+  },
+  {
+    "old": "photography/UPS Truck Under Apocalyptic Red Sky From Wildfire Smoke.jpeg",
+    "new": "photography/UPS Truck Under Apocalyptic Red Sky From Wildfires.jpg",
+    "label": "UPS Truck Under Apocalyptic Red Sky From Wildfires",
+    "sha256": "45540caa85f22f58c8f0cbcd244829b66128c0fb99b1f8e1705cfa01d1d1a3fc"
+  },
+  {
+    "old": "photography/black_and_white_photograph_of_a_man_on_a_city_sidewalk_2.png",
+    "new": "photography/black_and_white_photograph_of_a_man_on_a_city_sidewalk.png",
+    "label": "black_and_white_photograph_of_a_man_on_a_city_sidewalk",
+    "sha256": "6883535f31e33494fc8ffc8a19c346083d5f2dc5ac7e6de3211e058c284c3829"
+  },
+  {
+    "old": "photography/black_and_white_photograph_of_man_on_sidewalk_2.png",
+    "new": "photography/black_and_white_photograph_of_man_on_sidewalk.png",
+    "label": "black_and_white_photograph_of_man_on_sidewalk",
+    "sha256": "6575c5b9237fb3dedd88c0ac99f1940aac2ab8e1f69a48480c2807e7422efb32"
+  },
+  {
+    "old": "photography/overhead_photograph_of_priests_dancing_and_kneeling_2.png",
+    "new": "photography/overhead_photograph_of_priests_dancing_and_kneeling.png",
+    "label": "overhead_photograph_of_priests_dancing_and_kneeling",
+    "sha256": "14e1162489e399b8c43a82ddf8c5cbcd73ffa0de321a75fe7cf778d777d26cc7"
+  },
+  {
+    "old": "photography/photograph_of_a_white_fluffy_cat_looking_up_2.png",
+    "new": "photography/photograph_of_a_white_fluffy_cat_looking_up.png",
+    "label": "photograph_of_a_white_fluffy_cat_looking_up",
+    "sha256": "eb58bab43214b1aa7bc5d7a491f70669ba88a1cb233100aff80461ffaad2c583"
+  },
+  {
+    "old": "unsorted/Illustration - Stylized Portrait of Person with Glasses and Bamboo Background.png",
+    "new": "portraits/nick1.png",
+    "label": "nick1",
+    "sha256": "2f85f75e2923d098feb4dc9ed6e9fa1957826db3d03d9a03842e2a5968c2da75"
+  },
+  {
+    "old": "portraits/wedding1.png",
+    "new": "portraits/wedding.png",
+    "label": "wedding",
+    "sha256": "c468440c413923b1d2153de27d255d7db11ee34d761fe88f1ed239d85fd395b2"
+  },
+  {
+    "old": "unnamed/a_mermaid_by_john_william_waterhouse_2.png",
+    "new": "unnamed/a_mermaid_by_john_william_waterhouse.png",
+    "label": "a_mermaid_by_john_william_waterhouse",
+    "sha256": "9f82a90043c640262e21bf1b3e04f6ccb5a3de70598181bb496458df40f029dc"
+  },
+  {
+    "old": "unnamed/absurd_desire_2.png",
+    "new": "unnamed/absurd_desire.png",
+    "label": "absurd_desire",
+    "sha256": "0b716f829d4aef08919d2fc23a950de420530eda8ef35b269ea05d1f780c90d2"
+  },
+  {
+    "old": "unnamed/missing_cat_by_simon_bailly_2.png",
+    "new": "unnamed/missing_cat_by_simon_bailly.png",
+    "label": "missing_cat_by_simon_bailly",
+    "sha256": "a510e58ba451898065ba79b4dc3ec9d4cf0a0de8420577bc031c1baefddf88ec"
+  },
+  {
+    "old": "unnamed/nude_woman_chained_held_by_monster_holding_large_key_2.png",
+    "new": "unnamed/nude_woman_chained_held_by_monster_holding_large_key.png",
+    "label": "nude_woman_chained_held_by_monster_holding_large_key",
+    "sha256": "ac77de70581fd3d7f2c5395e1f43493e44a033b5fc2dc3f4ca63fe0357aaf626"
+  },
+  {
+    "old": "unnamed/red_car_engulfed_in_bright_orange_flames_2.png",
+    "new": "unnamed/red_car_engulfed_in_bright_orange_flames.png",
+    "label": "red_car_engulfed_in_bright_orange_flames",
+    "sha256": "14bdbdfe55a2ea83738e526751d5729802cf6d16295409c3904541647e8c0b07"
+  },
+  {
+    "old": "unnamed/textile_art_with_multiple_abstract_faces_and_red_eyes_2.png",
+    "new": "unnamed/textile_art_with_multiple_abstract_faces_and_red_eyes.png",
+    "label": "textile_art_with_multiple_abstract_faces_and_red_eyes",
+    "sha256": "c4a519c1a6b6f811f1df0b746b26f548c2f79f03df261433a379f3e1f869c3fc"
+  },
+  {
+    "old": "unnamed/the_edge_of_the_woods_by_charles_courtney_curran_1912_2.png",
+    "new": "unnamed/the_edge_of_the_woods_by_charles_courtney_curran_1912.png",
+    "label": "the_edge_of_the_woods_by_charles_courtney_curran_1912",
+    "sha256": "d218c628953e1893d1a3d9946445e759069b613890348b2a631d6ff8eb059d79"
+  },
+  {
+    "old": "unsorted/Illustration - Four Illustrated Portraits of Different Individuals in Various Styles.jpg",
+    "new": "unsorted/Document - Four Portraits of Cary Grant, Marilyn Monroe, and Katherine Hepburn.jpg",
+    "label": "Document - Four Portraits of Cary Grant, Marilyn Monroe, and Katherine Hepburn",
+    "sha256": "ad4b1816989f569ddb98744b3ec1bc88d29c1c709344cbc3ef33070c30fa633b"
+  },
+  {
+    "old": "unsorted/Illustration - Black Dog Looking Into Mirror, Reflection Visible.jpg",
+    "new": "unsorted/Illustration - Black Dog Looking At Its Reflection In A Mirror.jpg",
+    "label": "Illustration - Black Dog Looking At Its Reflection In A Mirror",
+    "sha256": "53e90ea70d49e317bd0e830f8f5f0f3eb1291977eb1d6e5325d8afe6a9dd27ed"
+  },
+  {
+    "old": "unsorted/Illustration - Simple Line Drawing of a Person with Messy Hair and Glasses.png",
+    "new": "unsorted/Illustration - Line Drawing Of Person With Messy Hair And Glasses.png",
+    "label": "Illustration - Line Drawing Of Person With Messy Hair And Glasses",
+    "sha256": "7143bee604055e158b978c007ac022168f8c3060d5a28c5ff528dddb650b3a6e"
+  },
+  {
+    "old": "unsorted/Illustration - Black And White Line Drawing Of A Person With Messy Hair And Glasses.png",
+    "new": "unsorted/Illustration - Line Drawing Of Person With Messy Hair And Glasses.png",
+    "label": "Illustration - Line Drawing Of Person With Messy Hair And Glasses",
+    "sha256": "7143bee604055e158b978c007ac022168f8c3060d5a28c5ff528dddb650b3a6e"
+  },
+  {
+    "old": "unsorted/Illustration - Pen-and-Ink Self-Portrait of a Man with Glasses and a Thought Bubble by Maxon Crumb.jpg",
+    "new": "unsorted/Illustration - Pen and Ink Self-Portrait with Thought Bubble. by Robert Crumb.jpg",
+    "label": "Illustration - Pen and Ink Self-Portrait with Thought Bubble. by Robert Crumb",
+    "sha256": "651e6b0279280fbe19c9d87e3a80d51ac787137487f2af4bd6958ef7653dbfb8"
+  },
+  {
+    "old": "unsorted/a_painting_of_a_sunlit_alleyway_with_potted_plants_and_fabric_canopy_2.png",
+    "new": "unsorted/a_painting_of_a_sunlit_alleyway_with_potted_plants_and_fabric_canopy.png",
+    "label": "a_painting_of_a_sunlit_alleyway_with_potted_plants_and_fabric_canopy",
+    "sha256": "1bb2abbe653a22ba728b5fd5d596186533d26371686136cb2cb118676ee57eca"
+  },
+  {
+    "old": "unsorted/black_cat_with_kittens_illustration_2.png",
+    "new": "unsorted/black_cat_with_kittens_illustration.png",
+    "label": "black_cat_with_kittens_illustration",
+    "sha256": "660ec4163f1aeff7fb7303e5fb659c0d0c532b072449bed4527bb1496c9177d1"
+  },
+  {
+    "old": "unsorted/blue_ink_drawing_of_houses_and_meditating_figure_2.png",
+    "new": "unsorted/blue_ink_drawing_of_houses_and_meditating_figure.png",
+    "label": "blue_ink_drawing_of_houses_and_meditating_figure",
+    "sha256": "79615262b66be213ac0c9daacf0c979d0724c55e828435523affe170584f3f07"
+  },
+  {
+    "old": "unsorted/colored_pencil_drawing_of_woman_smoking_by_window_at_night_2.png",
+    "new": "unsorted/colored_pencil_drawing_of_woman_smoking_by_window_at_night.png",
+    "label": "colored_pencil_drawing_of_woman_smoking_by_window_at_night",
+    "sha256": "1a8c4b26c61e98e54fa1c5c417026c0645ec8dcc954b9ead4f8264bdc327042e"
+  },
+  {
+    "old": "unsorted/drawing_of_a_person_carrying_another_past_a_brick_wall_with_dogs_2.png",
+    "new": "unsorted/drawing_of_a_person_carrying_another_past_a_brick_wall_with_dogs.png",
+    "label": "drawing_of_a_person_carrying_another_past_a_brick_wall_with_dogs",
+    "sha256": "6fe1d74ac25b98aba3660d74170570f3facc6cc2b3471f57f3f93b9258d5d0c2"
+  },
+  {
+    "old": "unsorted/drawing_of_people_and_dogs_running_in_rain_2.png",
+    "new": "unsorted/drawing_of_people_and_dogs_running_in_rain.png",
+    "label": "drawing_of_people_and_dogs_running_in_rain",
+    "sha256": "6d0278d41119b5adcc63af07b44251f25c0ce66e608f5cb0590ac9d417113d88"
+  },
+  {
+    "old": "unsorted/illustration_of_a_black_cat_ladybug_lemons_and_flowers_2.png",
+    "new": "unsorted/illustration_of_a_black_cat_ladybug_lemons_and_flowers.png",
+    "label": "illustration_of_a_black_cat_ladybug_lemons_and_flowers",
+    "sha256": "663df75c0d3c21d09c79c58b8b11d2fd7538755cc8cfacb1cd9e167a1158c167"
+  },
+  {
+    "old": "unsorted/illustration_of_a_woman_watching_a_burning_car_2.png",
+    "new": "unsorted/illustration_of_a_woman_watching_a_burning_car.png",
+    "label": "illustration_of_a_woman_watching_a_burning_car",
+    "sha256": "56483fd249e719861d52c37fb3c580de3eff71e019bc115b1ed9342e8cafcea3"
+  },
+  {
+    "old": "unsorted/illustration_of_two_figures_in_striped_clothes_2.png",
+    "new": "unsorted/illustration_of_two_figures_in_striped_clothes.png",
+    "label": "illustration_of_two_figures_in_striped_clothes",
+    "sha256": "8c5042ac78faa2a5a2e4b19cdee291c619766d86770b81210493b0917d8f07a4"
+  },
+  {
+    "old": "unsorted/painting_of_a_japanese_style_room_and_living_area_with_a_black_cat_2.png",
+    "new": "unsorted/painting_of_a_japanese_style_room_and_living_area_with_a_black_cat.png",
+    "label": "painting_of_a_japanese_style_room_and_living_area_with_a_black_cat",
+    "sha256": "6124eb4dec29e2e315296470a312027ac002ea566641ff0a281e14784dd74bdc"
+  },
+  {
+    "old": "unsorted/painting_of_a_stormy_sea_under_a_dramatic_orange_sky_2.png",
+    "new": "unsorted/painting_of_a_stormy_sea_under_a_dramatic_orange_sky.png",
+    "label": "painting_of_a_stormy_sea_under_a_dramatic_orange_sky",
+    "sha256": "f952736870f88d82b9edea99a69cf3de7022a2f04bb4f20e220885648db3ef08"
+  },
+  {
+    "old": "unsorted/painting_of_a_sunny_park_with_a_person_2.png",
+    "new": "unsorted/painting_of_a_sunny_park_with_a_person.png",
+    "label": "painting_of_a_sunny_park_with_a_person",
+    "sha256": "f7b124d3ed30f800de0ef40e1c845144b57ecd379a35f22860eab894eea545f7"
+  },
+  {
+    "old": "unsorted/painting_of_orange_clouds_over_a_dark_landscape_2.png",
+    "new": "unsorted/painting_of_orange_clouds_over_a_dark_landscape.png",
+    "label": "painting_of_orange_clouds_over_a_dark_landscape",
+    "sha256": "cdccd7f68d1dac3481352a92835e5cb4d251dc573f1db90f22dd2cbaaa1e1d83"
+  },
+  {
+    "old": "unsorted/painting_of_reclining_figure_in_zebra_print_2.png",
+    "new": "unsorted/painting_of_reclining_figure_in_zebra_print.png",
+    "label": "painting_of_reclining_figure_in_zebra_print",
+    "sha256": "36f759517f2a752c9c7d384cad95136901eb272f17520a8f5e4bfe148f5a0660"
+  },
+  {
+    "old": "unsorted/painting_of_two_masked_figures_with_guns_by_a_red_truck_2.png",
+    "new": "unsorted/painting_of_two_masked_figures_with_guns_by_a_red_truck.png",
+    "label": "painting_of_two_masked_figures_with_guns_by_a_red_truck",
+    "sha256": "5ca78f6aa3338b75799f46218059ee514b9e7938873fa813396f9e2b0d7f134d"
+  },
+  {
+    "old": "unsorted/painting_of_two_women_dancing_with_flowing_drapery_2.png",
+    "new": "unsorted/painting_of_two_women_dancing_with_flowing_drapery.png",
+    "label": "painting_of_two_women_dancing_with_flowing_drapery",
+    "sha256": "f183c8a015c1f2bf3e762fa81f1ad4f8a992dcfe8e4a5d179cef2280489ef510"
+  },
+  {
+    "old": "unsorted/pen_and_ink_drawing_of_victorian_house_2.jpeg",
+    "new": "unsorted/pen_and_ink_drawing_of_victorian_house.jpeg",
+    "label": "pen_and_ink_drawing_of_victorian_house",
+    "sha256": "ab35f908d729c9e467ef161b15581bc02f576ad4bd9160dcb531e32fc7a686a1"
+  },
+  {
+    "old": "unsorted/self_portrait_by_annegret_soltau_2.png",
+    "new": "unsorted/self_portrait_by_annegret_soltau.png",
+    "label": "self_portrait_by_annegret_soltau",
+    "sha256": "8f839bc8f29d7196181fcbc93d51200fd32b7fde33a94c5d4a6d947fea22a938"
+  },
+  {
+    "old": "unsorted/textured_painting_of_a_stylized_dog_in_grass_2.png",
+    "new": "unsorted/textured_painting_of_a_stylized_dog_in_grass.png",
+    "label": "textured_painting_of_a_stylized_dog_in_grass",
+    "sha256": "cb3f4391225912b5d65b91ca3b0d62919fd0d96edd7e2445718260392fe09634"
+  },
+  {
+    "old": "unsorted/two_sleeping_white_cats_with_ball_drawing_2.png",
+    "new": "unsorted/two_sleeping_white_cats_with_ball_drawing.png",
+    "label": "two_sleeping_white_cats_with_ball_drawing",
+    "sha256": "ef3d85d96ccd7be3275c4f0edecfb9d3d97e82a08ddc7014f59ab37bb67e6849"
   }
 ]
