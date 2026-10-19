@@ -1,5 +1,55 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Capture the page before adding the source display or other generated UI.
+    function initSourceParallax() {
+        const doctype = document.doctype
+            ? `${new XMLSerializer().serializeToString(document.doctype)}\n`
+            : '';
+        const source = doctype + document.documentElement.outerHTML;
+        const viewport = document.createElement('div');
+        viewport.id = 'html-source-parallax';
+        viewport.setAttribute('aria-hidden', 'true');
+        Object.assign(viewport.style, {
+            position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+            overflow: 'hidden', pointerEvents: 'none', userSelect: 'none', zIndex: '-2'
+        });
+
+        const code = document.createElement('pre');
+        // textContent displays markup literally, without executing it.
+        code.textContent = source;
+        Object.assign(code.style, {
+            margin: '0', padding: '0', border: '0', background: 'transparent',
+            fontFamily: 'monospace', fontSize: '10pt', fontWeight: '400',
+            lineHeight: '1.3', color: 'rgba(255, 255, 255, 0.20)',
+            whiteSpace: 'pre-wrap', overflowWrap: 'anywhere',
+            width: '100%', boxSizing: 'border-box', willChange: 'transform'
+        });
+        viewport.appendChild(code);
+        // Keep negative layers above the body's blue background. Source (-2)
+        // sits below art previews (-1), homepage images (0), and page content.
+        document.body.style.isolation = 'isolate';
+        document.body.appendChild(viewport);
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let scheduled = false;
+        const update = () => {
+            // Normal content moves 1px per scroll pixel; the source moves 0.25px.
+            const offset = reducedMotion.matches ? 0 : Math.max(0, window.scrollY) * 0.25;
+            code.style.transform = `translate3d(0, ${-offset}px, 0)`;
+            scheduled = false;
+        };
+        window.addEventListener('scroll', () => {
+            if (!scheduled) {
+                scheduled = true;
+                window.requestAnimationFrame(update);
+            }
+        }, { passive: true });
+        reducedMotion.addEventListener('change', update);
+        update();
+    }
+
+    initSourceParallax();
+
     /**
      * CONFIGURATION
      * Adjusted timings for optimal responsiveness vs. resource usage.
