@@ -363,7 +363,7 @@
   scrub.addEventListener('input' , () => jump(scrub.value));
   addEventListener('resize', wake);
   reduced.addEventListener('change', wake);
-  fetch('assets/timeline/artworks.json').then(response => {
+  fetch('../assets/timeline/artworks.json').then(response => {
     if (!response.ok) throw new Error('Archive unavailable');
     return response.json();
   }).then(items => {
@@ -383,6 +383,6 @@
     message.hidden = true; wake();
   }).catch(() => {
     message.textContent = 'The archive could not load. Please refresh, or browse the art archive.';
-    const link = document.createElement('a'); link.href = 'art.html'; link.textContent = ' open archive'; message.append(link);
+    const link = document.createElement('a'); link.href = '../art.html'; link.textContent = ' open archive'; message.append(link);
   });
 })();

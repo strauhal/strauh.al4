@@ -133,7 +133,12 @@ without overflow/margin overrides
   #info .hd{display:flex;align-items:flex-start;gap:9px;padding:13px 14px 11px;
     border-bottom:1px solid var(--line);position:sticky;top:0;background:#00f;}
   #info .dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;margin-top:5px;}
-  #info .ttl{flex:1;font-size:18px;color:#fff;line-height:1.25;word-break:break-word;}
+  #info .heading{flex:1;min-width:0;}
+  #info .jump-notes{display:block;margin:0 0 12px;padding:6px 10px;border:1px solid #fff;
+    background:#fff;color:#00f;font:inherit;font-size:12px;cursor:pointer;}
+  #info .jump-notes:hover{background:#00f;color:#fff;}
+  #info .jump-notes:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+  #info .ttl{display:block;font-size:18px;color:#fff;line-height:1.25;word-break:break-word;}
   #info .x{flex:0 0 auto;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:0 2px;}
   #info .x:hover{color:#fff;}
   #info .body{padding:11px 14px 14px;}
@@ -436,30 +441,18 @@ var dpr = Math.max(1, Math.min(3, (window.devicePixelRatio||1)*1.5));
 var W=0,H=0;
 var view = {k:0.18, tx:0, ty:0}; // scale + translate (CSS px)
 
-// ----- pseudo-3D: rotate the flat 2D layout in space (right-drag) -----
-// The physics stays 2D; we rotate (x,y,0) about the graph centroid by yaw/pitch
-// and apply a gentle perspective divide so it reads as orbiting in 3D.
+// Orbit the 3D layout with a fixed perspective; zoom scales the projection.
+// Keeping the eye outside the entire body prevents depth inversion and avoids
+// magnification clamps flattening the near half of the graph during an orbit.
 var rot = {yaw:0, pitch:0};
-var FOCAL = 1600;          // perspective focal length (DYNAMIC: shrinks as you zoom in -> dolly)
-var FOCAL_BASE = 1600;     // focal length at the fit view (gentle perspective)
-var MAXD = 100;            // graph bounding radius (set on fit)
-var fitK = 0.2;            // zoom level at which the whole graph fits (set in fitView)
-var cenX = 0, cenY = 0;    // graph centroid (recomputed each draw)
+var FOCAL = 1600;
+var FOCAL_BASE = 1600;
+var MAXD = 100;
+var fitK = 0.2;
+var cenX = 0, cenY = 0;
 function clampPitch(p){ return p<-1.35?-1.35:(p>1.35?1.35:p); }
-// camera distance for the CURRENT zoom: as you zoom in (k>fitK) the camera dollies
-// closer (FOCAL shrinks) so perspective strengthens and you fly forward through depth.
-// The low floor keeps the dolly progressive across the whole zoom range.
-// floor raised from 0.25 -> 0.45: at high zoom the old floor let a node's depth
-// get close enough to -FOCAL that perspOf's clamp kicked in hard and often,
-// which read as the whole web "folding" through itself mid-rotation.
-function effFocal(){ return Math.max(MAXD*0.45, Math.min(FOCAL_BASE, FOCAL_BASE*fitK/view.k)); }
-// perspective scale for a node at rotated depth z. Two safeguards against the
-// "folding" artifact: a much gentler near-plane clamp (0.35 instead of 0.14, so
-// the denominator never gets razor-thin), and a hard cap on the resulting
-// magnification -- no single node can balloon past ~2.2x, so a node sweeping
-// through the near side of a rotation eases up smoothly instead of suddenly
-// snapping huge.
-function perspOf(z){ var d=FOCAL+z, m=FOCAL*0.35; return Math.min(2.2, FOCAL/(d<m?m:d)); }
+function effFocal(){ return Math.max(FOCAL_BASE, MAXD*2.4); }
+function perspOf(z){ return FOCAL/(FOCAL+z); }
 // idle "living" animation energy: 1 = spinning, 0 = still. Eased, never snapped.
 var idleTarget=1, idleEnergy=1, autoPitchPrev=0;
 // breathing (node drift) is gated by ZOOM, not interaction: alive when viewing from a
@@ -686,13 +679,10 @@ function nodeVisible(n){
 // triggers a Chrome tessellation artifact (circles render as teardrops/polygons),
 // so we keep the CTM at dpr and bake the projection into the coordinates instead.
 var vib=0, vibPhase=0;                 // vibration during fly animation (screen px)
-// Split into "image" vs "core" (everything else) for a two-pass draw: core notes
-// and their connections always render ON TOP of images, regardless of raw Z
-// depth, and images render translucent -- so the knowledge base reads clearly
-// through the image layer instead of being buried under however many paintings
-// happen to be in front of it in 3D.
-var imageDrawOrder=[], coreDrawOrder=[];
-for(var i=0;i<N;i++) (nodes[i].shellR!=null ? imageDrawOrder : coreDrawOrder).push(i);
+// All nodes share one far-to-near order so overlap agrees with perspective
+// and motion parallax. Image dots retain their lighter visual weight.
+var nodeDrawOrder=[];
+for(var i=0;i<N;i++) nodeDrawOrder.push(i);
 var imageLinkOrder=[], coreLinkOrder=[];
 for(var i=0;i<links.length;i++){
   var L=links[i];
@@ -704,11 +694,19 @@ var zMin=0, zMax=0, cenZ=0;
 // Project every node from its real 3D position to screen px (perspective),
 // storing _sx,_sy,_sr,_z on the node. Always on — the layout is a 3D body.
 function computeProjection(){
-  FOCAL = effFocal();                  // dolly: camera distance tracks the zoom level
   var k=view.k, tx=view.tx, ty=view.ty;
   var sx=0, sy=0, sz=0, c=0;
   for(var i=0;i<N;i++){ var n=nodes[i]; if(!nodeVisible(n))continue; sx+=n.x; sy+=n.y; sz+=n.z; c++; }
   if(c){ cenX=sx/c; cenY=sy/c; cenZ=sz/c; }
+  // Measure the current body, including moved nodes, rather than relying on
+  // the last fit. The radius is rotation invariant, so orbiting cannot pump zoom.
+  var radius=0;
+  for(var i=0;i<N;i++){
+    var n=nodes[i];
+    radius=Math.max(radius,Math.hypot(n.x-cenX,n.y-cenY,n.z-cenZ));
+  }
+  MAXD=radius;
+  FOCAL=effFocal();
   var cyaw=Math.cos(rot.yaw), syaw=Math.sin(rot.yaw);
   // Canvas Y grows downward, while the WebGL orbit uses Y-up camera space.
   // Negate pitch only for graph projection so vertical portrait drags carry
@@ -798,10 +796,8 @@ function draw(){
   drawLinkPass(imageLinkOrder, true);
   drawLinkPass(coreLinkOrder, false);
 
-  // ---- nodes ---- (each pass depth-sorted far -> near within itself; the core
-  // pass always draws after/on top of the image pass, regardless of raw Z, and
-  // image nodes are drawn translucent so the core reads clearly through them)
-  function drawNodePass(order, isImagePass){
+  // ---- nodes: one consistent depth order across every category ----
+  function drawNodePass(order){
     order.sort(function(a,b){ return nodes[b]._z - nodes[a]._z; });
     for(var oi=0;oi<order.length;oi++){
       var n = nodes[order[oi]];
@@ -816,7 +812,7 @@ function draw(){
       var isConn=(n.i===connHi);
       if(isConn){ dim=false; full=true; ring=true; r=Math.max(r*1.5, r+5); }   // pop out of the focus web
       var a = dim?0.12 : (full?1:fogAlpha(n._z));
-      if(isImagePass && !full) a *= IMAGE_NODE_ALPHA;
+      if(n.shellR!=null && !full) a *= IMAGE_NODE_ALPHA;
       ctx.globalAlpha = a;
       ctx.beginPath();
       ctx.arc(sx,sy,r,0,TAU);
@@ -836,8 +832,7 @@ function draw(){
       }
     }
   }
-  drawNodePass(imageDrawOrder, true);
-  drawNodePass(coreDrawOrder, false);
+  drawNodePass(nodeDrawOrder);
   ctx.globalAlpha=1;
 
   // ---- hover: a single white outline ring on the node under the cursor ----
@@ -1248,9 +1243,10 @@ function openInfo(n){
   var col=n.col;
   var html="";
   html+="<div class='hd'><span class='dot' style='background:"+col+"'></span>"+
-        "<span class='ttl'>"+escapeHtml(n.name)+"</span>"+
+        "<div class='heading'><span class='ttl'>"+escapeHtml(n.name)+"</span></div>"+
         "<span class='x' id='infoX' title='Close (Esc)'>×</span></div>";
   html+="<div class='body'>";
+  if(ex) html+="<button type='button' class='jump-notes' id='infoJumpNotes' aria-controls='infoNotes'>Jump to notes ↓</button>";
   html+="<div class='grp'>"+escapeHtml(DATA.groupNames[n.g])+" · "+n.deg+" link"+(n.deg===1?"":"s")+"<br>"+escapeHtml(n.path)+"</div>";
 
   // tags
@@ -1293,11 +1289,20 @@ function openInfo(n){
   }
   // excerpt
   if(ex){
-    html+="<div class='sect'>Note</div><div class='ex'>"+escapeHtml(ex)+"</div>";
+    html+="<div class='sect' id='infoNotes' tabindex='-1'>Note</div><div class='ex'>"+escapeHtml(ex)+"</div>";
   }
   html+="</div>";
   infoEl.innerHTML=html;
   infoEl.classList.add("open");
+  infoEl.scrollTop=0;
+  var jumpNotes=document.getElementById("infoJumpNotes");
+  if(jumpNotes) jumpNotes.addEventListener("click",function(){
+    var section=document.getElementById("infoNotes");
+    var header=infoEl.querySelector(".hd");
+    var top=infoEl.scrollTop+section.getBoundingClientRect().top-infoEl.getBoundingClientRect().top-header.offsetHeight-12;
+    section.focus({preventScroll:true});
+    infoEl.scrollTo({top:Math.max(0,top),behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});
+  });
   document.getElementById("infoX").addEventListener("click", closeInfo);
   Array.prototype.forEach.call(infoEl.querySelectorAll(".cn[data-j]"), function(el){
     var j=+el.getAttribute("data-j");

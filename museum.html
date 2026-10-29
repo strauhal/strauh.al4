@@ -8566,10 +8566,14 @@
       context.fillStyle="#0000ff";
       context.fillRect(0,0,canvas.width,canvas.height);
       context.strokeStyle="#ffffff";
-      context.lineWidth=5;
+      context.lineWidth=2;
       context.strokeRect(3,3,canvas.width-6,canvas.height-6);
       context.fillStyle="#ffffff";
       context.font="600 30px Arial";
+      const labelWidth=context.measureText(label.toUpperCase()).width;
+      if (labelWidth>canvas.width-32) {
+        context.font=`600 ${Math.floor(30*(canvas.width-32)/labelWidth)}px Arial`;
+      }
       context.textAlign="center";
       context.textBaseline="middle";
       context.fillText(label.toUpperCase(),canvas.width/2,canvas.height/2);
@@ -8581,6 +8585,7 @@
       const material=animateMuseumBlueTextureMaterial(
         new THREE.MeshBasicMaterial({
           map:xrLabelTexture(label),
+          toneMapped:false,
           transparent:true,
           side:THREE.DoubleSide
         }),
@@ -8659,6 +8664,42 @@
     xrPanelButton("photography",.38,0,.34,()=>xrTravelToWing("PHOTOGRAPHY"),xrElevatorChoices);
     xrElevatorChoices.visible=false;
     xrControlDeck.add(xrElevatorChoices);
+    const xrControllerMenu=new THREE.Group();
+    xrControllerMenu.visible=false;
+    xrControlDeck.add(xrControllerMenu);
+    function xrMenuCaption(text,y,width=1.12) {
+      const caption=xrPanelButton(text,0,y,width,()=>{},xrControllerMenu);
+      caption.userData.xrControl="caption";
+      xrInteractive.splice(xrInteractive.indexOf(caption),1);
+      return caption;
+    }
+    xrMenuCaption("strauh.al / museum",.32,.85);
+    xrPanelButton("before 2000",-.43,.13,.4,()=>xrTravelToWing("ART BEFORE 2000"),xrControllerMenu);
+    xrPanelButton("after 2000",0,.13,.4,()=>xrTravelToWing("ART AFTER 2000"),xrControllerMenu);
+    xrPanelButton("photography",.43,.13,.4,()=>xrTravelToWing("PHOTOGRAPHY"),xrControllerMenu);
+    xrPanelButton("entrance",-.43,-.03,.4,()=>{resetPosition();toggleXRControlDeck();},xrControllerMenu);
+    xrPanelButton("flight on/off",0,-.03,.4,()=>toggleXRFlight(),xrControllerMenu);
+    xrPanelButton("close menu",.43,-.03,.4,()=>toggleXRControlDeck(),xrControllerMenu);
+    xrMenuCaption("A: jump / again: fly / flying: land",-.19);
+    xrMenuCaption("Hold X or left stick click: run",-.31);
+    xrPanelButton("leave immersive",0,-.45,.55,async()=>{
+      await renderer.xr.getSession()?.end();
+    },xrControllerMenu);
+    let xrHasControllers=false;
+    function updateXRMenuMode() {
+      const controllers=Array.from(renderer.xr.getSession()?.inputSources||[])
+        .some(source=>source.gamepad&&!source.hand);
+      if (controllers===xrHasControllers) return;
+      xrHasControllers=controllers;
+      xrStickState.active.forEach((_,index)=>releaseXRStick(index));
+      xrControlDeck.children.forEach(child=>{
+        child.visible=child===xrDeckBack||
+          (controllers?child===xrControllerMenu:child!==xrControllerMenu&&child!==xrElevatorChoices);
+      });
+      xrDeckBack.scale.y=controllers?1.6:1;
+      xrDeckBack.material.opacity=controllers?.96:.42;
+      xrDeckInitialized=false;
+    }
     xrControlDeck.visible=false;
     xrControlDeck.renderOrder=90;
     xrControlDeck.traverse(child=>{
@@ -8688,6 +8729,7 @@
       lastSafeUpperPosition.copy(rig.position);
       hasSafeUpperPosition=true;
       xrElevatorChoices.visible=false;
+      if (xrHasControllers) xrControlDeck.visible=false;
       document.getElementById("location").innerHTML=
         `${landing.name}<br>floor ${landing.level+1} · `+
         `elevation ${Math.round(rig.position.y)}`;
@@ -8702,7 +8744,10 @@
     function xrControlHit(controller) {
       if (!xrControlDeck.visible) return null;
       setXRControllerRay(controller);
-      return raycaster.intersectObjects(xrInteractive,false)[0]||null;
+      return raycaster.intersectObjects(xrInteractive.filter(object=>{
+        for (let node=object;node;node=node.parent) if (!node.visible) return false;
+        return true;
+      }),false)[0]||null;
     }
     function updateXRStick(controller,stick) {
       setXRControllerRay(controller);
@@ -8992,21 +9037,57 @@
 
     function handleXRPrimaryAction() {
       const now=performance.now();
-      if (now-xrPrimaryButtonAt<380) {
+      if (flying||!grounded||now-xrPrimaryButtonAt<450) {
         xrPrimaryButtonAt=-Infinity;
         toggleXRFlight();
         showXRStatus(flying?"flight on":"flight off",1200);
         return;
       }
       xrPrimaryButtonAt=now;
-      if (flying) {
-        rig.position.y=THREE.MathUtils.clamp(
-          rig.position.y+1.15,.08,roofY+72
-        );
-      } else if (grounded) {
-        verticalVelocity=6.3;
-        grounded=false;
+      verticalVelocity=6.3;
+      grounded=false;
+    }
+
+    // IWSDK's input layer works independently of its ECS renderer. Pin the
+    // stable release; importing only gamepad modules avoids a second Three.js
+    // runtime and leaves our tested locomotion/collision implementation intact.
+    let museumIWInput=null;
+    const museumIWGamepads=new WeakMap();
+    if (navigator.xr) Promise.all([
+      import("https://cdn.jsdelivr.net/npm/@iwsdk/xr-input@1.0.0/dist/gamepad/stateful-gamepad.js"),
+      import("https://cdn.jsdelivr.net/npm/@iwsdk/xr-input@1.0.0/dist/gamepad/input-profiles.js")
+    ]).then(([gamepads,profiles])=>{
+      museumIWInput={...gamepads,...profiles};
+      document.body.dataset.xrInputSDK="iwsdk-xr-input-1.0.0";
+    }).catch(()=>{
+      document.body.dataset.xrInputSDK="native-xr-standard-fallback";
+    });
+
+    function questButtons(source,handedness) {
+      if (museumIWInput) {
+        try {
+          let device=museumIWGamepads.get(source);
+          if (!device) {
+            const profile=museumIWInput.fetchProfileSync(source);
+            const layout=profile.layouts[handedness];
+            if (!layout?.components[handedness==="right"?"a-button":"x-button"]) {
+              throw new Error("No face-button profile");
+            }
+            device=new museumIWInput.StatefulGamepad({inputSource:source,layout});
+            museumIWGamepads.set(source,device);
+          }
+          device.update();
+          return {
+            primary:device.getButtonPressed(handedness==="right"?"a-button":"x-button"),
+            secondary:device.getButtonPressed(handedness==="right"?"b-button":"y-button"),
+            stick:device.getButtonPressed("xr-standard-thumbstick")
+          };
+        } catch (_) { /* Unsupported profiles retain native controls. */ }
       }
+      const buttons=source.gamepad.buttons;
+      // xr-standard reserves slot 2 for a touchpad, even on Touch controllers.
+      return {primary:!!buttons[4]?.pressed,secondary:!!buttons[5]?.pressed,
+        stick:!!buttons[3]?.pressed};
     }
 
     function readQuestFaceButtons(source,handedness) {
@@ -9019,17 +9100,14 @@
       )) return false;
       const state=xrGamepadButtonState[handedness];
       if (!state) return false;
-      // xr-standard reserves 0 trigger, 1 squeeze and 2 thumbstick. Oculus
-      // Touch profiles expose X/A at 3 and Y/B at 4 for the matching hand.
-      const primary=Boolean(gamepad.buttons?.[3]?.pressed);
-      const secondary=Boolean(gamepad.buttons?.[4]?.pressed);
+      const {primary,secondary,stick}=questButtons(source,handedness);
       if (handedness==="right" && primary && !state.primary) {
         handleXRPrimaryAction();
       }
       if (secondary && !state.secondary) toggleXRControlDeck();
       state.primary=primary;
       state.secondary=secondary;
-      return handedness==="left" && primary;
+      return handedness==="left" && (primary||stick);
     }
 
     function strongestXRThumbstick(gamepad,target,invertY=true) {
@@ -9084,6 +9162,7 @@
     }
     function updateXRControls(dt) {
       if (!renderer.xr.isPresenting||!xrPoseReady) return;
+      updateXRMenuMode();
       refreshXRView();
       const viewCamera=xrViewCamera;
       viewCamera.getWorldPosition(xrDeckPosition);
@@ -9098,7 +9177,7 @@
         xrControlDeck.position.copy(xrDeckPosition);
         xrControlDeck.quaternion.copy(xrDeckQuaternion);
         xrDeckInitialized=true;
-      } else {
+      } else if (!xrHasControllers) {
         xrControlDeck.position.lerp(xrDeckPosition,follow);
         xrControlDeck.quaternion.slerp(xrDeckQuaternion,follow);
       }
@@ -9139,7 +9218,7 @@
           :xrStickState.move
       );
       const moveMagnitude=moveInput.length();
-      const running=xRunHeld||moveMagnitude>.9;
+      const running=xRunHeld;
       if (running!==xrRunState) {
         xrRunState=running;
         document.body.dataset.xrPace=running?"run":"walk";
