@@ -443,8 +443,8 @@
     const xrRuntimePreset=xrIsStandaloneQuest
       ?{
           name:"quest-standalone-crisp",
-          framebufferScale:1.32,
-          foveation:.12,
+          framebufferScale:1,
+          foveation:.35,
           far:410,
           fogDensity:.00305,
           artworkDrawLimit:20,
@@ -8513,6 +8513,33 @@
       xrDecorativeWireMeshes.push(family.wire);
     });
     const desktopCameraFar=camera.far;
+    const desktopCameraNear=camera.near;
+    const xrDepthMaterials=new Map();
+    let xrArchitectureTime=null;
+    function setXRStructureStability(active) {
+      if (active) {
+        // Push solid faces slightly behind their coplanar outline strokes.
+        // Keep depth testing on: outlines behind walls must remain occluded.
+        scene.traverse(object=>{
+          if (!object.isMesh) return;
+          for (const material of (Array.isArray(object.material)?object.material:[object.material])) {
+            if (!material||material.wireframe||material.transparent||xrDepthMaterials.has(material)) continue;
+            xrDepthMaterials.set(material,[material.polygonOffset,material.polygonOffsetFactor,material.polygonOffsetUnits]);
+            material.polygonOffset=true;
+            material.polygonOffsetFactor=1;
+            material.polygonOffsetUnits=1;
+          }
+        });
+      } else {
+        xrDepthMaterials.forEach(([enabled,factor,units],material)=>{
+          material.polygonOffset=enabled;
+          material.polygonOffsetFactor=factor;
+          material.polygonOffsetUnits=units;
+        });
+        xrDepthMaterials.clear();
+        xrArchitectureTime=null;
+      }
+    }
     const desktopFogDensity=scene.fog.density;
 
     function setXRPerformanceEmergency(active) {
@@ -8524,7 +8551,7 @@
       if (renderer.xr.isPresenting && xrIsStandaloneQuest) {
         try {
           renderer.xr.setFoveation(
-            active ? .28 : xrRuntimePreset.foveation
+            active ? .5 : xrRuntimePreset.foveation
           );
         } catch (_) {}
         xrDecorativeWireMeshes.forEach(mesh=>{
@@ -8852,6 +8879,7 @@
         touchMove.set(0,0);
         document.body.classList.remove("looking");
         camera.far=xrRuntimePreset.far;
+        camera.near=.1;
         camera.updateProjectionMatrix();
         scene.fog.density=xrRuntimePreset.fogDensity;
         if (xrIsStandaloneQuest) {
@@ -8872,6 +8900,7 @@
           optionalFeatures: ["bounded-floor", "hand-tracking"]
         });
         await renderer.xr.setSession(session);
+        setXRStructureStability(true);
         try {
           renderer.xr.setFoveation(xrRuntimePreset.foveation);
         } catch (_) {}
@@ -8912,6 +8941,8 @@
           rig.rotation.set(0,0,0);
           camera.rotation.set(pitch,yaw,0,"YXZ");
           camera.far=desktopCameraFar;
+          camera.near=desktopCameraNear;
+          setXRStructureStability(false);
           camera.updateProjectionMatrix();
           scene.fog.density=desktopFogDensity;
           setXRPerformanceEmergency(false);
@@ -8925,6 +8956,8 @@
         }, { once:true });
       } catch (error) {
         camera.far=desktopCameraFar;
+        camera.near=desktopCameraNear;
+        setXRStructureStability(false);
         camera.updateProjectionMatrix();
         scene.fog.density=desktopFogDensity;
         showXRStatus(
@@ -9933,8 +9966,12 @@
         :(catZooming?"spontaneous-route-zoomies":
           (catMoving?"grounded-diagonal-stalk":"watching"));
       renderer.domElement.dataset.catFloorY=museumCatFloorY.toFixed(3);
-      const galleryInhale=Math.sin(time*.00034);
-      const galleryVerticalInhale=Math.sin(time*.00034-.9);
+      // Architectural motion is frozen in immersive mode so walls provide a
+      // stable reference during head tracking. Desktop animation stays live.
+      if (renderer.xr.isPresenting && xrArchitectureTime===null) xrArchitectureTime=time;
+      const architectureTime=renderer.xr.isPresenting?xrArchitectureTime:time;
+      const galleryInhale=Math.sin(architectureTime*.00034);
+      const galleryVerticalInhale=Math.sin(architectureTime*.00034-.9);
       const galleryRadialScale=1+galleryInhale*.0088;
       const galleryVerticalScale=1+galleryVerticalInhale*.0058;
       if (updateHeavyXRMotion) breathingGalleryElements.forEach(element=>{
@@ -9942,7 +9979,7 @@
         // A strong shared inhale now moves the outline of the whole museum.
         // A smaller phase-offset flex lets successive rooms answer that breath
         // without breaking the building into unrelated motion.
-        const localFlex=Math.sin(time*.00051+phase)*.00235;
+        const localFlex=Math.sin(architectureTime*.00051+phase)*.00235;
         const scaleX=galleryRadialScale+localFlex;
         const scaleY=galleryVerticalScale+localFlex*.42;
         const scaleZ=galleryRadialScale-localFlex*.55;
@@ -9974,15 +10011,15 @@
         // toward/away from the wall. The amplitudes remain inside the static
         // selection proxy and never affect collision.
         const artPhase=surface.motionPhase;
-        const alongDrift=Math.sin(time*.00043+artPhase)*.095;
+        const alongDrift=Math.sin(architectureTime*.00043+artPhase)*.095;
         const verticalDrift=Math.sin(
-          time*.00036+artPhase*1.71+.8
+          architectureTime*.00036+artPhase*1.71+.8
         )*.11;
         // Always retain a positive wall-normal stand-off. The oscillation is
         // still genuine Z-space motion, but can no longer carry a frame or its
         // title plaque through an inhaling wall.
         const normalDrift=.2+Math.sin(
-          time*.00029+artPhase*.73+2.1
+          architectureTime*.00029+artPhase*.73+2.1
         )*.055;
         const tangentX=Math.cos(surface.rotationY);
         const tangentZ=-Math.sin(surface.rotationY);
@@ -9998,13 +10035,13 @@
         // nonlinear vertex-depth warp, not a rigid rotation of the picture.
         surface.group.rotation.set(0,surface.rotationY,0);
         deformMountedArtworkGeometry(
-          surface.imageMesh,surface,time,false
+          surface.imageMesh,surface,architectureTime,false
         );
         deformMountedArtworkGeometry(
-          surface.frameParts?.shell,surface,time,true
+          surface.frameParts?.shell,surface,architectureTime,true
         );
         deformMountedArtworkGeometry(
-          surface.frameParts?.details,surface,time,true
+          surface.frameParts?.details,surface,architectureTime,true
         );
         surface.group.updateMatrix();
       });
@@ -10016,9 +10053,9 @@
           const phase=placement.motionPhase;
           const tangentX=Math.cos(placement.rotationY);
           const tangentZ=-Math.sin(placement.rotationY);
-          const along=Math.sin(time*.00037+phase)*.075;
-          const vertical=Math.sin(time*.00031+phase*1.43+.4)*.09;
-          const outward=.27+Math.sin(time*.00026+phase*.81+1.7)*.055;
+          const along=Math.sin(architectureTime*.00037+phase)*.075;
+          const vertical=Math.sin(architectureTime*.00031+phase*1.43+.4)*.09;
+          const outward=.27+Math.sin(architectureTime*.00026+phase*.81+1.7)*.055;
           decadeHeaderPosition.set(
             spiralCenter.x+
               (placement.position.x-spiralCenter.x)*galleryRadialScale+
@@ -10031,10 +10068,10 @@
               tangentZ*along+placement.normal.z*outward
           );
           decadeHeaderEuler.set(
-            Math.sin(time*.00028+phase)*.006,
+            Math.sin(architectureTime*.00028+phase)*.006,
             placement.rotationY+
-              Math.sin(time*.00023+phase*.93)*.007,
-            Math.sin(time*.00034+phase*1.21+2)*.01
+              Math.sin(architectureTime*.00023+phase*.93)*.007,
+            Math.sin(architectureTime*.00034+phase*1.21+2)*.01
           );
           decadeHeaderQuaternion.setFromEuler(decadeHeaderEuler);
           decadeHeaderScale.set(
@@ -10051,8 +10088,8 @@
         // The spire's roof root is immovable. Its open ribs and needle take a
         // deeper, slower breath so the changing silhouette is readable from
         // the entrance and through the atrium shaft far below.
-        const spirePrimary=Math.sin(time*.00024-.35);
-        const spireSecondary=Math.sin(time*.00047+1.2);
+        const spirePrimary=Math.sin(architectureTime*.00024-.35);
+        const spireSecondary=Math.sin(architectureTime*.00047+1.2);
         const spireRadialBreath=1+spirePrimary*.045+spireSecondary*.008;
         const spireVerticalBreath=1+spirePrimary*.075-spireSecondary*.01;
         const {baseScale,breathRoot}=centralSpire.userData;
@@ -10069,7 +10106,7 @@
         centralSpire.updateMatrixWorld(true);
         movingSpireParts.forEach((piece,index) => {
           const data=piece.userData;
-          const phase=time*.00016+data.phase;
+          const phase=architectureTime*.00016+data.phase;
           const scaleX=data.baseScale.x*spireRadialBreath;
           const scaleY=data.baseScale.y*spireVerticalBreath;
           const scaleZ=data.baseScale.z*spireRadialBreath;
@@ -10097,7 +10134,7 @@
         // The two helix strands breathe reciprocally: while one expands, the
         // other contracts. Their vertical roots remain locked to the static
         // circulation ribbon, preserving reliable ground-level entry.
-        const wave=Math.sin(time*.00115+step.userData.phase);
+        const wave=Math.sin(architectureTime*.00115+step.userData.phase);
         const breathScale=step.userData.helix
           ?1+wave*.024*step.userData.direction
           :1;
@@ -10108,17 +10145,17 @@
         step.position.y=step.userData.baseY;
         step.position.x=step.userData.baseX+
           (step.userData.breathCenterX||0)*(1-breathScale)+
-          Math.cos(time*.00082+step.userData.phase)*.06*
+          Math.cos(architectureTime*.00082+step.userData.phase)*.06*
           step.userData.direction;
         step.position.z=step.userData.baseZ+
           (step.userData.breathCenterZ||0)*(1-breathScale)+
-          Math.sin(time*.00067+step.userData.phase)*.035;
+          Math.sin(architectureTime*.00067+step.userData.phase)*.035;
         step.rotation.z=step.userData.helix
           ?0
           :wave*.014;
       });
       animatedWalkways.forEach(walkway => {
-        const wave=Math.sin(time*.00115+walkway.userData.phase);
+        const wave=Math.sin(architectureTime*.00115+walkway.userData.phase);
         const radialScale=
           1+wave*.007*walkway.userData.direction;
         walkway.scale.set(radialScale,1,radialScale);
@@ -10513,6 +10550,8 @@
     window.museumStartupComplete=true;
 
     function syncMuseumViewport() {
+      // Headset/browser UI resize events must not overwrite XR projection.
+      if (renderer.xr.isPresenting) return;
       const viewport=museumViewportSize();
       camera.aspect = viewport.width/viewport.height;
       camera.updateProjectionMatrix();
