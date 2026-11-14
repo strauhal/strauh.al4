@@ -23,10 +23,12 @@
 
         canvas {
             overflow-x: hidden;
-            position: absolute;
-            z-index: 9;
             position: fixed;
-            margin-top: 0vh;
+            top: 0;
+            left: 0;
+            z-index: 9;
+            margin: 0;
+            image-rendering: pixelated;
         }
 
         h1, h2, .banner, a {
@@ -255,16 +257,15 @@
 
     <script>
         /**
-         * ORGANIC BORDER SYNTHESIZER v8.1 (Fixed)
-         * * Changes:
-         * - Added safety checks in resize() to prevent IndexSizeError (0 width/height).
-         * - Maintains 1-bit bitmap logic.
+         * ORGANIC BORDER SYNTHESIZER — living Art Nouveau / spider field.
+         * All ornament curves use the same solid-white, coarse-grid bitmap plotter.
          */
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d', { alpha: true }); 
 
         let width, height;
+        let rasterWidth, rasterHeight, pixelRatio = 1, pixelBlock = 1;
         let frame = 0;
         let mouseX = 0;
         let mouseY = 0; 
@@ -323,8 +324,13 @@
         // --- BRESENHAM'S LINE ALGORITHM (1-BIT PLOTTER) ---
         // Draws a line directly into the 32-bit buffer
         function plotLine(x0, y0, x1, y1) {
-            x0 |= 0; y0 |= 0; x1 |= 0; y1 |= 0; // Force integer (floor)
-            
+            // Draw on a coarse grid, then stamp whole native-pixel squares.
+            // This keeps deliberate staircase edges without bitmap interpolation.
+            x0 = Math.floor(x0 * pixelRatio / pixelBlock);
+            y0 = Math.floor(y0 * pixelRatio / pixelBlock);
+            x1 = Math.floor(x1 * pixelRatio / pixelBlock);
+            y1 = Math.floor(y1 * pixelRatio / pixelBlock);
+
             const dx = Math.abs(x1 - x0);
             const dy = Math.abs(y1 - y0);
             const sx = (x0 < x1) ? 1 : -1;
@@ -332,15 +338,19 @@
             let err = dx - dy;
 
             // Safety bounds to prevent buffer overflow crashes
-            const w = width;
-            const h = height;
+            const w = Math.ceil(rasterWidth / pixelBlock);
+            const h = Math.ceil(rasterHeight / pixelBlock);
 
             while (true) {
                 // Bounds check before writing
                 if (x0 >= 0 && x0 < w && y0 >= 0 && y0 < h) {
-                    // Set pixel to Solid White (Little Endian: AABBGGRR -> 0xFFFFFFFF)
-                    // Use 0xFFFFFFFF for full opacity white.
-                    buf32[y0 * w + x0] = 0xFFFFFFFF; 
+                    const px = x0 * pixelBlock;
+                    const py = y0 * pixelBlock;
+                    const endX = Math.min(rasterWidth, px + pixelBlock);
+                    const endY = Math.min(rasterHeight, py + pixelBlock);
+                    for (let row = py; row < endY; row++) {
+                        buf32.fill(0xFFFFFFFF, row * rasterWidth + px, row * rasterWidth + endX);
+                    }
                 }
 
                 if (x0 === x1 && y0 === y1) break;
@@ -393,6 +403,10 @@
                 this.history = [];
                 this.maxLength = 60; 
                 this.speedOffset = Math.random() * 0.5 + 0.5;
+                this.growth = Math.random();
+                this.reach = 75;
+                this.pullX = 0;
+                this.pullY = 0;
             }
 
             update(morph) {
@@ -410,91 +424,68 @@
                 let dirX = (distToMouse > 0) ? dx / distToMouse : 0;
                 let dirY = (distToMouse > 0) ? dy / distToMouse : 0;
 
-                // --- 1. DIGITAL CORINTHIAN ---
-                if (morph <= 0.8) { 
-                    const influence = 1.0 - (morph / 0.8);
-                    
-                    let ns = 0.005; 
-                    let nVal = noise(this.baseX * ns, this.baseY * ns, time + this.seed);
-                    
-                    let stepSize = 10;
-                    let steppedVal = Math.floor(nVal * 5) * stepSize;
-                    
-                    let patternX = 0;
-                    let patternY = 0;
-                    
-                    if (this.side === 'left' || this.side === 'right') {
-                        patternX = (steppedVal * 5 * this.dir.x);
-                        patternY = Math.floor(Math.sin(frame * 0.02 + this.seed) * 2) * stepSize;
-                    } else {
-                        patternY = (steppedVal * 5 * this.dir.y);
-                        patternX = Math.floor(Math.sin(frame * 0.02 + this.seed) * 2) * stepSize;
-                    }
-
-                    let reachMagnitude = 200; 
-                    let reachX = bDirX * reachMagnitude * influence;
-                    let reachY = bDirY * reachMagnitude * influence;
-
-                    this.x = this.baseX + patternX * influence + reachX;
-                    this.y = this.baseY + patternY * influence + reachY;
+                // Both ornamental states are trajectories of the original agents,
+                // rendered only through their shared one-pixel history plotter.
+                const wild = Math.max(0, Math.min(1, (morph - 0.65) / 0.65));
+                const floral = Math.min(1, morph / 0.6);
+                const proximity = Math.exp(-bDist / 280);
+                this.reach += (65 + proximity * 155 - this.reach) * 0.025;
+                this.pullX += (bDirX * proximity * 65 - this.pullX) * 0.025;
+                this.pullY += (bDirY * proximity * 65 - this.pullY) * 0.025;
+                this.growth += (0.003 + proximity * 0.0025) * this.speedOffset;
+                if (this.growth >= 1) {
+                    this.growth -= 1;
+                    // A new shoot starts at its root; never connect tip to root.
+                    if (wild < 0.01) this.history = [];
                 }
-
-                // --- 2. MICROCHIP (BIASED WALK) ---
-                if (morph > 0.3 && morph <= 1.0) {
-                    let influence = 0;
-                    if (morph < 0.6) influence = (morph - 0.3) / 0.3;
-                    else influence = 1.0 - ((morph - 0.6) / 0.4);
-
-                    const gridSize = 10; 
-                    let step = Math.floor(frame / 40); 
-                    
-                    let rnd = noise(step * 0.1, this.seed, 0);
-                    
-                    let xOffset = 0;
-                    let yOffset = 0;
-
-                    let biasX = (dx > 0) ? 0.6 : 0.4;
-                    let biasY = (dy > 0) ? 0.6 : 0.4;
-
-                    if (rnd > 0.2) {
-                         let dir = (Math.random() < biasX) ? 1 : -1;
-                         xOffset = gridSize * influence * dir;
-                    } else {
-                         let dir = (Math.random() < biasY) ? 1 : -1;
-                         yOffset = gridSize * influence * dir;
-                    }
-                    
-                    if (this.side === 'left') this.x += xOffset;
-                    if (this.side === 'right') this.x -= xOffset;
-                    if (this.side === 'top') this.y += yOffset;
-                    if (this.side === 'bottom') this.y -= yOffset;
-                    
-                    this.x += dirX * 4 * influence;
-                    this.y += dirY * 4 * influence;
-
-                    this.x = this.x * 0.9 + (Math.round(this.x / gridSize) * gridSize) * 0.1;
-                    this.y = this.y * 0.9 + (Math.round(this.y / gridSize) * gridSize) * 0.1;
+                const q = this.growth;
+                const group = Math.floor(this.percent * numAgentsPerSide / 8);
+                const lane = Math.round(this.percent * numAgentsPerSide) % 8;
+                const handedness = group % 2 === 0 ? 1 : -1;
+                const phase = time * 0.35 + group * 1.7;
+                const length = this.reach * (0.85 + lane * 0.025);
+                let u, v;
+                if (q < 0.78) {
+                    const t = q / 0.78;
+                    // Elongated whiplash: one broad inflection rather than
+                    // repeated body-like undulations along a short moving trail.
+                    u = handedness * length * (1.15 * t + 0.22 * Math.sin(t * Math.PI * 2));
+                    v = length * (0.72 * t + 0.23 * Math.sin(t * Math.PI));
+                } else {
+                    const t = (q - 0.78) / 0.22;
+                    const angle = t * Math.PI * (1.7 + floral * 1.1);
+                    const radius = length * (0.12 + floral * 0.06);
+                    const taper = 1 - t * 0.92;
+                    u = handedness * (length * 1.15 + radius * Math.sin(angle) * taper);
+                    v = length * 0.72 + radius * (1 - Math.cos(angle) * taper);
                 }
-
-                // --- 3. SPIDERY / BIO-MECH (HUNTING) ---
-                if (morph > 0.8) {
-                    let influence = (morph - 0.8) / 1.7; 
-                    if (influence > 1) influence = 1;
-
-                    let flowScale = 0.01;
-                    let flowX = noise(this.x * flowScale, this.y * flowScale, time) - 0.5;
-                    let flowY = noise(this.x * flowScale + 100, this.y * flowScale + 100, time) - 0.5;
-
-                    this.x += (flowX * 8 + dirX * 6) * influence;
-                    this.y += (flowY * 8 + dirY * 6) * influence;
-
-                    let spikeProb = noise(frame * 0.1, this.seed, 0);
-                    if (spikeProb > 0.7) {
-                        this.x += this.dir.x * spikeProb * 3.0 * influence;
-                        this.y += this.dir.y * spikeProb * 3.0 * influence;
-                    }
+                // Neighbouring shoots share a wave but develop at different rates.
+                u += Math.sin(phase + q * 2) * 3 * q;
+                v += Math.sin(phase - q * 2) * 2 * q;
+                const vertical = this.side === 'left' || this.side === 'right';
+                const aimX = this.baseX + (vertical ? this.dir.x * v : u) + this.pullX * q;
+                const aimY = this.baseY + (vertical ? u : this.dir.y * v) + this.pullY * q;
+                const flowScale = 0.01;
+                const influence = Math.max(0, Math.min(1, (morph - 0.8) / 1.7));
+                const flowX = noise(this.x * flowScale, this.y * flowScale, time) - 0.5;
+                const flowY = noise(this.x * flowScale + 100, this.y * flowScale + 100, time) - 0.5;
+                // Continuously blend velocity, rather than swapping drawing layers.
+                this.x += (aimX - this.x) * 0.16 * (1 - wild) +
+                    (flowX * 8 + dirX * 6) * influence * wild;
+                this.y += (aimY - this.y) * 0.16 * (1 - wild) +
+                    (flowY * 8 + dirY * 6) * influence * wild;
+                const spike = noise(frame * 0.1, this.seed, 0);
+                if (spike > 0.7) {
+                    this.x += this.dir.x * spike * 3 * influence * wild;
+                    this.y += this.dir.y * spike * 3 * influence * wild;
                 }
+                // Retain the long stem as its tip unfurls; short detached tails
+                // made the ornamental state read as crawling worms.
+                this.maxLength = Math.round((260 + proximity * 80) * (1 - wild) + 60 * wild);
 
+                const inset = Math.min(borderPadding, width / 5, height / 5);
+                this.x = Math.max(inset, Math.min(width - inset, this.x));
+                this.y = Math.max(inset, Math.min(height - inset, this.y));
                 this.history.push({x: this.x, y: this.y});
                 if (this.history.length > this.maxLength) {
                     this.history.shift();
@@ -505,11 +496,21 @@
             drawToBuffer() {
                 if (this.history.length < 2) return;
 
-                // Draw segments using Bresenham
+                // Partition corner ownership once per trail, so neighbouring
+                // edges meet without producing crosses or protruding strokes.
+                const inset = Math.min(borderPadding, width / 5, height / 5);
+                const owns = p => {
+                    const left = p.x - inset, right = width - inset - p.x;
+                    const top = p.y - inset, bottom = height - inset - p.y;
+                    if (this.side === 'left') return left <= top && left <= bottom;
+                    if (this.side === 'right') return right <= top && right <= bottom;
+                    if (this.side === 'top') return top < left && top < right;
+                    return bottom < left && bottom < right;
+                };
                 for (let i = 0; i < this.history.length - 1; i++) {
                     const p1 = this.history[i];
                     const p2 = this.history[i+1];
-                    plotLine(p1.x, p1.y, p2.x, p2.y);
+                    if (owns(p1) && owns(p2)) plotLine(p1.x, p1.y, p2.x, p2.y);
                 }
             }
         }
@@ -563,12 +564,20 @@
             width = Math.max(1, window.innerWidth);
             height = Math.max(1, window.innerHeight);
             
-            canvas.width = width;
-            canvas.height = height;
+            pixelRatio = window.devicePixelRatio || 1;
+            // A fine pixel grid, aligned to whole device pixels on every display.
+            pixelBlock = Math.max(1, Math.round(pixelRatio));
+            rasterWidth = Math.max(1, Math.round(width * pixelRatio));
+            rasterHeight = Math.max(1, Math.round(height * pixelRatio));
+            canvas.width = rasterWidth;
+            canvas.height = rasterHeight;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.imageSmoothingEnabled = false;
             
             // Re-initialize buffer on resize
             try {
-                imgData = ctx.createImageData(width, height);
+                imgData = ctx.createImageData(rasterWidth, rasterHeight);
                 buf32 = new Uint32Array(imgData.data.buffer);
             } catch (e) {
                 console.warn("Buffer creation failed", e);
@@ -601,6 +610,9 @@
         }
 
         function animate() {
+            // Zooming or moving between displays can change density without
+            // changing the CSS viewport size. Rebuild at native resolution.
+            if ((window.devicePixelRatio || 1) !== pixelRatio) resize();
             currentMorph += (targetMorph - currentMorph) * 0.05;
             
             // 1. Clear Buffer (Set all pixels to Transparent Black)
@@ -624,7 +636,7 @@
                      agent.y += (agent.baseY - agent.y) * 0.05;
                 }
                 
-                if (Math.random() < 0.005) {
+                if (currentMorph > 1.3 && Math.random() < 0.005) {
                     agent.x = agent.baseX;
                     agent.y = agent.baseY;
                     agent.history = [];
