@@ -5214,6 +5214,8 @@
     const artworkWallLayouts=new Map();
     const artworkProxyMeshes = [];
     const artworkProxyHidden = new Set();
+    const mountedArtworks = new Set();
+    const failedArtworks = new Set();
     const artworkProxyPosition = new THREE.Vector3();
     const artworkProxyQuaternion = new THREE.Quaternion();
     const artworkProxyScale = new THREE.Vector3();
@@ -5232,6 +5234,8 @@
         );
         proxyMesh.setMatrixAt(surface.proxyIndex,hiddenMatrix);
       }
+      proxyMesh.instanceMatrix.addUpdateRange(surface.proxyIndex*16,16);
+      proxyMesh.instanceMatrix.needsUpdate=true;
       surface.proxyHidden=!visible;
       return true;
     }
@@ -5661,6 +5665,7 @@
       group.visible=false;
       group.updateMatrix();
       group.matrixAutoUpdate=false;
+      mountedArtworks.add(surface);
       surface.group=group;
       surface.imageMesh=imageMesh;
       surface.frameParts=frameParts;
@@ -5669,6 +5674,7 @@
     }
     function dematerializeArtwork(surface) {
       if (!surface.group || surface.loaded || surface.loading) return;
+      mountedArtworks.delete(surface);
       scene.remove(surface.group);
       surface.imageMesh.geometry.dispose();
       surface.imageMesh.material.dispose();
@@ -5983,6 +5989,7 @@
         surface.loadingTier=null;
         surface.loaded = true;
         surface.failed = false;
+        failedArtworks.delete(surface);
         if (previousTexture && previousTexture!==texture) {
           if (previousTexture.userData.tier==="preview") {
             surface.previewTexture=previousTexture;
@@ -6011,6 +6018,7 @@
         surface.requestedTier=surface.textureTier;
         surface.loaded=Boolean(surface.texture);
         surface.failed = true;
+        failedArtworks.add(surface);
       });
     }
     function releaseArtworkTexture(surface) {
@@ -6034,6 +6042,7 @@
           surface.loadingTier=null;
           surface.loaded=true;
           surface.failed=false;
+          failedArtworks.delete(surface);
           return;
         }
       } else {
@@ -6051,6 +6060,7 @@
       surface.loadingTier=null;
       surface.loaded=false;
       surface.failed=false;
+      failedArtworks.delete(surface);
     }
 
     function trimPreviewTexturePool() {
@@ -6059,7 +6069,7 @@
         :104;
       if (previewTexturePool.size<=limit) return;
       const attached=new Set(
-        artworkSurfaces
+        [...mountedArtworks]
           .filter(surface=>surface.texture)
           .map(surface=>surface.texture)
       );
@@ -7854,12 +7864,17 @@
       "webkitfullscreenchange",updateFullscreenLabel
     );
     const signed=value => `${value>=0?"+":""}${value.toFixed(1).padStart(6,"0")}`;
+    let lastCoordinateHTML="";
     function updateCoordinateReadout() {
       const heading=((THREE.MathUtils.radToDeg(-yaw)%360)+360)%360;
       const pitchDegrees=THREE.MathUtils.radToDeg(pitch);
-      coordinateReadout.innerHTML =
+      const html =
         `X ${signed(rig.position.x)} · Y ${signed(rig.position.y)} · Z ${signed(rig.position.z)}<br>`+
         `HDG ${String(Math.round(heading)).padStart(3,"0")}° · PITCH ${signed(pitchDegrees)}° · LENS ${Math.round(camera.fov)}°${flying?" · FLY":""}`;
+      if (html!==lastCoordinateHTML) {
+        coordinateReadout.innerHTML=html;
+        lastCoordinateHTML=html;
+      }
     }
 
     function resetPosition() {
@@ -8439,8 +8454,10 @@
                 ? "photography wing"
                 : "art before 2000";
       const level=zeroBasedLevel+1;
-      document.getElementById("location").innerHTML =
+      const locationNode=document.getElementById("location");
+      const locationHTML=
         `${zone}<br>floor ${level} · elevation ${Math.round(rig.position.y)}`;
+      if (locationNode.innerHTML!==locationHTML) locationNode.innerHTML=locationHTML;
       window.museumState = {
         initialized:true,x:rig.position.x,y:rig.position.y,z:rig.position.z,
         yaw,pitch,forward,side,pointerLocked,flying,
@@ -9353,11 +9370,19 @@
     const artworkToCamera = new THREE.Vector3();
     const artworkSphere = new THREE.Sphere();
     const nearbyArtworkSurfaces=[];
+    // Prepare one new frame per desktop paint; a turn into a new gallery
+    // should not construct dozens of detailed frame geometries in one tick.
+    const desktopMountQueue=[];
+
     let lastArtworkVisibilityUpdate = -Infinity;
     let lastTextureTrim = -Infinity;
     function updateArtworkStreaming(time) {
       if (!artworkPlacementReady) return;
+      if (!renderer.xr.isPresenting && desktopMountQueue.length) {
+        materializeArtwork(desktopMountQueue.pop());
+      }
       if (time-lastArtworkVisibilityUpdate < 285) return;
+      desktopMountQueue.length=0;
       lastArtworkVisibilityUpdate = time;
       const xrPresenting=renderer.xr.isPresenting;
       const movingRecently=time-lastMovementAt<180;
@@ -9376,13 +9401,6 @@
 
       let visible = 0;
       let pending = 0;
-      let proxyMatrixDirty=false;
-      for (const surface of artworkProxyHidden) {
-        proxyMatrixDirty=setArtworkProxyVisible(surface,true) || proxyMatrixDirty;
-        if (surface.group?.visible) surface.group.visible=false;
-        if (surface.titleLabel?.visible) surface.titleLabel.visible=false;
-      }
-      artworkProxyHidden.clear();
       const wantedTextureKeys = new Set();
       visibleAnimatedTextures.clear();
       const drawCandidates=[];
@@ -9445,8 +9463,7 @@
           alignment > (xrPresenting?-.2:.4) &&
           facing > (xrPresenting?-.18:-.08)
         );
-        if (surface.group?.visible) surface.group.visible=false;
-        if (surface.titleLabel?.visible) surface.titleLabel.visible=false;
+        if (!shouldStream) continue;
         const verticalCoverage=
           2*Math.atan(surface.maxH/(2*Math.max(distance,.1)))/
           THREE.MathUtils.degToRad(viewCamera.fov||baseFov);
@@ -9469,6 +9486,14 @@
             :xrRuntimePreset.artworkDrawLimit)
         :(movingRecently?24:36);
       const selected=drawCandidates.slice(0,drawLimit);
+      const selectedSurfaces=new Set(selected.map(candidate=>candidate.surface));
+      for (const previous of artworkProxyHidden) {
+        if (selectedSurfaces.has(previous)) continue;
+        setArtworkProxyVisible(previous,true);
+        previous.group.visible=false;
+        if (previous.titleLabel) previous.titleLabel.visible=false;
+        artworkProxyHidden.delete(previous);
+      }
       artworkTargetSurfaces.length=0;
       for (const candidate of selected) {
         artworkTargetSurfaces.push(candidate.surface);
@@ -9504,14 +9529,20 @@
           !isAnimatedImageURL(enlargedArtworkSurface.item[1])) {
         fullResolutionSurfaces.add(enlargedArtworkSurface);
       }
+      if (!xrPresenting) {
+        for (const candidate of [...selected,...preload].reverse()) {
+          if (!candidate.surface.group) desktopMountQueue.push(candidate.surface);
+        }
+      }
       for (const {surface,distance,alignment} of selected) {
+        if (!xrPresenting && !surface.group) { pending++; continue; }
         materializeArtwork(surface);
         surface.group.visible=true;
-        proxyMatrixDirty=setArtworkProxyVisible(surface,false) || proxyMatrixDirty;
+        setArtworkProxyVisible(surface,false);
         artworkProxyHidden.add(surface);
         if (!artworkViewer.visible&&distance<5.5&&alignment>.18) {
           ensureArtworkLabel(surface);
-        }
+        } else if (surface.titleLabel) surface.titleLabel.visible=false;
         surface.lastWantedAt=time;
         surface.lastDrawnAt=time;
         const desiredTier=fullResolutionSurfaces.has(surface) &&
@@ -9546,6 +9577,7 @@
         }
       }
       for (const {surface,distance,alignment} of preload) {
+        if (!xrPresenting && !surface.group) continue;
         surface.lastWantedAt=time;
         surface.requestedTier="preview";
         wantedTextureKeys.add(textureCacheKey(surface.item[1],"preview"));
@@ -9564,11 +9596,6 @@
             :"full"
         ));
       }
-      if (proxyMatrixDirty) {
-        for (const proxyMesh of artworkProxyMeshes) {
-          proxyMesh.instanceMatrix.needsUpdate=true;
-        }
-      }
       for (const [key,job] of textureJobsByURL) {
         // Finish tiny preview requests even if the camera moves on: they are
         // cheap, bounded by the LRU and likely to be needed on the next turn.
@@ -9580,7 +9607,8 @@
       }
       if (time-lastTextureTrim>1000) {
         lastTextureTrim=time;
-        const resident=artworkSurfaces.filter(surface=>surface.loaded && surface.texture);
+        const mounted=[...mountedArtworks];
+        const resident=mounted.filter(surface=>surface.loaded && surface.texture);
         // Full originals disappear almost immediately after they stop filling
         // the view. Small previews get a modest LRU pool and also expire by age,
         // so a long museum visit cannot grow GPU memory without bound.
@@ -9598,7 +9626,7 @@
             time-surface.lastWantedAt>12000
           )
           .forEach(releaseArtworkTexture);
-        const previewResident=artworkSurfaces.filter(surface=>
+        const previewResident=mounted.filter(surface=>
           surface.loaded && surface.textureTier==="preview"
         );
         const previewResidentLimit=xrPresenting
@@ -9612,22 +9640,20 @@
             .forEach(releaseArtworkTexture);
         }
         renderer.domElement.dataset.residentTextures=String(
-          artworkSurfaces.reduce((count,surface)=>count+Number(surface.loaded),0)
+          mounted.reduce((count,surface)=>count+Number(surface.loaded),0)
         );
         renderer.domElement.dataset.previewTextures=String(
-          artworkSurfaces.reduce(
+          mounted.reduce(
             (count,surface)=>count+Number(surface.textureTier==="preview"),0
           )
         );
         renderer.domElement.dataset.fullTextures=String(
-          artworkSurfaces.reduce(
+          mounted.reduce(
             (count,surface)=>count+Number(surface.textureTier==="full"),0
           )
         );
         renderer.domElement.dataset.failedArtworkTextures=String(
-          artworkSurfaces.reduce(
-            (count,surface)=>count+Number(surface.failed),0
-          )
+          failedArtworks.size
         );
         renderer.domElement.dataset.textureCacheEntries=
           String(texturePromiseCache.size);
@@ -9639,7 +9665,7 @@
           String(previewTexturePool.size);
         renderer.domElement.dataset.frameAssetCache=
           String(artworkFrameAssets.size);
-        artworkSurfaces
+        mounted
           .filter(surface=>
             surface.group && !surface.loaded && !surface.loading &&
             time-surface.lastWantedAt>15000
